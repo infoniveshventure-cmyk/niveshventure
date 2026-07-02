@@ -53,16 +53,89 @@ export default function DashboardPage() {
 
   return (
     <DashboardShell>
-      <div className="glass-card p-6 lg:p-8 mb-6 relative overflow-hidden">
-        <div className="relative z-10">
-          <p className="text-ink-muted text-sm">Welcome back,</p>
-          <h1 className="font-display text-2xl lg:text-3xl font-bold mt-1">
-            {profile?.fullName || "Member"}{" "}
-            <span className="text-xs align-middle px-2 py-1 rounded-full bg-neon-green/15 text-neon-green border border-neon-green/30">
-              {profile?.isActive ? "Active" : "Inactive"}
-            </span>
-          </h1>
-          <p className="text-ink-muted text-sm mt-2 max-w-md">Member ID: {profile?.memberId}</p>
+      {/* ── Premium Hero Card ── */}
+      <div
+        className="mb-6 relative overflow-hidden rounded-2xl p-5 lg:p-7"
+        style={{
+          background: "linear-gradient(135deg, #0d1535 0%, #111b40 55%, #0d1a3a 100%)",
+          border: "1px solid rgba(99,130,255,0.25)",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.45)",
+        }}
+      >
+        {/* Subtle radial glow top-left */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at 10% 50%, rgba(123,92,255,0.12) 0%, transparent 60%)" }} />
+
+        <div className="relative z-10 flex items-center gap-5">
+          {/* Avatar with optional crown */}
+          <div className="relative shrink-0">
+            <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden ring-2 ring-yellow-400/60"
+              style={{ boxShadow: "0 0 18px rgba(234,179,8,0.35)" }}>
+              {profile?.profilePhotoUrl ? (
+                <img src={profile.profilePhotoUrl} alt={profile.fullName} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center text-2xl font-bold text-white">
+                  {profile?.fullName?.[0]?.toUpperCase() || "U"}
+                </div>
+              )}
+            </div>
+            {/* Crown badge — only when active */}
+            {profile?.isActive && (
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full flex items-center justify-center text-base"
+                style={{ background: "linear-gradient(135deg, #b8860b, #ffd700)", boxShadow: "0 2px 8px rgba(218,165,32,0.6)" }}>
+                👑
+              </div>
+            )}
+          </div>
+
+          {/* Text info */}
+          <div className="flex-1 min-w-0">
+            <p className="text-ink-muted text-sm mb-0.5">Welcome back,</p>
+            <h1 className="font-display text-2xl lg:text-3xl font-bold text-white leading-tight flex flex-wrap items-center gap-2">
+              {profile?.fullName?.split(" ")[0] || "Member"}
+              {/* Premium Member badge */}
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full"
+                style={{
+                  background: "linear-gradient(135deg, rgba(120,80,0,0.55), rgba(218,165,32,0.15))",
+                  border: "1px solid rgba(218,165,32,0.55)",
+                  color: "#f5c842",
+                }}>
+                👑 Premium Member
+              </span>
+            </h1>
+
+            {/* Active pill */}
+            <div className="mt-2">
+              <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${
+                profile?.isActive
+                  ? "bg-neon-green/20 text-neon-green border border-neon-green/40"
+                  : "bg-white/8 text-ink-muted border border-white/15"
+              }`}>
+                {profile?.isActive && <span className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />}
+                {profile?.isActive ? "Active" : "Inactive"}
+              </span>
+            </div>
+
+            <p className="text-ink-muted text-sm mt-2">Member ID: <span className="text-ink font-medium">{profile?.memberId || "—"}</span></p>
+          </div>
+
+          {/* Decorative NV shield on right — hidden on very small screens */}
+          <div className="hidden sm:flex shrink-0 items-center justify-center w-24 h-24 lg:w-32 lg:h-32 relative select-none pointer-events-none">
+            {/* Glow rings */}
+            <div className="absolute inset-0 rounded-full opacity-30"
+              style={{ background: "radial-gradient(circle, rgba(0,229,255,0.4) 0%, transparent 70%)" }} />
+            <div className="absolute inset-3 rounded-full border border-neon-cyan/20 animate-pulse" />
+            {/* Shield */}
+            <div className="relative w-16 h-16 lg:w-20 lg:h-20 rounded-xl flex items-center justify-center font-display font-black text-xl lg:text-2xl"
+              style={{
+                background: "linear-gradient(145deg, #1a2a5e, #0e1a40)",
+                border: "2px solid rgba(218,165,32,0.6)",
+                boxShadow: "0 4px 20px rgba(0,229,255,0.25), inset 0 1px 0 rgba(255,255,255,0.08)",
+                color: "#f5c842",
+              }}>
+              NV
+            </div>
+          </div>
         </div>
       </div>
 
