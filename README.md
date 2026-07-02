@@ -8,6 +8,12 @@ Production-ready member + admin platform. Next.js 14, MongoDB Atlas, Firebase Au
 npm install
 cp .env.example .env
 ```
+```
+github repo repush:
+git add .
+git commit -m "first commit"
+git push -u origin main
+```
 
 Fill every value in `.env` — real MongoDB URI, real Firebase project, real SMTP account, real Web3Forms key, real support email/WhatsApp number. No placeholder data ships in the app; empty states show until real data exists.
 
