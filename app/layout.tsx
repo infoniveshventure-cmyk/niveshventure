@@ -37,6 +37,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className="font-body bg-base text-ink bg-grid-glow min-h-screen">
         <AuthProvider>
           <ChatbotProvider>
