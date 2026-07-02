@@ -3,6 +3,15 @@ import { getAuth } from "firebase-admin/auth";
 
 let adminApp: App;
 
+function normalizeFirebasePrivateKey(value: string) {
+  let normalized = value.trim();
+  normalized = normalized.replace(/^"|"$/g, "");
+  normalized = normalized.replace(/\\r\\n/g, "\n");
+  normalized = normalized.replace(/\\n/g, "\n");
+  normalized = normalized.replace(/\r/g, "");
+  return normalized;
+}
+
 function getAdminApp() {
   if (getApps().length) return getApps()[0];
 
@@ -10,13 +19,7 @@ function getAdminApp() {
   const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
   let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
   if (privateKey) {
-    privateKey = privateKey.trim();
-    // Trim surrounding quotes if present (some env providers paste with quotes)
-    privateKey = privateKey.replace(/^"|"$/g, "");
-    // Replace escaped newlines with real newlines
-    privateKey = privateKey.replace(/\\n/g, "\n");
-    // Also handle double-escaped newline sequences
-    privateKey = privateKey.replace(/\\\\n/g, "\\n");
+    privateKey = normalizeFirebasePrivateKey(privateKey);
   }
 
   if (!projectId || !clientEmail || !privateKey) {
