@@ -124,7 +124,6 @@ right-2
 bottom-4
 h-[65vh]
 rounded-2xl
-
 sm:left-1/2
 sm:-translate-x-1/2
 sm:top-auto
