@@ -66,11 +66,12 @@ export default function LoginPage() {
         >
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="auth-logo-ring mb-4">
-            <Image src="/logo.png" alt="Nivesh Ventures" width={72} height={72} className="rounded-2xl" />
+          <div className="">
+            {/* <div className="auth-logo-ring mb-4"> */}
+            <Image src="/logo1.png" alt="Nivesh Ventures" width={200} height={200} className="rounded-2xl" />
           </div>
-          <h2 className="auth-brand-name">NIVESH <span>VENTURES</span></h2>
-          <p className="auth-brand-tagline">TOGETHER WE GROW</p>
+          {/* <h2 className="auth-brand-name">NIVESH <span>VENTURES</span></h2>
+          <p className="auth-brand-tagline">TOGETHER WE GROW</p> */}
         </div>
 
         {/* Heading */}
@@ -153,7 +154,7 @@ export default function LoginPage() {
       </div>
 
       <footer className="fixed bottom-0 left-0 right-0 text-center text-xs text-white/25 flex items-center justify-center gap-1.5 z-10 py-2 bg-[#0D0D1A]/60 backdrop-blur-sm">
-        <CopyrightGate overlayClassName="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm" /> {new Date().getFullYear()} Nivesh Ventures
+        <CopyrightGate overlayClassName="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm" /> {new Date().getFullYear()} Nivesh Ventures. All rights reserved.
       </footer>
     </div>
   );
