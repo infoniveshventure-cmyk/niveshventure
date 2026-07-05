@@ -43,17 +43,17 @@ export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section id="faq" className="relative py-28 bg-[#050914]">
+    <section id="faq" className="relative py-8 md:py-20 bg-[#050914]">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
 
-      <div className="max-w-4xl mx-auto px-8 lg:px-12">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 lg:px-12">
         {/* Header */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-6 md:mb-12">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-sm font-medium text-neon-cyan tracking-widest uppercase mb-3"
+            className="text-xs md:text-xs font-medium text-neon-cyan tracking-widest uppercase mb-2 md:mb-2"
           >
             Frequently Asked
           </motion.p>
@@ -62,7 +62,7 @@ export default function FAQSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-4xl xl:text-5xl font-display font-bold text-white"
+            className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white"
           >
             Got{" "}
             <span className="gradient-text">Questions?</span>
@@ -72,7 +72,7 @@ export default function FAQSection() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15 }}
-            className="text-ink-muted mt-4"
+            className="text-ink-muted mt-2 md:mt-3 text-xs md:text-base"
           >
             Everything you need to know about the platform
           </motion.p>

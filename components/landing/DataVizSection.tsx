@@ -58,17 +58,17 @@ function ChartCard({ title, subtitle, children }: {
 
 export default function DataVizSection() {
   return (
-    <section className="relative py-28 bg-[#0A0E1A]">
+    <section className="relative py-8 md:py-20 bg-[#0A0E1A]">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-violet/30 to-transparent" />
 
-      <div className="max-w-7xl mx-auto px-8 lg:px-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
         {/* Header */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-6 md:mb-12">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-sm font-medium text-neon-cyan tracking-widest uppercase mb-3"
+            className="text-xs md:text-xs font-medium text-neon-cyan tracking-widest uppercase mb-2 md:mb-2"
           >
             Live Metrics
           </motion.p>
@@ -77,7 +77,7 @@ export default function DataVizSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-4xl xl:text-5xl font-display font-bold text-white"
+            className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white"
           >
             Real-time{" "}
             <span className="gradient-text">Growth Analytics</span>
@@ -87,14 +87,14 @@ export default function DataVizSection() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15 }}
-            className="text-ink-muted mt-4 max-w-xl mx-auto"
+            className="text-ink-muted mt-2 md:mt-3 max-w-xl mx-auto text-xs md:text-base"
           >
             Transparent, data-driven performance across all investment categories
           </motion.p>
         </div>
 
         {/* Charts row */}
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
           {/* Monthly Growth */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}

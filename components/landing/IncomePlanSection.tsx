@@ -53,21 +53,21 @@ const INCOMES = [
 
 export default function IncomePlanSection() {
   return (
-    <section id="income" className="relative py-28 bg-[#050914] overflow-hidden">
+    <section id="income" className="relative py-8 md:py-20 bg-[#050914] overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-green/30 to-transparent" />
 
       {/* Background decorations */}
       <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-neon-violet/5 blur-[100px] pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-neon-cyan/5 blur-[80px] pointer-events-none" />
 
-      <div className="relative max-w-7xl mx-auto px-8 lg:px-12">
+      <div className="relative max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
         {/* Header */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-6 md:mb-12">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-sm font-medium text-neon-green tracking-widest uppercase mb-3"
+            className="text-xs md:text-xs font-medium text-neon-green tracking-widest uppercase mb-2 md:mb-2"
           >
             Multiple Income Streams
           </motion.p>
@@ -76,7 +76,7 @@ export default function IncomePlanSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-4xl xl:text-5xl font-display font-bold text-white"
+            className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white"
           >
             Five Ways to{" "}
             <span className="gradient-text">Earn Daily</span>
@@ -86,7 +86,7 @@ export default function IncomePlanSection() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15 }}
-            className="text-ink-muted mt-4 max-w-2xl mx-auto text-lg"
+            className="text-ink-muted mt-2 md:mt-3 max-w-2xl mx-auto text-xs md:text-base"
           >
             A diversified income architecture ensures you earn from multiple sources simultaneously,
             maximizing your wealth-building velocity.
@@ -94,7 +94,7 @@ export default function IncomePlanSection() {
         </div>
 
         {/* Income cards */}
-        <div className="grid lg:grid-cols-5 gap-5">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-5">
           {INCOMES.map((income, i) => {
             const Icon = income.icon;
             return (
@@ -104,11 +104,11 @@ export default function IncomePlanSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.55, delay: i * 0.1 }}
-                className="landing-card p-6 flex flex-col group cursor-default"
+                className="landing-card p-3 md:p-6 flex flex-col group cursor-default"
               >
                 {/* Rate badge */}
                 <div
-                  className="self-end mb-5 px-2.5 py-1 rounded-full text-xs font-bold"
+                  className="self-end mb-3 md:mb-5 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full text-xs font-bold"
                   style={{
                     color: income.color,
                     background: `${income.color}18`,
@@ -120,13 +120,13 @@ export default function IncomePlanSection() {
 
                 {/* Icon */}
                 <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300"
+                  className="w-10 md:w-12 h-10 md:h-12 rounded-lg md:rounded-2xl flex items-center justify-center mb-3 md:mb-5 group-hover:scale-110 transition-transform duration-300"
                   style={{ background: `${income.color}18`, boxShadow: `0 0 16px ${income.glow}` }}
                 >
-                  <Icon size={22} style={{ color: income.color }} />
+                  <Icon size={18} className="md:w-[22px] md:h-[22px]" style={{ color: income.color }} />
                 </div>
 
-                <h3 className="font-display font-bold text-white text-base mb-3">{income.title}</h3>
+                <h3 className="font-display font-bold text-white text-sm md:text-base mb-2 md:mb-3">{income.title}</h3>
                 <p className="text-ink-muted text-xs leading-relaxed flex-1">{income.description}</p>
 
                 {/* Bottom glow line */}

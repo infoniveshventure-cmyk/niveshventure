@@ -75,7 +75,7 @@ export default function TestimonialsSection() {
   ];
 
   return (
-    <section className="relative py-28 bg-[#0A0E1A] overflow-hidden">
+    <section className="relative py-12 md:py-28 bg-[#0A0E1A] overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-violet/30 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-neon-violet/3 to-transparent pointer-events-none" />
 

@@ -80,20 +80,20 @@ function TiltCard({ children, className }: { children: React.ReactNode; classNam
 
 export default function BusinessSection() {
   return (
-    <section id="business" className="relative py-28 bg-[#050914]">
+    <section id="business" className="relative py-8 md:py-20 bg-[#050914]">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
 
       {/* Background glow */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#0A0E1A] via-[#050914] to-[#0A0E1A] pointer-events-none" />
 
-      <div className="relative max-w-7xl mx-auto px-8 lg:px-12">
+      <div className="relative max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
         {/* Section header */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-6 md:mb-12">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-sm font-medium text-neon-cyan tracking-widest uppercase mb-3"
+            className="text-xs md:text-xs font-medium text-neon-cyan tracking-widest uppercase mb-2 md:mb-2"
           >
             Business Verticals
           </motion.p>
@@ -102,7 +102,7 @@ export default function BusinessSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-4xl xl:text-5xl font-display font-bold text-white"
+            className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white"
           >
             Where Your Money{" "}
             <span className="gradient-text">Works Harder</span>
@@ -112,14 +112,14 @@ export default function BusinessSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-ink-muted mt-4 max-w-xl mx-auto text-lg"
+            className="text-ink-muted mt-2 md:mt-3 max-w-xl mx-auto text-xs md:text-base"
           >
             Five carefully curated investment categories managed by experienced professionals
           </motion.p>
         </div>
 
         {/* Cards grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {VERTICALS.slice(0, 3).map((v, i) => {
             const Icon = v.icon;
             return (
@@ -130,7 +130,7 @@ export default function BusinessSection() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: i * 0.12 }}
               >
-                <TiltCard className="p-7 h-full cursor-default">
+                <TiltCard className="p-4 md:p-7 h-full cursor-default">
                   {/* Top gradient */}
                   <div className={`absolute inset-x-0 top-0 h-1 rounded-t-[1.25rem] bg-gradient-to-r ${v.gradient.replace("to-transparent", "to-transparent")} opacity-0 group-hover:opacity-100`}
                     style={{ background: `linear-gradient(to right, ${v.color}, transparent)` }}
@@ -138,14 +138,14 @@ export default function BusinessSection() {
 
                   {/* Icon */}
                   <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
+                    className="w-10 md:w-14 h-10 md:h-14 rounded-lg md:rounded-2xl flex items-center justify-center mb-3 md:mb-6"
                     style={{ background: `${v.color}18`, boxShadow: `0 0 20px ${v.glow}` }}
                   >
-                    <Icon size={26} style={{ color: v.color }} />
+                    <Icon size={20} className="md:w-[26px] md:h-[26px]" style={{ color: v.color }} />
                   </div>
 
-                  <h3 className="text-xl font-display font-bold text-white mb-3">{v.title}</h3>
-                  <p className="text-ink-muted text-sm leading-relaxed">{v.description}</p>
+                  <h3 className="text-base md:text-xl font-display font-bold text-white mb-2 md:mb-3">{v.title}</h3>
+                  <p className="text-ink-muted text-xs md:text-sm leading-relaxed">{v.description}</p>
 
                   {/* Bottom accent */}
                   <div

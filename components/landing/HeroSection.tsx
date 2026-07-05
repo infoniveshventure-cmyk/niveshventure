@@ -68,16 +68,16 @@ export default function HeroSection() {
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-neon-cyan/8 blur-[80px] pointer-events-none" style={{ animationDelay: "3s" }} />
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-12 w-full pt-24 pb-20">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 lg:px-12 w-full pt-8 md:pt-20 pb-8 md:pb-16">
+        <div className="grid lg:grid-cols-2 gap-8 md:gap-16 items-center">
           {/* Left: Text */}
-          <div className="space-y-8">
+          <div className="space-y-4 md:space-y-8">
             {/* Badge */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-neon-violet/30 bg-neon-violet/10 text-sm text-neon-cyan font-medium"
+              className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-neon-violet/30 bg-neon-violet/10 text-xs md:text-sm text-neon-cyan font-medium"
             >
               <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
               Trusted by 50,000+ Investors Worldwide
@@ -88,7 +88,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}
-              className="text-5xl xl:text-6xl 2xl:text-7xl font-display font-bold leading-[1.1] tracking-tight"
+              className="text-2xl sm:text-3xl md:text-5xl xl:text-6xl 2xl:text-7xl font-display font-bold leading-[1.1] tracking-tight"
             >
               Build Your{" "}
               <span className="gradient-text">Financial Future</span>{" "}
@@ -100,7 +100,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg text-ink-muted leading-relaxed max-w-xl"
+              className="text-xs md:text-base text-ink-muted leading-relaxed max-w-xl"
             >
               Nivesh Ventures empowers you with multiple income streams — referral bonuses,
               matching commissions, booster rewards, and monthly returns — all in one transparent platform.
@@ -111,7 +111,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="border-l-2 border-neon-violet pl-5 italic text-ink-muted text-sm"
+              className="border-l-2 border-neon-violet pl-3 md:pl-5 italic text-ink-muted text-xs md:text-sm"
             >
               "Your journey starts today. Every successful investment begins with one confident step."
             </motion.blockquote>
@@ -121,13 +121,13 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex items-center gap-4 flex-wrap"
+              className="flex items-center gap-2 md:gap-4 flex-wrap"
             >
-              <Link href="/register" className="btn-landing-primary inline-flex items-center gap-2.5 landing-glow-pulse">
+              <Link href="/register" className="btn-landing-primary inline-flex items-center gap-1.5 md:gap-2.5 text-xs md:text-base landing-glow-pulse">
                 Get Started Free
-                <ArrowRight size={18} />
+                <ArrowRight size={16} className="md:w-[18px] md:h-[18px]" />
               </Link>
-              <Link href="/login" className="btn-landing-ghost inline-flex items-center gap-2.5">
+              <Link href="/login" className="btn-landing-ghost inline-flex items-center gap-1.5 md:gap-2.5 text-xs md:text-base">
                 Login to Dashboard
               </Link>
             </motion.div>
@@ -137,7 +137,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex items-center gap-8 pt-2"
+              className="flex items-center gap-4 md:gap-8 pt-2"
             >
               {[
                 { label: "Members", value: "50K+" },
@@ -145,14 +145,14 @@ export default function HeroSection() {
                 { label: "Countries", value: "50+" },
               ].map((s) => (
                 <div key={s.label}>
-                  <div className="text-xl font-bold text-white">{s.value}</div>
-                  <div className="text-xs text-ink-muted">{s.label}</div>
+                  <div className="text-lg md:text-xl font-bold text-white">{s.value}</div>
+                  <div className="text-xs md:text-xs text-ink-muted">{s.label}</div>
                 </div>
               ))}
             </motion.div>
           </div>
 
-          {/* Right: Floating visual elements */}
+          {/* Right: Floating visual elements - hidden on mobile */}
           <div className="relative h-[520px] hidden lg:block">
             {/* Main dashboard card */}
             <motion.div

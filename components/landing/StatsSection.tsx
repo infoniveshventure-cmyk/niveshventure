@@ -40,7 +40,7 @@ function AnimatedCounter({ end, suffix = "", duration = 2200 }: { end: number; s
   }, [end, duration]);
 
   return (
-    <div ref={ref} className="font-display font-bold text-4xl text-white tabular-nums">
+    <div ref={ref} className="font-display font-bold text-xl md:text-3xl text-white tabular-nums">
       {count.toLocaleString()}{suffix}
     </div>
   );
@@ -48,23 +48,23 @@ function AnimatedCounter({ end, suffix = "", duration = 2200 }: { end: number; s
 
 export default function StatsSection() {
   return (
-    <section id="about" className="relative py-24 bg-[#0A0E1A]">
+    <section id="about" className="relative py-8 md:py-20 bg-[#0A0E1A]">
       {/* Divider glow */}
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-violet/40 to-transparent" />
 
-      <div className="max-w-7xl mx-auto px-8 lg:px-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-6 md:mb-12"
         >
-          <p className="text-sm font-medium text-neon-cyan tracking-widest uppercase mb-3">By the Numbers</p>
-          <h2 className="text-4xl font-display font-bold text-white">Trusted by Thousands Globally</h2>
+          <p className="text-xs md:text-xs font-medium text-neon-cyan tracking-widest uppercase mb-2 md:mb-2">By the Numbers</p>
+          <h2 className="text-lg md:text-3xl font-display font-bold text-white">Trusted by Thousands Globally</h2>
         </motion.div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
           {STATS.map((stat, i) => {
             const Icon = stat.icon;
             return (
@@ -74,13 +74,13 @@ export default function StatsSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="landing-card p-8 text-center group"
+                className="landing-card p-3 md:p-6 text-center group"
               >
-                <div className={`w-14 h-14 rounded-2xl ${stat.bg} flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon size={26} className={stat.color} />
+                <div className={`w-8 md:w-12 h-8 md:h-12 rounded-lg md:rounded-xl ${stat.bg} flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon size={16} className={`${stat.color} md:w-[22px] md:h-[22px]`} />
                 </div>
                 <AnimatedCounter end={stat.value} suffix={stat.display.replace(stat.value.toString(), "").replace("$", "")} />
-                <div className="text-sm text-ink-muted mt-2">{stat.label}</div>
+                <div className="text-xs md:text-xs text-ink-muted mt-1 md:mt-2">{stat.label}</div>
               </motion.div>
             );
           })}

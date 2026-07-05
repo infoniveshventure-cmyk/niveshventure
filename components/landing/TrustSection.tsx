@@ -36,20 +36,20 @@ const TRUST_PILLARS = [
 
 export default function TrustSection() {
   return (
-    <section id="about" className="relative py-28 bg-[#0A0E1A] overflow-hidden">
+    <section id="about" className="relative py-8 md:py-20 bg-[#0A0E1A] overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-magenta/30 to-transparent" />
 
       {/* Background accent */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-neon-violet/4 blur-[120px] pointer-events-none" />
 
-      <div className="relative max-w-7xl mx-auto px-8 lg:px-12">
+      <div className="relative max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
         {/* Header */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-6 md:mb-12">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-sm font-medium text-neon-magenta tracking-widest uppercase mb-3"
+            className="text-xs md:text-xs font-medium text-neon-magenta tracking-widest uppercase mb-2 md:mb-2"
           >
             Why Choose Us
           </motion.p>
@@ -58,7 +58,7 @@ export default function TrustSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-4xl xl:text-5xl font-display font-bold text-white"
+            className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white"
           >
             Built on{" "}
             <span className="gradient-text">Trust & Integrity</span>
@@ -66,7 +66,7 @@ export default function TrustSection() {
         </div>
 
         {/* Trust pillars grid */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
           {TRUST_PILLARS.map((pillar, i) => {
             const Icon = pillar.icon;
             return (

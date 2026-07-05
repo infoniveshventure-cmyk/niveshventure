@@ -12,16 +12,16 @@ const RANKS = [
 
 export default function RankRewardsSection() {
   return (
-    <section className="relative py-28 bg-[#050914]">
+    <section className="relative py-8 md:py-20 bg-[#050914]">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#FFD700]/30 to-transparent" />
 
-      <div className="max-w-7xl mx-auto px-8 lg:px-12">
-        <div className="text-center mb-20">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
+        <div className="text-center mb-6 md:mb-12">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-sm font-medium tracking-widest uppercase mb-3 gradient-text-gold"
+            className="text-xs md:text-xs font-medium tracking-widest uppercase mb-2 md:mb-2 gradient-text-gold"
           >
             Rank System
           </motion.p>
@@ -30,7 +30,7 @@ export default function RankRewardsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-4xl xl:text-5xl font-display font-bold text-white"
+            className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white"
           >
             Climb the Ranks,{" "}
             <span className="gradient-text-gold">Unlock Rewards</span>
@@ -40,14 +40,14 @@ export default function RankRewardsSection() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15 }}
-            className="text-ink-muted mt-4 max-w-xl mx-auto"
+            className="text-ink-muted mt-2 md:mt-3 max-w-xl mx-auto text-xs md:text-base"
           >
             Your team size determines your rank — and your rank unlocks extraordinary rewards
           </motion.p>
         </div>
 
         {/* Rank cards */}
-        <div className="space-y-4">
+        <div className="space-y-2 md:space-y-4">
           {RANKS.map((r, i) => (
             <motion.div
               key={r.rank}
@@ -55,12 +55,12 @@ export default function RankRewardsSection() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.55, delay: i * 0.1 }}
-              className="landing-card p-6 group"
+              className="landing-card p-3 md:p-6 group"
             >
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
                 {/* Rank badge */}
                 <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 font-display font-bold text-sm group-hover:scale-110 transition-transform duration-300"
+                  className="w-10 md:w-14 h-10 md:h-14 rounded-lg md:rounded-2xl flex items-center justify-center flex-shrink-0 font-display font-bold text-xs md:text-sm group-hover:scale-110 transition-transform duration-300"
                   style={{ background: r.bg, border: `1px solid ${r.color}30`, color: r.color }}
                 >
                   {r.rank.slice(0, 2).toUpperCase()}
@@ -68,9 +68,9 @@ export default function RankRewardsSection() {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-display font-bold text-white text-lg">{r.rank}</h3>
-                    <div className="flex items-center gap-6 text-sm">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0 md:mb-2">
+                    <h3 className="font-display font-bold text-white text-base md:text-lg">{r.rank}</h3>
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 text-xs md:text-sm">
                       <span className="text-ink-muted">Team: <span className="text-white font-medium">{r.team}</span></span>
                       <span className="text-ink-muted">Reward: <span className="font-bold" style={{ color: r.color }}>{r.reward}</span></span>
                       <span className="text-ink-muted">Bonus: <span className="text-white font-medium">{r.bonus}</span></span>
