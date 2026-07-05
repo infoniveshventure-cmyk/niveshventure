@@ -780,3 +780,43 @@ Implement the following advanced production-grade enhancements in the existing s
 - Maintain production-level code quality.
 - Ensure all features are scalable, secure, and optimized.
 - Follow consistent UI/UX design system across entire application.
+
+
+MONGODB_URI=mongodb+srv://sumit:sumit123@cluster0.nwwizkk.mongodb.net/mydb?retryWrites=true&w=majority&appName=Cluster0
+
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyBirsRpNHa92enUclBy8rmqQJdSUYI2HYU
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=free-6258c.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=free-6258c
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=free-6258c.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=813434140350
+NEXT_PUBLIC_FIREBASE_APP_ID=1:813434140350:web:6f18bc30eb7372191c50ef
+
+NEXT_PUBLIC_ADMIN_EMAILS=sumitraj805109@gmail.com
+
+FIREBASE_ADMIN_PROJECT_ID=free-6258c
+FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk-fbsvc@free-6258c.iam.gserviceaccount.com
+
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC3px2FjAigIuOl\nsxmYoiqfw4+mxDjdxxeB0pTRKQTzg6+1OqOQR0WoSIm7NTXxFO3hhU13mFe0tnxT\nLZjvpLWaKrgkbtz+vCnSBlea9IGE0ZGolhbuhAmndem0rb+ZyXYTbGq5h9KL+sPN\nz9UL7vr0x8ZMOfMeujDTvyefgRYhP0rM5zwcCkprlKtq+Uipfw8KrJQ5825ex95n\ncOLgmngTHG2WgBVv6dIJl9Pibu8H/m/XJQuHzDmd/7jf/bwnKc4je/gexJBCGTtM\nD+Soy6KnvsVQlzthapN+vPSRAfIrcGQq/qj83XiX3KQJJ77omL4HRUpwoA/2nHgg\nIT/TdfIzAgMBAAECggEAPqz7uD3oG66Mflo3HA4L+eYlukYxGg7+CMIzI4aaN/jz\nGChg9bY9IYdP6eHo/NOls1do7q3BEN1OZJylGvPdPjXiDhz/srfIlfKwJyPWp9tV\nmHFQdin9mXb2QUEiqHtGnq5bZeHiiv8Tn8OT87SlVLBxDkagoBXu3/TWsuq9AK8i\nX0IGQP9OmJMeqyt/P6sT1Byl5UErpsLaS+YhKiCSSER5ExsiRJZy5hGRa4LzWfKj\nWVA7CcOF4F24qJISeGEiaHFp4PE4VnwsEFi9MgZDEw03szUJgDorIWQSzYN8OTaf\nAZPPylpeH0MjfajUNOVqK8tO0KQFGxXynERDTI/akQKBgQDtW4rznD7V+qJyngbv\nRnCAamYe8GlUuGsU2zC9xwXNaryWnARjMp+ECDwGGYrhVivwwE5iWpw8hv+5i1zp\n641eHOdYibXbSWoZZfaq4WC3ow4MsBcE2Uu66X8vDBD/XyexqbJu7Ffk4eaB/NXl\noD8BBtdjRbHVLvHY8+SKzG4QtQKBgQDGE8BB9pvSTJ64jpB7RsgaBilcy0dKkhMQ\nNN4KfyHWEvNLQE0SmDVpCOJ7kU4aC8O9PcJxewlOMnO0Q8V7a/C9SmlJC/26uH1K\nXaF7xH5i7xO4UxJwNG54q8apr/9fkn7D8khjYexswMZfNMQajPBgqjOXI2O8kHZL\nXPbHAtQQRwKBgQDepWci+qZKi+8Dus5gdl+jZarjTLpRGSiBCNagveboeD3svO60\nqlDNRfgf9Ke8ldtj2s/sHHi/ohaQ0nRWjHkwFcbA23R1/ViD+Iw4YG8b8tyD9E2z\nY61Q6CRAWn47PeP7GGZi/Fm6Pli+CBAQdI+FBAjYexDEG2QLEUSJGhgInQKBgQCg\n1qjm5zjgKxc3BYyMjY0ulJJBp07cXoDcSBGEtHblPb4Q/MWYs7+q6mv9qp+gxqzK\nnbumKiIEPTN2zREuhxeUnTeg+PuvAt+54w2dUpDOBRQeOFZghjKuCc3nO+JB2NLW\niYX+LSWtqVtrM42Jgagu1gXOVA5Ir4Ve7L32G3XXQQKBgQDQfKWP3G1Lhw0Sq7xN\nv//tnG4+GTABu4ZGwye7P+g6uAEi09b5VohElsCiD3f0oHCLzT7NSVtVMVwlctzc\n50V6bMpRoLWmwNWnvJOSV+b8SdqHeqkWYGyDhOcHpabr49/tTEr0w4VjpXOt/rmC\nhedu4jWQYRzicvzaBFmidIarQQ==\n-----END PRIVATE KEY-----\n"
+JWT_SECRET=ce23b3e18b7a1a37db64c4e9437d92847d67b106537abeeaa59fa87085c23d511106b392072acd9d3ebeca890cd22f906afe315e75b5d4cb0c843d53dda8c2fe
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=sumitraj805109@gmail.com
+SMTP_PASS="phdr ktos ytmk bvmm"
+SMTP_FROM="NexaChain <sumitraj805109@gmail.com>"
+
+# WEB3FORMS_ACCESS_KEY=1726725b-934b-4041-be9a-246ca9a6da41
+SUPPORT_EMAIL=niveshventures8@gmail.com
+# ADMIN_EMAIL=niveshventures8@gmail.com
+
+ADMIN_EMAIL=sumitraj805109@gmail.com
+
+# WHATSAPP_SUPPORT_NO=917485001044
+# NEXT_PUBLIC_WHATSAPP_SUPPORT_NO=917485001044
+
+DEPOSIT_USDT_ADDRESS=
+
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=y3r6gi4g
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=ml_default
+
+NEXT_PUBLIC_APP_URL=https://nivesh-ventures.vercel.app
