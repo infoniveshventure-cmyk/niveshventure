@@ -58,7 +58,13 @@ export async function PATCH(req: NextRequest) {
       if (rewardAmount > 0) {
         const sponsor = await User.findOneAndUpdate(
           { memberId: depositor.sponsorId },
-          { $inc: { walletBalance: rewardAmount } },
+          {
+            $inc: {
+              walletBalance: rewardAmount,
+              totalReferralIncome: rewardAmount,
+              totalRewardIncome: rewardAmount,
+            },
+          },
           { new: true }
         );
         if (sponsor) {
@@ -71,6 +77,14 @@ export async function PATCH(req: NextRequest) {
             status: "completed",
             note: `Referral share reward — ${depositor.memberId} completed first deposit`,
           });
+
+          notifyMember(
+            sponsor.memberId,
+            "Referral Reward 🎁",
+            `You received a referral reward of $${rewardAmount} for ${depositor.memberId}'s first deposit.`,
+            "referral_reward",
+            deposit._id
+          ).catch(() => {});
         }
       }
       depositor.firstDepositRewarded = true;

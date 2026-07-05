@@ -38,7 +38,7 @@ export async function compareSecret(value: string, hash: string) {
 
 export function generateMemberId() {
   const num = Math.floor(100000 + Math.random() * 900000);
-  return `MLM${num}`;
+  return `NV${num}`;
 }
 
 export function generateKey(prefix: string) {

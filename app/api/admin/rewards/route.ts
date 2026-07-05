@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import RewardRule from "@/models/RewardRule";
 import RewardHistory from "@/models/RewardHistory";
 import User from "@/models/User";
+import Transaction from "@/models/Transaction";
 import { requireAdmin } from "@/lib/require-admin";
 import { notifyMember } from "@/lib/notification";
 
@@ -59,6 +60,27 @@ export async function GET(req: NextRequest) {
 }
 
 // POST: Create a new reward rule or release a manual reward
+async function creditRewardToUser(user: any, amount: number, type: string, note: string) {
+  const isReferralReward = /referral|share/i.test(type);
+
+  user.totalRewardIncome = (user.totalRewardIncome || 0) + amount;
+  if (isReferralReward) {
+    user.totalReferralIncome = (user.totalReferralIncome || 0) + amount;
+  }
+  user.walletBalance = (user.walletBalance || 0) + amount;
+  await user.save();
+
+  await Transaction.create({
+    memberId: user.memberId,
+    type: isReferralReward ? "share_reward" : "reward_income",
+    direction: "credit",
+    amount,
+    currency: "USDT",
+    status: "completed",
+    note,
+  });
+}
+
 export async function POST(req: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
@@ -95,10 +117,12 @@ export async function POST(req: NextRequest) {
     const user = await User.findOne({ memberId });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    // Credit to User's rewards wallet
-    user.totalRewardIncome = (user.totalRewardIncome || 0) + amount;
-    user.walletBalance = (user.walletBalance || 0) + amount;
-    await user.save();
+    await creditRewardToUser(
+      user,
+      amount,
+      type,
+      `Admin released reward for ${type.replace(/_/g, " ")}`
+    );
 
     // Create log entry
     const log = await RewardHistory.create({
@@ -170,9 +194,12 @@ export async function PATCH(req: NextRequest) {
       // Credit user wallet
       const user = await User.findOne({ memberId: log.memberId });
       if (user) {
-        user.totalRewardIncome = (user.totalRewardIncome || 0) + log.amount;
-        user.walletBalance = (user.walletBalance || 0) + log.amount;
-        await user.save();
+        await creditRewardToUser(
+          user,
+          log.amount,
+          log.rewardType,
+          `Pending reward released for ${log.rewardType.replace(/_/g, " ")}`
+        );
 
         notifyMember(
           log.memberId,

@@ -171,3 +171,250 @@ body {
   box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 30px rgba(123,92,255,0.1);
   transform: translateY(-4px);
 }
+
+/* ═══════════════════════════════════════════════════
+   AUTH PAGES (Login / Register)
+═══════════════════════════════════════════════════ */
+
+/* Scroll wrapper: sits fixed over the overflow:hidden body,
+   has its own scroll context so auth pages can scroll freely */
+.auth-scroll-wrapper {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(123,92,255,0.3) transparent;
+}
+
+.auth-bg {
+  min-height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem 5rem; /* bottom padding clears the fixed footer */
+  position: relative;
+  background: #0D0D1A;
+}
+
+/* Floating blobs */
+.auth-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: auth-blob-float 8s ease-in-out infinite;
+}
+.auth-blob-purple {
+  width: 380px; height: 380px;
+  top: -80px; left: -100px;
+  background: radial-gradient(circle, rgba(100,30,200,0.75) 0%, rgba(80,20,180,0.4) 60%, transparent 100%);
+  animation-delay: 0s;
+}
+.auth-blob-orange {
+  width: 340px; height: 340px;
+  bottom: -60px; right: -80px;
+  background: radial-gradient(circle, rgba(220,80,20,0.7) 0%, rgba(180,60,10,0.35) 60%, transparent 100%);
+  animation-delay: -3s;
+}
+.auth-blob-purple2 {
+  width: 180px; height: 180px;
+  top: 30%; right: -40px;
+  background: radial-gradient(circle, rgba(140,30,200,0.6) 0%, transparent 70%);
+  animation-delay: -5s;
+}
+
+@keyframes auth-blob-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  33%       { transform: translateY(-25px) scale(1.04); }
+  66%       { transform: translateY(12px) scale(0.97); }
+}
+
+/* Glass card */
+.auth-card {
+  background: rgba(18, 14, 38, 0.72);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 28px;
+  box-shadow:
+    0 0 0 1px rgba(120,60,255,0.12),
+    0 32px 80px rgba(0,0,0,0.55),
+    0 0 60px rgba(100,30,200,0.15);
+}
+
+/* Logo ring */
+.auth-logo-ring {
+  padding: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  box-shadow: 0 0 30px rgba(100,30,200,0.25);
+}
+
+/* Brand name */
+.auth-brand-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  margin-top: 2px;
+}
+.auth-brand-name span {
+  color: #00B4FF;
+}
+.auth-brand-tagline {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.35);
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+/* Heading */
+.auth-heading {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+.auth-subheading {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.35);
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+/* Inputs */
+.auth-input-wrapper {
+  position: relative;
+}
+.auth-input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 0.75rem 2.75rem 0.75rem 1rem;
+  color: #fff;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.auth-input::placeholder { color: rgba(255,255,255,0.3); }
+.auth-input:focus {
+  border-color: rgba(0,180,255,0.5);
+  box-shadow: 0 0 0 3px rgba(0,180,255,0.08);
+}
+.auth-input-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.auth-select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+/* Primary button */
+.auth-btn-primary {
+  display: block;
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  background: linear-gradient(135deg, #E84A1A 0%, #FF6B2C 50%, #E83020 100%);
+  box-shadow: 0 6px 24px rgba(220, 60, 30, 0.45);
+  transition: all 0.25s;
+  cursor: pointer;
+  border: none;
+  text-transform: uppercase;
+}
+.auth-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 8px 32px rgba(220, 60, 30, 0.65);
+  transform: translateY(-1px);
+}
+.auth-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Link */
+.auth-link {
+  color: #00B4FF;
+  transition: color 0.2s;
+}
+.auth-link:hover { color: #66d9ff; text-decoration: underline; }
+
+/* Step indicator */
+.auth-step-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.35);
+  transition: all 0.3s;
+}
+.auth-step-dot.active {
+  background: linear-gradient(135deg, #E84A1A, #FF6B2C);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 0 14px rgba(220,70,30,0.5);
+}
+.auth-step-dot.done {
+  background: rgba(0,200,80,0.15);
+  border-color: rgba(0,200,80,0.4);
+  color: #00C850;
+}
+.auth-step-line {
+  flex: 1; height: 1px;
+  background: rgba(255,255,255,0.1);
+  transition: background 0.3s;
+}
+.auth-step-line.active {
+  background: linear-gradient(90deg, #E84A1A, #FF6B2C);
+}
+
+/* Radio labels */
+.auth-radio-label {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0.65rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.auth-radio-label.active {
+  border-color: rgba(0,180,255,0.45);
+  background: rgba(0,180,255,0.07);
+  color: #fff;
+}
+.auth-radio-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.25);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.auth-radio-dot.active {
+  border-color: #00B4FF;
+  background: #00B4FF;
+  box-shadow: 0 0 8px rgba(0,180,255,0.5);
+}
+

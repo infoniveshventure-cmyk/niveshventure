@@ -17,8 +17,22 @@ export const metadata: Metadata = {
   description: "Track your team, income and rewards in one place.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "Nivesh Ventures",
+    description: "Track your team, income and rewards in one place.",
+    url: "/",
+    type: "website",
+    images: [{ url: "/logo.png", width: 512, height: 512, alt: "Nivesh Ventures" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Nivesh Ventures",
+    description: "Track your team, income and rewards in one place.",
+    images: ["/logo.png"],
   },
   appleWebApp: {
     capable: true,

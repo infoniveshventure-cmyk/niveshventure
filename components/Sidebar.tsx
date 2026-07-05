@@ -56,8 +56,18 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
   const { profile } = useAuth();
 
   async function handleLogout() {
-    await signOut(auth);
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      await signOut(auth);
+    } catch {
+      // ignore Firebase sign-out errors
+    }
+
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // ignore logout API errors
+    }
+
     toast.success("Logged out");
     router.push("/login");
   }

@@ -39,25 +39,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setProfile(data.user);
-      } else {
-        setProfile(null);
+        return;
       }
     } catch {
-      setProfile(null);
+      // ignore and fall back to Firebase-based state
     }
+
+    try {
+      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data.user);
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    setProfile(null);
   }
 
   useEffect(() => {
+    let mounted = true;
+
     const unsub = onAuthStateChanged(auth, async (u) => {
+      if (!mounted) return;
       setFirebaseUser(u);
       if (u) {
         await refreshProfile();
       } else {
         setProfile(null);
       }
-      setLoading(false);
+      if (mounted) {
+        setLoading(false);
+      }
     });
-    return () => unsub();
+
+    const init = async () => {
+      if (!mounted) return;
+      await refreshProfile();
+      if (mounted) {
+        setLoading(false);
+      }
+    };
+
+    init();
+
+    return () => {
+      mounted = false;
+      unsub();
+    };
   }, []);
 
   return (
