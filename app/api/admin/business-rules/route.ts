@@ -37,7 +37,7 @@ const DEFAULT_RULES = [
   { key: "withdrawal_fee_pct", category: "general", label: "Withdrawal Fee %", value: 5, type: "percentage", min: 0, max: 20, unit: "%" },
 ];
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
 

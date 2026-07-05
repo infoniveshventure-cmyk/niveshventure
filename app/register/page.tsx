@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const { refreshProfile } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [form, setForm] = useState({
     fullName: "",
     mobile: "",
@@ -30,6 +31,49 @@ export default function RegisterPage() {
     otp: "",
   });
 
+  const [sponsorName, setSponsorName] = useState("");
+  const [validatingSponsor, setValidatingSponsor] = useState(false);
+  const [sponsorError, setSponsorError] = useState("");
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((c) => c - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (!form.sponsorId) {
+      setSponsorName("");
+      setSponsorError("");
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setValidatingSponsor(true);
+      setSponsorError("");
+      try {
+        const res = await fetch(`/api/auth/lookup-sponsor?sponsorId=${encodeURIComponent(form.sponsorId)}`);
+        const data = await res.json();
+        if (!res.ok) {
+          setSponsorError(data.error || "Invalid referral code");
+          setSponsorName("");
+        } else {
+          setSponsorName(data.fullName);
+          setSponsorError("");
+        }
+      } catch (err) {
+        setSponsorError("Error checking referral code");
+        setSponsorName("");
+      } finally {
+        setValidatingSponsor(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [form.sponsorId]);
+
   function update(k: string, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
   }
@@ -38,6 +82,14 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!form.fullName || !form.mobile || !form.email || form.password.length < 6) {
       toast.error("Fill all fields — password needs 6+ characters");
+      return;
+    }
+    if (form.sponsorId && sponsorError) {
+      toast.error("Please enter a valid referral code or clear the field");
+      return;
+    }
+    if (form.sponsorId && validatingSponsor) {
+      toast.error("Validating referral code... please wait.");
       return;
     }
     setLoading(true);
@@ -54,8 +106,29 @@ export default function RegisterPage() {
       if (!res.ok) throw new Error(data.error);
       toast.success("OTP sent to your Gmail");
       setStep(2);
+      setCooldown(60);
     } catch (err: any) {
       toast.error(err.message?.replace("Firebase: ", "") || "Could not send OTP");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResendOtp() {
+    if (cooldown > 0 || loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email, purpose: "register" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast.success("OTP resent to your Gmail");
+      setCooldown(60);
+    } catch (err: any) {
+      toast.error(err.message || "Could not resend OTP");
     } finally {
       setLoading(false);
     }
@@ -117,8 +190,23 @@ export default function RegisterPage() {
             <select className="input-field" value={form.country} onChange={(e) => update("country", e.target.value)}>
               {countries.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
-            <input className="input-field" placeholder="Referral code (optional)" value={form.sponsorId}
-              onChange={(e) => update("sponsorId", e.target.value)} />
+            <div className="space-y-1">
+              <input className="input-field" placeholder="Referral code (optional)" value={form.sponsorId}
+                onChange={(e) => update("sponsorId", e.target.value)} />
+              {validatingSponsor && (
+                <p className="text-xs text-ink-muted px-1 animate-pulse">Validating referral code...</p>
+              )}
+              {!validatingSponsor && sponsorName && (
+                <p className="text-xs text-emerald-500 font-medium px-1 flex items-center gap-1">
+                  <span>✓</span> Sponsor: <span className="font-semibold text-white">{sponsorName}</span>
+                </p>
+              )}
+              {!validatingSponsor && sponsorError && (
+                <p className="text-xs text-rose-500 font-medium px-1 flex items-center gap-1">
+                  <span>✗</span> {sponsorError}
+                </p>
+              )}
+            </div>
             <div className="flex gap-3">
               <label className="flex-1 flex items-center gap-2 input-field cursor-pointer">
                 <input type="radio" name="pos" checked={form.position === "left"} onChange={() => update("position", "left")} />
@@ -136,14 +224,40 @@ export default function RegisterPage() {
         )}
 
         {step === 2 && (
-          <form onSubmit={handleVerifyAndRegister} className="space-y-3">
-            <p className="text-sm text-ink-muted">Enter the 6-digit code sent to <span className="text-neon-cyan">{form.email}</span></p>
-            <input className="input-field text-center tracking-[0.5em] text-lg" maxLength={6} placeholder="000000"
-              value={form.otp} onChange={(e) => update("otp", e.target.value.replace(/\D/g, ""))} />
+          <form onSubmit={handleVerifyAndRegister} className="space-y-4">
+            <div>
+              <p className="text-sm text-ink-muted mb-2">Enter the 6-digit code sent to <span className="text-neon-cyan">{form.email}</span></p>
+              <input className="input-field text-center tracking-[0.5em] text-lg" maxLength={6} placeholder="000000"
+                value={form.otp} onChange={(e) => update("otp", e.target.value.replace(/\D/g, ""))} />
+            </div>
+
             <button disabled={loading} className="btn-primary w-full">
               {loading ? "Verifying..." : "Verify & Create Account"}
             </button>
-            <button type="button" onClick={() => setStep(1)} className="btn-ghost w-full text-sm">Back</button>
+
+            <div className="flex justify-between items-center text-sm pt-1">
+              <button type="button" onClick={() => setStep(1)} className="text-ink-muted hover:text-white transition-colors">
+                ← Back
+              </button>
+              {cooldown > 0 ? (
+                <span className="text-ink-muted text-xs">
+                  Resend OTP in <span className="text-neon-cyan font-mono font-semibold">{cooldown}s</span>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={loading}
+                  className="text-neon-cyan hover:underline transition-all disabled:opacity-50 font-medium text-xs"
+                >
+                  Resend OTP
+                </button>
+              )}
+            </div>
+
+            <p className="text-xs text-yellow-500/80 bg-yellow-500/5 border border-yellow-500/10 rounded-lg p-2.5 text-center leading-relaxed">
+              If you are not receiving the OTP, please check your spam/junk folder once before requesting to resend it.
+            </p>
           </form>
         )}
 

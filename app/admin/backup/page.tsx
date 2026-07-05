@@ -19,7 +19,7 @@ export default function BackupPage() {
       if (res.ok) {
         setBackups(data.backups || []);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to load backup logs");
     } finally {
       setLoading(false);
@@ -36,7 +36,7 @@ export default function BackupPage() {
       } else {
         toast.error("Backup creation failed");
       }
-    } catch (err) {
+    } catch {
       toast.error("Network error");
     } finally {
       setActionLoading(false);

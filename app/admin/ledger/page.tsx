@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import AdminSubnav from "@/components/AdminSubnav";
-import { RefreshCw, FileText } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 export default function LedgerPage() {
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState("");
 
-  const fetchLedger = async () => {
+  const fetchLedger = useCallback(async () => {
     setLoading(true);
     try {
       const currentMonth = month || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
@@ -24,11 +24,11 @@ export default function LedgerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [month]);
 
   useEffect(() => {
     fetchLedger();
-  }, [month]);
+  }, [fetchLedger]);
 
   return (
     <DashboardShell>

@@ -18,7 +18,7 @@ export default function FraudDetectionPage() {
       if (res.ok) {
         setFlags(data.flags || []);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to load fraud flags");
     } finally {
       setLoading(false);
@@ -41,7 +41,7 @@ export default function FraudDetectionPage() {
         toast.success(isBlocked ? "User withdrawals blocked" : "User withdrawals unblocked");
         fetchFlags();
       }
-    } catch (err) {
+    } catch {
       toast.error("Action failed");
     }
   };

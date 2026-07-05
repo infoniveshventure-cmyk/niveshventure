@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import AdminSubnav from "@/components/AdminSubnav";
 import toast from "react-hot-toast";
-import { Save, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 export default function BusinessRulesPage() {
   const [rules, setRules] = useState<any[]>([]);
@@ -19,7 +19,7 @@ export default function BusinessRulesPage() {
       if (res.ok) {
         setRules(data.rules || []);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to load rules");
     } finally {
       setLoading(false);
@@ -41,7 +41,7 @@ export default function BusinessRulesPage() {
       } else {
         toast.error(data.error || "Update failed");
       }
-    } catch (err) {
+    } catch {
       toast.error("Network error");
     } finally {
       setUpdatingKey(null);

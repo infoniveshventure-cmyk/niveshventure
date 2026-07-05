@@ -12,7 +12,7 @@ cp .env.example .env
 ## github repo repush  :
 ```
 git add .
-git commit -m "add admin panel feature and other updates with landing page"
+git commit -m "fix ui and reverification otp and Auto-Validation referal"
 git push -u origin main
 ```
 

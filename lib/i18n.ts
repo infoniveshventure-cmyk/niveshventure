@@ -1,5 +1,3 @@
-import { appCache } from "@/lib/cache";
-import User from "@/models/User";
 
 const en = {
   dashboard: "Dashboard",

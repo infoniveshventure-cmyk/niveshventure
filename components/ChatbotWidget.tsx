@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, ArrowLeft, Mail, Phone, Search } from "lucide-react";
-import { faqTree, faqIndex, FaqNode } from "@/lib/faqData";
+import { MessageCircle, X, ArrowLeft, Search } from "lucide-react";
+import { faqTree, FaqNode } from "@/lib/faqData";
 import { useAuth } from "@/lib/AuthContext";
 import { useChatbot } from "@/lib/ChatbotContext";
 import toast from "react-hot-toast";
@@ -16,8 +16,6 @@ export default function ChatbotWidget() {
   const [greeted, setGreeted] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [showSupportForm, setShowSupportForm] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
-  const [sending, setSending] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const scrollRef = useRef<HTMLDivElement>(null);

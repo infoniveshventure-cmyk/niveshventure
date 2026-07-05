@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { ArrowRight, TrendingUp, DollarSign, Users, BarChart2 } from "lucide-react";
@@ -236,8 +237,29 @@ export default function HeroSection() {
             </FloatingCard>
 
             {/* Spinning ring decoration */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full border border-neon-violet/10 landing-spin-slow pointer-events-none" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full border border-neon-cyan/8 pointer-events-none" style={{ animation: "spin-slow 30s linear infinite reverse" }} />
+            {/* Spinning ring decoration */}
+            <div className="absolute top-[80%] left-1/2 -translate-x-1/2 -translate-y-1/2">
+
+              {/* Outer ring */}
+              <div className="w-72 h-72 rounded-full border border-neon-violet/10 landing-spin-slow" />
+
+              {/* Inner ring */}
+              <div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full border border-neon-cyan/8 pointer-events-none"
+              />
+
+              {/* Logo center */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full overflow-hidden flex items-center justify-center pointer-events-none bg-white/5">
+                <Image
+                  src="/logo.png"
+                  alt="Logo"
+                  width={160}
+                  height={160}
+                  className="object-cover w-full h-full"
+                />
+              </div>
+
+            </div>
           </div>
         </div>
       </div>

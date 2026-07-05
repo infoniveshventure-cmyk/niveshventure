@@ -9,14 +9,10 @@ import {
   UserCheck, 
   DollarSign, 
   Clock, 
-  Database, 
-  TrendingUp, 
-  ArrowUpRight, 
-  ArrowDownRight, 
   ShieldAlert,
-  Server
+  Server,
+  TrendingUp
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 export default function AdminDashboard() {
   const [data, setData] = useState<any>(null);

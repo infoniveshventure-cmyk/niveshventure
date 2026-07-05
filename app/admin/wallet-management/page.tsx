@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import AdminSubnav from "@/components/AdminSubnav";
 import toast from "react-hot-toast";
-import { Search, RefreshCw, Send, ShieldAlert, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { Search, RefreshCw, Send, ShieldAlert } from "lucide-react";
 
 export default function AdminMultiWalletPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -20,7 +20,7 @@ export default function AdminMultiWalletPage() {
   const [remarks, setRemarks] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/members?search=${encodeURIComponent(search)}`, { cache: "no-store" });
@@ -28,12 +28,12 @@ export default function AdminMultiWalletPage() {
       if (res.ok) {
         setUsers(data.members || []);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to load user lists");
     } finally {
       setLoading(false);
     }
-  };
+  }, [search]);
 
   const selectUser = async (user: any) => {
     setSelectedUser(user);
@@ -77,7 +77,7 @@ export default function AdminMultiWalletPage() {
       } else {
         toast.error(data.error || "Adjustment failed");
       }
-    } catch (err) {
+    } catch {
       toast.error("Network error");
     } finally {
       setSubmitting(false);
@@ -86,7 +86,7 @@ export default function AdminMultiWalletPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   return (
     <DashboardShell>

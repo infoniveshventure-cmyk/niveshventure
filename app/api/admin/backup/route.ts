@@ -1,16 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Transaction from "@/models/Transaction";
 import MonthlyClosing from "@/models/MonthlyClosing";
 import { requireAdmin } from "@/lib/require-admin";
-import { getSessionFromCookies } from "@/lib/auth-server";
 import fs from "fs";
 import path from "path";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
 
@@ -36,7 +35,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ backups });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
 

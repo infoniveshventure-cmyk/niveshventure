@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import AdminSubnav from "@/components/AdminSubnav";
 import toast from "react-hot-toast";
-import { RefreshCw, Plus, Search, Tag, Check, HelpCircle } from "lucide-react";
+import { RefreshCw, Plus, Search, Check } from "lucide-react";
 
 export default function AdminPinManagementPage() {
   const [pins, setPins] = useState<any[]>([]);
@@ -25,7 +25,7 @@ export default function AdminPinManagementPage() {
   const [pinCodeToUse, setPinCodeToUse] = useState("");
   const [targetMemberId, setTargetMemberId] = useState("");
 
-  const fetchPins = async () => {
+  const fetchPins = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(
@@ -41,11 +41,11 @@ export default function AdminPinManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, typeFilter, searchQuery]);
 
   useEffect(() => {
     fetchPins();
-  }, [statusFilter, typeFilter]);
+  }, [fetchPins]);
 
   const handleBulkGenerate = async () => {
     setActionLoading(true);

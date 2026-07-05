@@ -12,7 +12,7 @@ import { getSessionFromCookies } from "@/lib/auth-server";
 export const dynamic = "force-dynamic";
 
 // GET: Dashboard status cards for Manual Override section
-export async function GET(req: NextRequest) {
+export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
 
@@ -39,14 +39,6 @@ export async function GET(req: NextRequest) {
 
   if (currentClosing) {
     const c = currentClosing as any;
-    const allTypes = [
-      { type: "reward_income", val: 0 },
-      { type: "returns_income", val: 0 },
-      { type: "level_income", val: 0 },
-      { type: "referral_income", val: 0 },
-      { type: "matching_income", val: 0 },
-      { type: "booster_income", val: 0 },
-    ];
 
     (c.calculatedIncomes || []).forEach((inc: any) => {
       const fields: Record<string, number> = {
