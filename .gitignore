@@ -1,6 +1,7 @@
 node_modules
 .next
 .env
+rem.txt
 .env.local
 *.log
 .DS_Store

@@ -9,7 +9,7 @@ npm install
 cp .env.example .env
 ```
 
-## github repo repush:
+## github repo repush  :
 ```
 git add .
 git commit -m "add admin panel feature and other updates with landing page"
