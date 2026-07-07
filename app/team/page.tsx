@@ -2,19 +2,19 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import DashboardShell from "@/components/DashboardShell";
-import { 
-  Users, 
-  ChevronDown, 
-  ChevronRight, 
-  TrendingUp, 
-  RefreshCw, 
-  ZoomIn, 
-  ZoomOut, 
-  Maximize2, 
-  Minimize2, 
-  Search, 
-  Eye, 
-  Moon, 
+import {
+  Users,
+  ChevronDown,
+  ChevronRight,
+  TrendingUp,
+  RefreshCw,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
+  Search,
+  Eye,
+  Moon,
   Sun,
   ChevronUp,
   MapPin
@@ -154,7 +154,7 @@ export default function TeamPage() {
     fetch("/api/team", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setDirectTeam(d.directTeam || []))
-      .catch(() => {});
+      .catch(() => { });
   }, [initTree]);
 
   // Center a node coordinate in viewport
@@ -202,7 +202,7 @@ export default function TeamPage() {
   const handleNodeCardClick = async (e: React.MouseEvent, node: TreeNode) => {
     e.stopPropagation();
     const id = node.memberId;
-    
+
     setSelectedNode({ node, stats: treeState[id]?.stats });
 
     const isExpanded = treeState[id]?.isExpanded;
@@ -438,8 +438,8 @@ export default function TeamPage() {
 
   const coordinates = getCoordinatesLayout();
 
-  const themeClass = theme === "dark" 
-    ? "bg-slate-950 text-white" 
+  const themeClass = theme === "dark"
+    ? "bg-slate-950 text-white"
     : "bg-slate-50 text-slate-900";
 
   return (
@@ -556,7 +556,7 @@ export default function TeamPage() {
               const pY = parentCoords.y + 28; // precisely at bottom center of parent avatar
 
               // Find children coordinates
-              const childCoords = parentState.children.map((child) => 
+              const childCoords = parentState.children.map((child) =>
                 coordinates.find((c) => c.id === child.memberId)
               ).filter(Boolean) as CoordinateNode[];
 
@@ -578,7 +578,7 @@ export default function TeamPage() {
                 <g key={`connectors-${parentId}`}>
                   {/* Parent vertical drop stem */}
                   <path d={stemPath} fill="none" stroke="#ffffff" strokeWidth="1.5" className="opacity-90" />
-                  
+
                   {/* Sibling horizontal bar */}
                   {childCoords.length > 1 && (
                     <path d={barPath} fill="none" stroke="#ffffff" strokeWidth="1.5" className="opacity-90" />
@@ -619,8 +619,8 @@ export default function TeamPage() {
 
             // Choose avatar background color based on status/active
             // Root is green/blue, active is blue, inactive is red
-            const avatarBg = nodeData.isActive 
-              ? (item.id === rootId ? "bg-[#4CAF50]" : "bg-[#2196F3]") 
+            const avatarBg = nodeData.isActive
+              ? (item.id === rootId ? "bg-[#4CAF50]" : "bg-[#2196F3]")
               : "bg-[#F44336]";
 
             return (
@@ -637,9 +637,8 @@ export default function TeamPage() {
               >
                 {/* User Avatar Circle */}
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-300 ${avatarBg} ${
-                    isTarget ? "ring-4 ring-yellow-400 animate-pulse" : "group-hover:scale-110"
-                  }`}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-300 ${avatarBg} ${isTarget ? "ring-4 ring-yellow-400 animate-pulse" : "group-hover:scale-110"
+                    }`}
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
@@ -670,7 +669,7 @@ export default function TeamPage() {
           })}
         </div>
 
-        {/* Floating controls panel */}
+        {/* Floating controls panel commented out
         <div className="absolute bottom-4 right-4 flex flex-col sm:flex-row gap-2 bg-slate-900/90 border border-white/10 p-1.5 rounded-xl shadow-2xl backdrop-blur-md">
           <button
             onClick={handleZoomIn}
@@ -716,6 +715,7 @@ export default function TeamPage() {
             <MapPin size={14} />
           </button>
         </div>
+        */}
       </div>
 
       {/* Selected Node Details Stats Panel */}
@@ -814,9 +814,8 @@ export default function TeamPage() {
                     <td className="py-2.5 pr-4 text-xs">{m.rank}</td>
                     <td className="py-2.5 pr-4 text-ink-muted text-xs">{new Date(m.createdAt).toLocaleDateString()}</td>
                     <td className="py-2.5">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        m.isActive ? "bg-neon-green/15 text-neon-green" : "bg-white/5 text-ink-muted"
-                      }`}>{m.isActive ? "Active" : "Inactive"}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${m.isActive ? "bg-neon-green/15 text-neon-green" : "bg-white/5 text-ink-muted"
+                        }`}>{m.isActive ? "Active" : "Inactive"}</span>
                     </td>
                   </tr>
                 ))}
