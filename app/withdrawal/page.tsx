@@ -46,6 +46,7 @@ export default function WithdrawalPage() {
   const numAmount = parseFloat(amount) || 0;
   const charge = Number((numAmount * 0.03).toFixed(2));
   const net = Number((numAmount - charge).toFixed(2));
+  const filteredHistory = history.filter((w) => (w.withdrawalKind || "earning") === kind);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -98,7 +99,11 @@ export default function WithdrawalPage() {
                 <button type="button" key={k} onClick={() => setKind(k)}
                   className={`flex-1 py-2 rounded-xl text-sm border capitalize transition ${
                     kind === k ? "border-neon-violet bg-neon-violet/10 text-neon-violet" : "border-white/10 text-ink-muted"
-                  }`}>{k}</button>
+                  }`}>
+                  {k === "earning" 
+                    ? `Earning: $${(profile?.walletBalance ?? 0).toLocaleString()}` 
+                    : `Capital: $${(profile?.totalInvestment ?? 0).toLocaleString()}`}
+                </button>
               ))}
             </div>
             {kind === "capital" && (
@@ -155,16 +160,29 @@ export default function WithdrawalPage() {
           </form>
 
           <div className="glass-card p-6">
-            <h2 className="font-display font-semibold mb-4">Withdrawal Requests</h2>
-            {!history.length ? (
-              <p className="text-sm text-ink-muted py-8 text-center">No withdrawal requests yet.</p>
+            <h2 className="font-display font-semibold mb-4 capitalize">
+              Withdrawal Requests ({kind})
+            </h2>
+            {!filteredHistory.length ? (
+              <p className="text-sm text-ink-muted py-8 text-center">No {kind} withdrawal requests yet.</p>
             ) : (
               <div className="space-y-2">
-                {history.map((w) => (
+                {filteredHistory.map((w) => (
                   <div key={w._id} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
                     <div>
                       <p className="text-sm font-medium">{w.mode} · ${w.amount}</p>
                       <p className="text-xs text-ink-muted">{new Date(w.createdAt).toLocaleDateString()}</p>
+                      {w.usdtAddress && (
+                        <p className="text-[11px] text-ink-muted mt-0.5">Address: {w.usdtAddress}</p>
+                      )}
+                      {w.bankDetails?.accountNumber && (
+                        <p className="text-[11px] text-ink-muted mt-0.5">
+                          Bank: {w.bankDetails.bankName} ({w.bankDetails.accountNumber})
+                        </p>
+                      )}
+                      {w.adminNote && (
+                        <p className="text-[11px] text-neon-magenta mt-0.5">Note: {w.adminNote}</p>
+                      )}
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       w.status === "completed" ? "bg-neon-green/15 text-neon-green" :

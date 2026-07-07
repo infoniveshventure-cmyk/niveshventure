@@ -20,7 +20,10 @@ import {
   Lock,
   PlusCircle,
   MinusCircle,
-  Clock
+  Clock,
+  ShieldOff,
+  ShieldCheck,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { currencySymbol } from "@/lib/currency";
@@ -34,6 +37,7 @@ export default function AdminMemberDetailsPage() {
   
   // Modals/Forms State
   const [editingProfile, setEditingProfile] = useState(false);
+  const [fullNameVal, setFullNameVal] = useState("");
   const [emailVal, setEmailVal] = useState("");
   const [mobileVal, setMobileVal] = useState("");
   const [usdtAddrVal, setUsdtAddrVal] = useState("");
@@ -41,10 +45,15 @@ export default function AdminMemberDetailsPage() {
   const [resettingPassword, setResettingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
 
-  const [adjustingWallet, setAdjustingWallet] = useState<string | null>(null); // walletType
+  const [adjustingWallet, setAdjustingWallet] = useState<string | null>(null);
   const [adjustDirection, setAdjustDirection] = useState<"credit" | "debit">("credit");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustRemarks, setAdjustRemarks] = useState("");
+
+  // Delete/Block state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -53,6 +62,7 @@ export default function AdminMemberDetailsPage() {
       if (res.ok) {
         const json = await res.json();
         setData(json);
+        setFullNameVal(json.member?.fullName || "");
         setEmailVal(json.member?.email || "");
         setMobileVal(json.member?.mobile || "");
         setUsdtAddrVal(json.member?.usdtWalletAddress || "");
@@ -100,6 +110,7 @@ export default function AdminMemberDetailsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "update_profile",
+          fullName: fullNameVal,
           email: emailVal,
           mobile: mobileVal,
           usdtWalletAddress: usdtAddrVal,
@@ -115,6 +126,53 @@ export default function AdminMemberDetailsPage() {
       }
     } catch {
       toast.error("Network error");
+    }
+  }
+
+  async function handleBlockToggle() {
+    const action = data?.member?.isBlocked ? "Unblock" : "Block";
+    if (!confirm(`Are you sure you want to ${action.toLowerCase()} this member's login access?`)) return;
+    try {
+      const res = await fetch(`/api/admin/members/${memberId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "block_toggle", reason: `Admin ${action.toLowerCase()}ed from member detail page` }),
+      });
+      if (res.ok) {
+        toast.success(`Member ${action.toLowerCase()}ed successfully`);
+        loadData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || `Failed to ${action.toLowerCase()} member`);
+      }
+    } catch {
+      toast.error("Network error");
+    }
+  }
+
+  async function handleDelete() {
+    if (deleteConfirmId !== memberId) {
+      toast.error("Member ID does not match");
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/members/${memberId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "Deleted from member detail page by admin" }),
+      });
+      if (res.ok) {
+        toast.success(`Member ${memberId} permanently deleted`);
+        window.location.href = "/admin/members";
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Delete failed");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -250,6 +308,23 @@ export default function AdminMemberDetailsPage() {
           >
             {m.isActive ? <XCircle size={14} /> : <CheckCircle size={14} />}
             {m.isActive ? "Deactivate Account" : "Activate Account"}
+          </button>
+          <button
+            onClick={handleBlockToggle}
+            className={`btn-primary flex items-center gap-1.5 text-xs py-1.5 px-3 ${
+              m.isBlocked
+                ? "bg-neon-green/20 border-neon-green/40 hover:bg-neon-green/30"
+                : "bg-red-500/20 border-red-500/40 hover:bg-red-500/30"
+            }`}
+          >
+            {m.isBlocked ? <ShieldCheck size={14} /> : <ShieldOff size={14} />}
+            {m.isBlocked ? "Unblock Login" : "Block Login"}
+          </button>
+          <button
+            onClick={() => { setShowDeleteModal(true); setDeleteConfirmId(""); }}
+            className="btn-primary flex items-center gap-1.5 text-xs py-1.5 px-3 bg-red-500/20 border-red-500/40 hover:bg-red-500/30"
+          >
+            <Trash2 size={14} /> Delete Account
           </button>
         </div>
       </div>
@@ -534,6 +609,16 @@ export default function AdminMemberDetailsPage() {
             <h3 className="text-lg font-bold text-white">Edit Profile Details</h3>
             <form onSubmit={handleUpdateProfile} className="space-y-3">
               <div>
+                <label className="text-xs text-ink-muted block mb-1">Full Name</label>
+                <input 
+                  type="text" 
+                  value={fullNameVal} 
+                  onChange={(e) => setFullNameVal(e.target.value)} 
+                  className="input-field w-full text-sm"
+                  required
+                />
+              </div>
+              <div>
                 <label className="text-xs text-ink-muted block mb-1">Email Address</label>
                 <input 
                   type="email" 
@@ -661,6 +746,54 @@ export default function AdminMemberDetailsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 space-y-4 border border-red-500/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
+                <Trash2 size={18} className="text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Delete Member Account</h3>
+                <p className="text-xs text-ink-muted">This is permanent and cannot be undone.</p>
+              </div>
+            </div>
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-1 text-sm">
+              <p className="text-white font-semibold">{m.fullName}</p>
+              <p className="text-ink-muted">{m.memberId} · {m.email}</p>
+            </div>
+            <div>
+              <label className="text-xs text-red-400 block mb-1.5 font-semibold">
+                Type <span className="font-mono text-white">{m.memberId}</span> to confirm:
+              </label>
+              <input
+                className="input-field w-full font-mono text-sm"
+                placeholder={m.memberId}
+                value={deleteConfirmId}
+                onChange={(e) => setDeleteConfirmId(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleDelete}
+                disabled={deleting || deleteConfirmId !== m.memberId}
+                className="flex-1 py-2.5 text-sm font-semibold rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition disabled:opacity-40"
+              >
+                {deleting ? "Deleting..." : "Permanently Delete"}
+              </button>
+              <button
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirmId(""); }}
+                className="flex-1 py-2.5 text-sm rounded-xl border border-white/10 hover:bg-white/5 text-ink transition"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { auth, createUserWithEmailAndPassword } from "@/lib/firebase";
+import { auth, signInWithCustomToken } from "@/lib/firebase";
 import CopyrightGate from "@/components/CopyrightGate";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -73,7 +73,8 @@ export default function RegisterPage() {
     if (form.sponsorId && validatingSponsor) { toast.error("Validating referral code... please wait."); return; }
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, form.email, form.password);
+      // Send OTP only — Firebase account is created server-side after OTP verification.
+      // This prevents incomplete registrations from permanently blocking the email.
       const res = await fetch("/api/auth/send-otp", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email, purpose: "register" }),
@@ -109,13 +110,17 @@ export default function RegisterPage() {
     if (form.otp.length !== 6) { toast.error("Enter the 6-digit OTP"); return; }
     setLoading(true);
     try {
-      const idToken = await auth.currentUser?.getIdToken();
+      // Send password instead of firebaseIdToken — server creates Firebase account after OTP is verified.
       const res = await fetch("/api/auth/register", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, firebaseIdToken: idToken }),
+        body: JSON.stringify({ ...form }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      // Sign the client into Firebase using the custom token returned by the server.
+      if (data.customToken) {
+        await signInWithCustomToken(auth, data.customToken);
+      }
       toast.success("Account created — check your email for your Member ID");
       await refreshProfile();
       router.push("/dashboard");

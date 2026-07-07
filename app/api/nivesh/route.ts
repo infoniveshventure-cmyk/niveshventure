@@ -5,6 +5,7 @@ import Investment from "@/models/Investment";
 import Transaction from "@/models/Transaction";
 import BusinessHistory from "@/models/BusinessHistory";
 import { getSessionFromCookies } from "@/lib/auth-server";
+import { propagateBusinessUp } from "@/lib/propagateBusinessUp";
 
 const MIN_INVESTMENT = 100;
 const LOCK_IN_MONTHS = 11;
@@ -96,6 +97,11 @@ export async function POST(req: NextRequest) {
     (user as any)[walletInfo.field] = currentBalance - amount;
     user.totalInvestment = (user.totalInvestment || 0) + amount;
     await user.save();
+
+    // Propagate this investment amount up the entire binary-tree upline chain
+    // so every ancestor's leftCurrentBusiness / rightCurrentBusiness is updated
+    // in the database immediately — no manual refresh needed.
+    await propagateBusinessUp(user.memberId, amount);
 
     const tx = await Transaction.create({
       memberId: user.memberId,

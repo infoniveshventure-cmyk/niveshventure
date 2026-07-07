@@ -90,7 +90,7 @@ export default function AdminIncomeDistributionPage() {
         const d = await res.json();
         // Filter audit logs specifically for income distribution events
         const distLogs = (d.logs || []).filter(
-          (log: any) => log.action === "income_distribution" || log.action === "auto_income_distribution"
+          (log: any) => log.actionType === "income_distribution" || log.actionType === "auto_income_distribution"
         );
         setAuditLogs(distLogs);
       }
@@ -384,11 +384,11 @@ export default function AdminIncomeDistributionPage() {
                       {new Date(log.createdAt).toLocaleString()}
                     </td>
                     <td className="py-3 pr-4 font-mono font-bold text-neon-cyan uppercase">
-                      {log.action.replace(/_/g, " ")}
+                      {(log.actionType || "").replace(/_/g, " ")}
                     </td>
-                    <td className="py-3 pr-4 font-semibold text-white">{log.actor}</td>
+                    <td className="py-3 pr-4 font-semibold text-white">{log.actorName || log.actorId}</td>
                     <td className="py-3 text-ink-muted leading-relaxed max-w-md">
-                      {log.details}
+                      {log.metadata?.adminRemarks || "Distributed income."}
                     </td>
                   </tr>
                 ))}

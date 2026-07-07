@@ -12,22 +12,6 @@ export const dynamic = "force-dynamic";
 
 const DEFAULT_RETURNS_LEVELS = [15, 10, 5, 5, 5, 3, 2, 1, 1, 1]; // Level ROI commissions (%)
 
-// BFS helper to map downline levels
-function getDownlineLevels(rootId: string, maxDepth: number): Record<string, number> {
-  const downlines: Record<string, number> = {};
-  const queue: { id: string; depth: number }[] = [{ id: rootId, depth: 1 }];
-  const visited = new Set<string>([rootId]);
-
-  let pointer = 0;
-  while (pointer < queue.length) {
-    const current = queue[pointer++];
-    if (current.depth > maxDepth) continue;
-
-    // We need to query children synchronously or from a pre-loaded map, but BFS list is fine
-  }
-  return downlines;
-}
-
 export async function GET(req: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
@@ -241,11 +225,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Create Audit Log entry
+    // Create Audit Log entry matching AuditLog schema
     await AuditLog.create({
-      action: "income_distribution",
-      actor: adminName,
-      details: `Distributed ${percentage}% Monthly ROI and Level Returns for ${period}. Users processed: ${creditedCount}, Duplicates skipped: ${duplicateSkipped}. Total ROI paid: $${totalCreditedRoi.toFixed(2)}, Total Level ROI paid: $${totalCreditedLevel.toFixed(2)}.`,
+      actorId: session.memberId,
+      actorRole: "admin",
+      actorName: adminName,
+      actionType: "income_distribution",
+      resourceType: "Transaction",
+      severity: "info",
+      metadata: {
+        percentage,
+        period,
+        creditedCount,
+        duplicateSkipped,
+        totalCreditedRoi,
+        totalCreditedLevel,
+        adminRemarks: `Distributed ${percentage}% Monthly ROI and Level Returns for ${period}.`
+      }
     });
 
     return NextResponse.json({

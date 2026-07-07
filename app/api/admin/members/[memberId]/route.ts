@@ -5,8 +5,9 @@ import AdminWalletTransaction from "@/models/AdminWalletTransaction";
 import Transaction from "@/models/Transaction";
 import Deposit from "@/models/Deposit";
 import Withdrawal from "@/models/Withdrawal";
+import AuditLog from "@/models/AuditLog";
 import { requireAdmin } from "@/lib/require-admin";
-import { updateFirebaseUserPasswordByEmail } from "@/lib/firebase-admin";
+import { updateFirebaseUserPasswordByEmail, deleteFirebaseUser } from "@/lib/firebase-admin";
 import { notifyMember } from "@/lib/notification";
 import crypto from "crypto";
 
@@ -57,6 +58,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
   const body = await req.json();
   const { 
     action, 
+    fullName,
     email, 
     mobile, 
     usdtWalletAddress, 
@@ -73,6 +75,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
   }
 
   if (action === "update_profile") {
+    if (fullName && fullName.trim()) user.fullName = fullName.trim();
     if (email) user.email = email.toLowerCase().trim();
     if (mobile) user.mobile = mobile;
     if (usdtWalletAddress !== undefined) user.usdtWalletAddress = usdtWalletAddress;
@@ -113,6 +116,47 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
     ).catch(() => {});
   }
 
+  // Block / Unblock user — prevents login entirely
+  if (action === "block_toggle") {
+    const wasBlocked = user.isBlocked;
+    user.isBlocked = !wasBlocked;
+    await user.save();
+
+    // Write audit log
+    await AuditLog.create({
+      actorId: guard.session!.memberId,
+      actorRole: "admin",
+      actionType: wasBlocked ? "user_unblocked" : "user_blocked",
+      resourceType: "User",
+      resourceId: user.memberId,
+      targetMemberId: user.memberId,
+      severity: "warning",
+      metadata: {
+        adminId: guard.session!.memberId,
+        reason: body.reason || "Admin action",
+        previousState: wasBlocked ? "blocked" : "active",
+        newState: wasBlocked ? "active" : "blocked",
+      },
+    });
+
+    // Notify user
+    notifyMember(
+      user.memberId,
+      wasBlocked ? "Account Unblocked ✅" : "Account Blocked 🔒",
+      wasBlocked
+        ? "Your account has been unblocked by the administrator. You can now log in."
+        : "Your account has been blocked by the administrator. Please contact support.",
+      "account_status"
+    ).catch(() => {});
+
+    return NextResponse.json({
+      success: true,
+      message: `Member ${wasBlocked ? "unblocked" : "blocked"} successfully`,
+      isBlocked: user.isBlocked,
+      member: user,
+    });
+  }
+
   if (action === "reset_password") {
     if (!password || password.length < 6) {
       return NextResponse.json({ error: "Password must be at least 6 characters long" }, { status: 400 });
@@ -121,8 +165,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
     try {
       // Update in Firebase Auth
       await updateFirebaseUserPasswordByEmail(user.email, password);
-      // Hash key hashes if application stores hashes in MongoDB (e.g. loginKeyHash / accessKeyHash)
-      // Usually nextjs auth checks JWT or firebase directly, but let's update hashed values just in case
       const hash = crypto.createHash("sha256").update(password).digest("hex");
       user.loginKeyHash = hash;
       user.accessKeyHash = hash;
@@ -225,4 +267,63 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
   }
 
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+}
+
+// DELETE — permanently remove a member account
+export async function DELETE(req: NextRequest, { params }: { params: { memberId: string } }) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
+
+  const { memberId } = params;
+  if (!memberId) {
+    return NextResponse.json({ error: "memberId parameter is required" }, { status: 400 });
+  }
+
+  await connectDB();
+
+  const user = await User.findOne({ memberId });
+  if (!user) {
+    return NextResponse.json({ error: "Member not found" }, { status: 404 });
+  }
+
+  // Prevent deleting admin accounts
+  if (user.role === "admin") {
+    return NextResponse.json({ error: "Admin accounts cannot be deleted" }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const reason = body.reason || "Deleted by admin";
+
+  // Write immutable audit log BEFORE deletion
+  await AuditLog.create({
+    actorId: guard.session!.memberId,
+    actorRole: "admin",
+    actionType: "user_deleted",
+    resourceType: "User",
+    resourceId: user.memberId,
+    targetMemberId: user.memberId,
+    severity: "critical",
+    metadata: {
+      adminId: guard.session!.memberId,
+      reason,
+      deletedEmail: user.email,
+      deletedFullName: user.fullName,
+      deletedMemberId: user.memberId,
+      sponsorId: user.sponsorId,
+      walletBalance: user.walletBalance,
+    },
+  });
+
+  // Delete Firebase user (best-effort)
+  if (user.firebaseUid) {
+    await deleteFirebaseUser(user.firebaseUid);
+  }
+
+  // Delete MongoDB user document
+  await User.deleteOne({ memberId });
+
+  return NextResponse.json({
+    success: true,
+    message: `Member ${memberId} has been permanently deleted`,
+  });
 }

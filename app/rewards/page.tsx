@@ -56,13 +56,13 @@ export default function RewardsPage() {
     load();
   }, []);
 
-  const leftBusiness = stats?.leftCurrentBusiness ?? 0;
-  const rightBusiness = stats?.rightCurrentBusiness ?? 0;
+  const leftTeam  = stats?.leftTeam  ?? 0;
+  const rightTeam = stats?.rightTeam ?? 0;
 
-  // Determine qualification statuses chronologically
+  // Determine qualification statuses chronologically (based on member counts)
   let foundFirstUnachieved = false;
   const processedRanks = ranks.map((r) => {
-    const isAchieved = leftBusiness >= r.left && rightBusiness >= r.right;
+    const isAchieved = leftTeam >= r.left && rightTeam >= r.right;
     let status: "Achieved" | "In Progress" | "Locked" = "Locked";
 
     if (isAchieved) {
@@ -132,9 +132,9 @@ export default function RewardsPage() {
                 const isInProgress = r.status === "In Progress";
                 const isLocked = r.status === "Locked";
 
-                // Progress percentage calculation
-                const leftProgress = Math.min(100, Math.max(0, (leftBusiness / r.left) * 100));
-                const rightProgress = Math.min(100, Math.max(0, (rightBusiness / r.right) * 100));
+                // Progress percentage calculation based on member counts
+                const leftProgress  = Math.min(100, Math.max(0, (leftTeam  / r.left)  * 100));
+                const rightProgress = Math.min(100, Math.max(0, (rightTeam / r.right) * 100));
                 const averageProgress = (leftProgress + rightProgress) / 2;
 
                 return (
@@ -178,22 +178,22 @@ export default function RewardsPage() {
                     <div className="mt-2.5 space-y-1 text-[10px] text-ink-muted">
                       <div className="flex justify-between">
                         <span>Required Left:</span>
-                        <span className="font-semibold text-white">${r.left.toLocaleString()}</span>
+                        <span className="font-semibold text-white">{r.left.toLocaleString()} Members</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Current Left:</span>
-                        <span className={`font-semibold ${leftBusiness >= r.left ? "text-neon-green" : "text-white"}`}>
-                          ${leftBusiness.toLocaleString()}
+                        <span className={`font-semibold ${leftTeam >= r.left ? "text-neon-green" : "text-white"}`}>
+                          {leftTeam.toLocaleString()} Members
                         </span>
                       </div>
                       <div className="flex justify-between pt-1 border-t border-white/5">
                         <span>Required Right:</span>
-                        <span className="font-semibold text-white">${r.right.toLocaleString()}</span>
+                        <span className="font-semibold text-white">{r.right.toLocaleString()} Members</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Current Right:</span>
-                        <span className={`font-semibold ${rightBusiness >= r.right ? "text-neon-green" : "text-white"}`}>
-                          ${rightBusiness.toLocaleString()}
+                        <span className={`font-semibold ${rightTeam >= r.right ? "text-neon-green" : "text-white"}`}>
+                          {rightTeam.toLocaleString()} Members
                         </span>
                       </div>
                     </div>

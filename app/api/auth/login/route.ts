@@ -42,6 +42,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
+    // Block check — hard blocked users cannot log in
+    if (user.isBlocked) {
+      return NextResponse.json(
+        { error: "Your account has been blocked. Please contact support for assistance." },
+        { status: 403 }
+      );
+    }
+
     // Auto-assign admin role for configured admin email
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
     if (adminEmail && decoded.email?.toLowerCase() === adminEmail && user.role !== "admin") {

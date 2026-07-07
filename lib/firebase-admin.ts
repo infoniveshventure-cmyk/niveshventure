@@ -46,3 +46,37 @@ export async function updateFirebaseUserPasswordByEmail(email: string, newPasswo
   await auth.updateUser(userRecord.uid, { password: newPassword });
   return true;
 }
+
+/**
+ * Create a new Firebase Auth user server-side.
+ * Called only after OTP verification, so incomplete registrations
+ * never permanently block the email in Firebase.
+ */
+export async function createFirebaseUser(email: string, password: string) {
+  const app = getAdminApp();
+  return getAuth(app).createUser({ email, password });
+}
+
+/**
+ * Delete a Firebase Auth user by UID.
+ * Used for cleanup if MongoDB user creation fails after Firebase account was created.
+ */
+export async function deleteFirebaseUser(uid: string) {
+  try {
+    const app = getAdminApp();
+    await getAuth(app).deleteUser(uid);
+  } catch {
+    // Best-effort cleanup — log but don't rethrow
+    console.error(`[firebase-admin] Failed to delete Firebase user ${uid}`);
+  }
+}
+
+/**
+ * Create a custom sign-in token for a Firebase UID.
+ * Returned to the client so it can call signInWithCustomToken(auth, token)
+ * immediately after server-side registration.
+ */
+export async function createFirebaseCustomToken(uid: string) {
+  const app = getAdminApp();
+  return getAuth(app).createCustomToken(uid);
+}

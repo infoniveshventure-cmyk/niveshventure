@@ -18,7 +18,10 @@ export async function GET() {
   );
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  const directCount = await User.countDocuments({ sponsorId: user.memberId });
+  const directsList = await User.find({ sponsorId: user.memberId })
+    .select("memberId fullName isActive")
+    .lean();
+  const directCount = directsList.length;
 
   // Full downline count via parentId chain (BFS)
   async function countTeamWithBusiness(rootId: string): Promise<{ count: number; activeCount: number; business: number }> {
@@ -48,24 +51,42 @@ export async function GET() {
     return { count: total, activeCount, business };
   }
 
-  // Get left and right direct children
-  const leftChild = await User.findOne({ parentId: user.memberId, position: "left" }).select("memberId isActive totalInvestment");
-  const rightChild = await User.findOne({ parentId: user.memberId, position: "right" }).select("memberId isActive totalInvestment");
-
-  const [leftStats, rightStats] = await Promise.all([
-    leftChild ? countTeamWithBusiness(leftChild.memberId) : Promise.resolve({ count: 0, activeCount: 0, business: 0 }),
-    rightChild ? countTeamWithBusiness(rightChild.memberId) : Promise.resolve({ count: 0, activeCount: 0, business: 0 }),
+  // Get ALL direct children placed on left and right sides
+  const [leftChildren, rightChildren] = await Promise.all([
+    User.find({ parentId: user.memberId, position: "left" }).select("memberId isActive totalInvestment"),
+    User.find({ parentId: user.memberId, position: "right" }).select("memberId isActive totalInvestment"),
   ]);
 
-  const totalTeam = leftStats.count + rightStats.count + (leftChild ? 1 : 0) + (rightChild ? 1 : 0);
+  // Aggregate stats across all left-side children and their entire downlines
+  const leftStatsList = await Promise.all(
+    leftChildren.map((child: any) => countTeamWithBusiness(child.memberId))
+  );
+  const rightStatsList = await Promise.all(
+    rightChildren.map((child: any) => countTeamWithBusiness(child.memberId))
+  );
 
-  // Left/Right Active Team counts (include the direct child if active, plus active downline)
-  const leftActiveTeam = (leftChild && leftChild.isActive ? 1 : 0) + leftStats.activeCount;
-  const rightActiveTeam = (rightChild && rightChild.isActive ? 1 : 0) + rightStats.activeCount;
+  const leftStats = leftStatsList.reduce(
+    (acc, s) => ({ count: acc.count + s.count, activeCount: acc.activeCount + s.activeCount, business: acc.business + s.business }),
+    { count: 0, activeCount: 0, business: 0 }
+  );
+  const rightStats = rightStatsList.reduce(
+    (acc, s) => ({ count: acc.count + s.count, activeCount: acc.activeCount + s.activeCount, business: acc.business + s.business }),
+    { count: 0, activeCount: 0, business: 0 }
+  );
 
-  // Computed business values
-  const leftCurrentBusiness = leftStats.business + (leftChild ? leftChild.totalInvestment || 0 : 0);
-  const rightCurrentBusiness = rightStats.business + (rightChild ? rightChild.totalInvestment || 0 : 0);
+  const totalTeam = leftStats.count + rightStats.count + leftChildren.length + rightChildren.length;
+
+  // Left/Right Active Team counts (include each direct child if active, plus their active downlines)
+  const leftDirectActive = leftChildren.filter((c: any) => c.isActive).length;
+  const rightDirectActive = rightChildren.filter((c: any) => c.isActive).length;
+  const leftActiveTeam = leftDirectActive + leftStats.activeCount;
+  const rightActiveTeam = rightDirectActive + rightStats.activeCount;
+
+  // Computed business values: sum all direct children's totalInvestment + their downline business
+  const leftDirectBusiness = leftChildren.reduce((sum: number, c: any) => sum + (c.totalInvestment || 0), 0);
+  const rightDirectBusiness = rightChildren.reduce((sum: number, c: any) => sum + (c.totalInvestment || 0), 0);
+  const leftCurrentBusiness = leftStats.business + leftDirectBusiness;
+  const rightCurrentBusiness = rightStats.business + rightDirectBusiness;
 
   // Update the user's business fields if they differ
   let needsSave = false;
@@ -80,18 +101,22 @@ export async function GET() {
     needsSave = true;
   }
 
-  // Real-time rank qualifications progression
+  // Real-time rank qualifications — based on Left/Right MEMBER COUNTS, not business volume.
   const RANK_RULES = [
-    { code: "X1", left: 20, right: 20, reward: 100 },
-    { code: "X2", left: 50, right: 50, reward: 300 },
-    { code: "X3", left: 100, right: 100, reward: 700 },
-    { code: "X4", left: 250, right: 250, reward: 2000 },
-    { code: "X5", left: 500, right: 500, reward: 5000 },
+    { code: "X1", level: "Level 1", left: 20,  right: 20,  reward: 100  },
+    { code: "X2", level: "Level 2", left: 50,  right: 50,  reward: 300  },
+    { code: "X3", level: "Level 3", left: 100, right: 100, reward: 700  },
+    { code: "X4", level: "Level 4", left: 250, right: 250, reward: 2000 },
+    { code: "X5", level: "Level 5", left: 500, right: 500, reward: 5000 },
   ];
+
+  // Member counts (direct children + their full downlines per side)
+  const leftTeamCount  = leftStats.count  + leftChildren.length;
+  const rightTeamCount = rightStats.count + rightChildren.length;
 
   let highestQualifiedRank = user.rank || "Unranked";
   for (const rank of RANK_RULES) {
-    if (leftCurrentBusiness >= rank.left && rightCurrentBusiness >= rank.right) {
+    if (leftTeamCount >= rank.left && rightTeamCount >= rank.right) {
       // Check if already rewarded
       const rewardExists = await Transaction.findOne({
         memberId: user.memberId,
@@ -111,7 +136,7 @@ export async function GET() {
           currency: "USDT",
           status: "completed",
           note: `Rank Reward - ${rank.code}`,
-          description: `Qualified for Rank ${rank.code}`,
+          description: `Qualified for Rank ${rank.code} (Left: ${leftTeamCount}, Right: ${rightTeamCount} members)`,
         });
 
         await RewardHistory.create({
@@ -140,8 +165,9 @@ export async function GET() {
     user,
     stats: {
       direct: directCount,
-      leftTeam: leftStats.count + (leftChild ? 1 : 0),
-      rightTeam: rightStats.count + (rightChild ? 1 : 0),
+      directsList: directsList,
+      leftTeam: leftTeamCount,
+      rightTeam: rightTeamCount,
       leftActiveTeam,
       rightActiveTeam,
       totalTeam,

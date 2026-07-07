@@ -63,6 +63,7 @@ const UserSchema = new Schema(
     sortOrder: { type: Number, default: 0 },
     isPinned: { type: Boolean, default: false },
     withdrawalsEnabled: { type: Boolean, default: true },
+    isBlocked: { type: Boolean, default: false }, // Hard block — prevents login
     isPremium: { type: Boolean, default: false },
     premiumActivatedAt: { type: Date, default: null },
     premiumExpiresAt: { type: Date, default: null },

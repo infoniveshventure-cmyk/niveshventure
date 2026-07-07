@@ -158,7 +158,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <DirectProgressCard directCount={stats?.direct ?? 0} isActive={profile?.isActive ?? false} />
+      <DirectProgressCard directCount={stats?.direct ?? 0} isActive={profile?.isActive ?? false} directsList={stats?.directsList || []} />
 
       {/* ── Activity chart ── */}
       <TransactionChart transactions={transactions} />
