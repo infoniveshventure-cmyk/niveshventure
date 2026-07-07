@@ -29,7 +29,7 @@ export default function WithdrawalPage() {
       .then((d) => setTxHistory(d.transactions || []))
       .finally(() => setTxLoading(false));
   }
-  
+
   useEffect(() => {
     loadHistory();
     fetch("/api/admin/settings", { cache: "no-store" })
@@ -39,7 +39,7 @@ export default function WithdrawalPage() {
           setWithdrawalsEnabled(d.settings.withdrawalsEnabled !== false);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setCheckingStatus(false));
   }, []);
 
@@ -95,16 +95,23 @@ export default function WithdrawalPage() {
             <p className="text-xs text-ink-muted mb-3">Minimum $10 for earnings. 3% processing charge applies.</p>
 
             <div className="flex gap-3">
-              {(["earning", "capital"] as const).map((k) => (
-                <button type="button" key={k} onClick={() => setKind(k)}
-                  className={`flex-1 py-2 rounded-xl text-sm border capitalize transition ${
-                    kind === k ? "border-neon-violet bg-neon-violet/10 text-neon-violet" : "border-white/10 text-ink-muted"
-                  }`}>
-                  {k === "earning" 
-                    ? `Earning: $${(profile?.walletBalance ?? 0).toLocaleString()}` 
-                    : `Capital: $${(profile?.totalInvestment ?? 0).toLocaleString()}`}
-                </button>
-              ))}
+              {(["earning", "capital"] as const).map((k) => {
+                const totalEarnings =
+                  (profile?.totalReferralIncome ?? 0) +
+                  (profile?.totalMatchingIncome ?? 0) +
+                  (profile?.totalReturnsIncome ?? 0) +
+                  (profile?.totalLevelIncome ?? 0) +
+                  (profile?.totalRewardIncome ?? 0);
+                return (
+                  <button type="button" key={k} onClick={() => setKind(k)}
+                    className={`flex-1 py-2 rounded-xl text-sm border capitalize transition ${kind === k ? "border-neon-violet bg-neon-violet/10 text-neon-violet" : "border-white/10 text-ink-muted"
+                      }`}>
+                    {k === "earning"
+                      ? `Total Earning: $${totalEarnings.toLocaleString()}`
+                      : `Total Capital: $${(profile?.totalInvestment ?? 0).toLocaleString()}`}
+                  </button>
+                );
+              })}
             </div>
             {kind === "capital" && (
               <p className="text-xs text-neon-magenta">Capital (Nivesh) withdrawable only after 11-month lock-in completes.</p>
@@ -113,9 +120,8 @@ export default function WithdrawalPage() {
             <div className="flex gap-3">
               {(["USDT", "INR"] as const).map((m) => (
                 <button type="button" key={m} onClick={() => setMode(m)}
-                  className={`flex-1 py-2 rounded-xl text-sm border transition ${
-                    mode === m ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
-                  }`}>{m}</button>
+                  className={`flex-1 py-2 rounded-xl text-sm border transition ${mode === m ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
+                    }`}>{m}</button>
               ))}
             </div>
 
@@ -184,10 +190,9 @@ export default function WithdrawalPage() {
                         <p className="text-[11px] text-neon-magenta mt-0.5">Note: {w.adminNote}</p>
                       )}
                     </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      w.status === "completed" ? "bg-neon-green/15 text-neon-green" :
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${w.status === "completed" ? "bg-neon-green/15 text-neon-green" :
                       w.status === "pending" ? "bg-yellow-500/15 text-yellow-400" : "bg-neon-magenta/15 text-neon-magenta"
-                    }`}>{w.status}</span>
+                      }`}>{w.status}</span>
                   </div>
                 ))}
               </div>
