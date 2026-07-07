@@ -7,14 +7,12 @@ import {
   ChevronDown, 
   ChevronRight, 
   TrendingUp, 
-  ArrowLeft, 
   RefreshCw, 
   ZoomIn, 
   ZoomOut, 
   Maximize2, 
   Minimize2, 
   Search, 
-  X, 
   Eye, 
   Moon, 
   Sun,
@@ -39,8 +37,7 @@ type TreeNode = {
 
 type TreeData = {
   node: TreeNode;
-  left: TreeNode | null;
-  right: TreeNode | null;
+  children: TreeNode[];
   stats: {
     leftTeamCount: number;
     rightTeamCount: number;
@@ -55,8 +52,7 @@ type TreeData = {
 
 interface LocalNodeState {
   node: TreeNode;
-  left: TreeNode | null;
-  right: TreeNode | null;
+  children: TreeNode[];
   stats: any;
   isExpanded: boolean;
 }
@@ -71,10 +67,10 @@ interface CoordinateNode {
   node: TreeNode | null;
 }
 
-const CARD_WIDTH = 160;
-const CARD_HEIGHT = 100;
-const INITIAL_H_SPACING = 240;
-const V_SPACING = 170;
+const CARD_WIDTH = 90;
+const CARD_HEIGHT = 65;
+const V_SPACING = 120;
+const NODE_GAP = 20; // Gap between sibling cards/subtrees
 
 export default function TeamPage() {
   const [treeState, setTreeState] = useState<Record<string, LocalNodeState>>({});
@@ -88,7 +84,7 @@ export default function TeamPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
 
-  // Navigation / Details Panel state
+  // Details Panel and Side referrals list
   const [selectedNode, setSelectedNode] = useState<{ node: TreeNode; stats: any } | null>(null);
   const [breadcrumb, setBreadcrumb] = useState<{ id: string; name: string }[]>([]);
   const [directTeam, setDirectTeam] = useState<any[]>([]);
@@ -100,7 +96,7 @@ export default function TeamPage() {
   const dragStart = useRef({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // 1. Load Node Details recursively or single level
+  // Load a single level of the tree
   const loadNode = useCallback(async (memberId: string, expandAfterLoad = false) => {
     try {
       const res = await fetch(`/api/team/tree?rootId=${memberId}`, { cache: "no-store" });
@@ -110,21 +106,20 @@ export default function TeamPage() {
           ...prev,
           [memberId]: {
             node: data.node,
-            left: data.left,
-            right: data.right,
+            children: data.children || [],
             stats: data.stats,
             isExpanded: expandAfterLoad ? true : prev[memberId]?.isExpanded ?? false,
           },
         }));
         return data;
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to load network branch");
     }
     return null;
   }, []);
 
-  // Initialize root user tree
+  // Initialize tree
   const initTree = useCallback(async () => {
     setLoading(true);
     try {
@@ -136,21 +131,19 @@ export default function TeamPage() {
         setTreeState({
           [data.node.memberId]: {
             node: data.node,
-            left: data.left,
-            right: data.right,
+            children: data.children || [],
             stats: data.stats,
             isExpanded: true,
           },
         });
         setSelectedNode({ node: data.node, stats: data.stats });
-        // Center the tree layout initially
         if (canvasRef.current) {
           const width = canvasRef.current.clientWidth;
           setPan({ x: width / 2 - CARD_WIDTH / 2, y: 60 });
         }
       }
     } catch {
-      toast.error("Failed to load binary tree");
+      toast.error("Failed to load network tree");
     } finally {
       setLoading(false);
     }
@@ -158,34 +151,31 @@ export default function TeamPage() {
 
   useEffect(() => {
     initTree();
-    // Load direct team list separately
     fetch("/api/team", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setDirectTeam(d.directTeam || []))
       .catch(() => {});
   }, [initTree]);
 
-  // Center a specific coordinate in the viewport
+  // Center a node coordinate in viewport
   const centerNode = useCallback((x: number, y: number) => {
     if (!canvasRef.current) return;
     const width = canvasRef.current.clientWidth;
     const height = canvasRef.current.clientHeight || 500;
-    // Calculate offset to place (x, y) at the middle
     setPan({
       x: width / 2 - x * zoom - (CARD_WIDTH / 2) * zoom,
       y: height / 3 - y * zoom - (CARD_HEIGHT / 2) * zoom,
     });
   }, [zoom]);
 
-  // Handle expand/collapse of a node
+  // Handle expand/collapse toggle
   const handleExpandToggle = async (e: React.MouseEvent, node: TreeNode) => {
     e.stopPropagation();
     const id = node.memberId;
     const isExpanded = treeState[id]?.isExpanded;
 
     if (!isExpanded) {
-      // Lazy load children if not loaded
-      if (!treeState[id]?.left && !treeState[id]?.right && node.hasChildren) {
+      if (!treeState[id] && node.hasChildren) {
         toast.loading("Loading downline...", { id: "tree-lazy-load" });
         await loadNode(id, true);
         toast.dismiss("tree-lazy-load");
@@ -202,14 +192,13 @@ export default function TeamPage() {
       }));
     }
 
-    // Auto-center the clicked node
     const nodeCoords = findNodeCoordinates(id);
     if (nodeCoords) {
       centerNode(nodeCoords.x, nodeCoords.y);
     }
   };
 
-  // Click card container directly: selects node, toggles expansion, and centers it
+  // Node Click: Select node, toggle expand/collapse, and center
   const handleNodeCardClick = async (e: React.MouseEvent, node: TreeNode) => {
     e.stopPropagation();
     const id = node.memberId;
@@ -218,7 +207,7 @@ export default function TeamPage() {
 
     const isExpanded = treeState[id]?.isExpanded;
     if (!isExpanded) {
-      if (!treeState[id]?.left && !treeState[id]?.right && node.hasChildren) {
+      if (!treeState[id] && node.hasChildren) {
         toast.loading("Loading downline...", { id: "tree-lazy-load" });
         await loadNode(id, true);
         toast.dismiss("tree-lazy-load");
@@ -253,15 +242,12 @@ export default function TeamPage() {
       const res = await fetch(`/api/team/tree?search=${encodeURIComponent(searchQuery.trim())}`, { cache: "no-store" });
       const data = await res.json();
       if (res.ok && data.searchResult) {
-        // Path matches: [rootId, ..., targetId]
-        // Inject all retrieved path node details into treeState
         setTreeState((prev) => {
           const updated = { ...prev };
           Object.keys(data.nodes).forEach((key) => {
             updated[key] = {
               node: data.nodes[key].node,
-              left: data.nodes[key].left,
-              right: data.nodes[key].right,
+              children: data.nodes[key].children || [],
               stats: data.nodes[key].stats,
               isExpanded: true,
             };
@@ -269,24 +255,20 @@ export default function TeamPage() {
           return updated;
         });
 
-        // Set target highlighted
         setHighlightedId(data.targetId);
         toast.success(`Located ${data.targetId}`);
 
-        // Update selected detail panel
-        const targetDetails = data.nodes[data.targetId] || await fetchNode(data.targetId);
+        const targetDetails = data.nodes[data.targetId] || await fetch(`/api/team/tree?rootId=${data.targetId}`).then((r) => r.json());
         if (targetDetails) {
           setSelectedNode({ node: targetDetails.node, stats: targetDetails.stats });
         }
 
-        // Center on target node. Need a slight delay to allow coordinate calculation
         setTimeout(() => {
           const coords = findNodeCoordinates(data.targetId);
           if (coords) {
             centerNode(coords.x, coords.y);
           }
         }, 150);
-
       } else {
         toast.error(data.error || "No member found matching query");
       }
@@ -297,31 +279,34 @@ export default function TeamPage() {
     }
   };
 
-  // Generate recursive binary tree layout with coordinates
+  // Recursively calculate horizontal subtree widths and positions
   const getCoordinatesLayout = useCallback(() => {
     const coords: CoordinateNode[] = [];
     if (!rootId || !treeState[rootId]) return coords;
 
     const widthMap: Record<string, number> = {};
 
-    // Helper to calculate horizontal width occupied by each subtree
+    // 1st Pass: Bottom-up subtree width calculator
     function calculateSubtreeWidth(id: string): number {
       const current = treeState[id];
-      if (!current || !current.isExpanded) {
-        widthMap[id] = 200; // default node leaf width including margins
-        return 200;
+      if (!current || !current.isExpanded || !current.children || current.children.length === 0) {
+        widthMap[id] = CARD_WIDTH + NODE_GAP;
+        return CARD_WIDTH + NODE_GAP;
       }
 
-      const leftWidth = current.left ? calculateSubtreeWidth(current.left.memberId) : 200;
-      const rightWidth = current.right ? calculateSubtreeWidth(current.right.memberId) : 200;
+      let childrenWidth = 0;
+      current.children.forEach((child) => {
+        childrenWidth += calculateSubtreeWidth(child.memberId);
+      });
 
-      const totalWidth = leftWidth + rightWidth + 40; // 40px gap between left & right subtrees
-      widthMap[id] = totalWidth;
-      return totalWidth;
+      const totalWidth = childrenWidth + NODE_GAP * (current.children.length - 1);
+      widthMap[id] = Math.max(CARD_WIDTH + NODE_GAP, totalWidth);
+      return widthMap[id];
     }
 
     calculateSubtreeWidth(rootId);
 
+    // 2nd Pass: Top-down coordinate assignment
     function traverse(
       node: TreeNode,
       x: number,
@@ -343,64 +328,40 @@ export default function TeamPage() {
 
       const current = treeState[id];
 
-      // If expanded, draw left and right positions
-      if (current && current.isExpanded) {
+      if (current && current.isExpanded && current.children && current.children.length > 0) {
         const nextY = y + V_SPACING;
-        
-        const leftWidth = current.left ? (widthMap[current.left.memberId] || 200) : 200;
-        const rightWidth = current.right ? (widthMap[current.right.memberId] || 200) : 200;
 
-        const leftX = x - leftWidth / 2 - 20;
-        const rightX = x + rightWidth / 2 + 20;
+        // Calculate combined widths of all subtrees
+        let totalWidth = 0;
+        current.children.forEach((child) => {
+          totalWidth += widthMap[child.memberId] || (CARD_WIDTH + NODE_GAP);
+        });
+        totalWidth += NODE_GAP * (current.children.length - 1);
 
-        // Left Position
-        if (current.left) {
-          traverse(current.left, leftX, nextY, id, "left");
-        } else {
-          // Placeholder for empty left slot
-          coords.push({
-            id: `${id}-empty-left`,
-            isPlaceholder: true,
-            side: "left",
-            x: leftX,
-            y: nextY,
-            parentId: id,
-            node: null,
-          });
-        }
+        let startX = x + CARD_WIDTH / 2 - totalWidth / 2;
 
-        // Right Position
-        if (current.right) {
-          traverse(current.right, rightX, nextY, id, "right");
-        } else {
-          // Placeholder for empty right slot
-          coords.push({
-            id: `${id}-empty-right`,
-            isPlaceholder: true,
-            side: "right",
-            x: rightX,
-            y: nextY,
-            parentId: id,
-            node: null,
-          });
-        }
+        current.children.forEach((child) => {
+          const childWidth = widthMap[child.memberId] || (CARD_WIDTH + NODE_GAP);
+          const childX = startX + childWidth / 2 - CARD_WIDTH / 2;
+
+          traverse(child, childX, nextY, id, child.position as any);
+          startX += childWidth;
+        });
       }
     }
 
-    // Traverse starting at root node coordinates (0, 0)
     traverse(treeState[rootId].node, 0, 0, null);
     return coords;
   }, [rootId, treeState]);
 
-  // Find a specific node's coordinate helper
   const findNodeCoordinates = (id: string) => {
     const layout = getCoordinatesLayout();
     return layout.find((l) => l.id === id);
   };
 
-  // Drag Canvas handlers
+  // Drag Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // Left click only
+    if (e.button !== 0) return;
     setIsDragging(true);
     dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
   };
@@ -417,19 +378,6 @@ export default function TeamPage() {
     setIsDragging(false);
   };
 
-  // Zoom handlers
-  const handleZoomIn = () => setZoom((z) => Math.min(2, z + 0.1));
-  const handleZoomOut = () => setZoom((z) => Math.max(0.3, z - 0.1));
-  const handleZoomReset = () => {
-    setZoom(1);
-    // Recenter root
-    if (canvasRef.current) {
-      const width = canvasRef.current.clientWidth;
-      setPan({ x: width / 2 - CARD_WIDTH / 2, y: 60 });
-    }
-  };
-
-  // Wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const zoomFactor = 0.05;
@@ -440,7 +388,16 @@ export default function TeamPage() {
     }
   };
 
-  // Expand / Collapse All
+  const handleZoomIn = () => setZoom((z) => Math.min(2, z + 0.1));
+  const handleZoomOut = () => setZoom((z) => Math.max(0.3, z - 0.1));
+  const handleZoomReset = () => {
+    setZoom(1);
+    if (canvasRef.current) {
+      const width = canvasRef.current.clientWidth;
+      setPan({ x: width / 2 - CARD_WIDTH / 2, y: 60 });
+    }
+  };
+
   const handleExpandAll = () => {
     setTreeState((prev) => {
       const updated = { ...prev };
@@ -465,28 +422,7 @@ export default function TeamPage() {
     toast.success("Collapsed branches");
   };
 
-  const handleCenterRoot = () => {
-    handleZoomReset();
-  };
-
-  // Breadcrumb navigation
   const navigateTo = async (node: TreeNode) => {
-    if (!node.hasChildren) {
-      setSelectedNode({
-        node,
-        stats: {
-          leftTeamCount: 0,
-          rightTeamCount: 0,
-          totalTeam: 0,
-          leftCurrentBusiness: 0,
-          rightCurrentBusiness: 0,
-          leftTotalBusiness: 0,
-          rightTotalBusiness: 0,
-          totalBusiness: 0,
-        },
-      });
-      return;
-    }
     setBreadcrumb((prev) => [...prev, { id: rootId, name: treeState[rootId]?.node.fullName || rootId }]);
     setRootId(node.memberId);
     if (!treeState[node.memberId]) {
@@ -500,17 +436,7 @@ export default function TeamPage() {
     setRootId(targetId);
   };
 
-  // Node details loader for breadcrumb path setup
-  const fetchNode = async (memberId: string) => {
-    const res = await fetch(`/api/team/tree?rootId=${memberId}`);
-    if (res.ok) return await res.json();
-    return null;
-  };
-
   const coordinates = getCoordinatesLayout();
-
-  // Find relationships to draw connector paths
-  const parentChildPairs = coordinates.filter((c) => c.parentId !== null);
 
   const themeClass = theme === "dark" 
     ? "bg-slate-950 text-white" 
@@ -524,13 +450,12 @@ export default function TeamPage() {
             <Users className="text-neon-cyan" size={20} />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-bold">Interactive Genealogy</h1>
-            <p className="text-xs text-ink-muted">View, expand, and search your entire binary tree structure.</p>
+            <h1 className="font-display text-2xl font-bold">Genealogy Tree View</h1>
+            <p className="text-xs text-ink-muted">Redesigned multi-node sponsor referral layout with dynamic alignment.</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Theme switcher */}
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-ink-muted hover:text-white transition"
@@ -604,56 +529,77 @@ export default function TeamPage() {
         onMouseUp={handleMouseUpOrLeave}
         onMouseLeave={handleMouseUpOrLeave}
         onWheel={handleWheel}
-        className={`relative w-full h-[520px] rounded-2xl overflow-hidden border border-white/10 select-none cursor-grab active:cursor-grabbing ${themeClass}`}
-        style={{
-          backgroundImage: theme === "dark" 
-            ? "radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)"
-            : "radial-gradient(rgba(0,0,0,0.05) 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-        }}
+        className="relative w-full h-[580px] rounded-2xl overflow-hidden bg-[#424242] border border-[#555] select-none cursor-grab active:cursor-grabbing text-white"
       >
+        {/* Top Info Banner - Exactly matching screenshot */}
+        <div className="absolute top-4 left-4 right-4 z-10 bg-black/30 border border-yellow-500/30 rounded-lg p-2.5 text-center text-xs text-yellow-500 font-medium">
+          🔍 Note: You can zoom in or zoom out the page by using Ctrl + Mouse Wheel
+        </div>
+
         {/* SVG Connector Lines Layer */}
         <svg
-          className="absolute inset-0 pointer-events-none w-full h-full"
+          className="absolute inset-0 pointer-events-none w-full h-full overflow-visible"
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
             transformOrigin: "0 0",
           }}
         >
           <g>
-            {parentChildPairs.map((pair) => {
-              const parent = coordinates.find((c) => c.id === pair.parentId);
-              if (!parent) return null;
+            {Object.keys(treeState).map((parentId) => {
+              const parentState = treeState[parentId];
+              if (!parentState || !parentState.isExpanded || !parentState.children || parentState.children.length === 0) return null;
 
-              // Calculate start coordinates (bottom-middle of parent card)
-              const startX = parent.x + CARD_WIDTH / 2;
-              const startY = parent.y + CARD_HEIGHT;
+              const parentCoords = coordinates.find((c) => c.id === parentId);
+              if (!parentCoords) return null;
 
-              // Calculate end coordinates (top-middle of child card)
-              const endX = pair.x + CARD_WIDTH / 2;
-              const endY = pair.y;
+              const pX = parentCoords.x + CARD_WIDTH / 2;
+              const pY = parentCoords.y + 28; // precisely at bottom center of parent avatar
 
-              // Control midpoint for orthogonal connector curve
-              const midY = startY + (endY - startY) / 2;
+              // Find children coordinates
+              const childCoords = parentState.children.map((child) => 
+                coordinates.find((c) => c.id === child.memberId)
+              ).filter(Boolean) as CoordinateNode[];
 
-              // Draw neat path
-              const pathData = `
-                M ${startX} ${startY}
-                L ${startX} ${midY}
-                L ${endX} ${midY}
-                L ${endX} ${endY}
-              `;
+              if (childCoords.length === 0) return null;
+
+              const midY = pY + (V_SPACING - 28) / 2;
+
+              // Draw vertical drop stem from parent bottom to midY
+              const stemPath = `M ${pX} ${pY} L ${pX} ${midY}`;
+
+              // Draw horizontal connector bar spanning first to last child
+              const xCoords = childCoords.map((c) => c.x + CARD_WIDTH / 2);
+              const minX = Math.min(...xCoords);
+              const maxX = Math.max(...xCoords);
+
+              const barPath = `M ${minX} ${midY} L ${maxX} ${midY}`;
 
               return (
-                <path
-                  key={pair.id}
-                  d={pathData}
-                  fill="none"
-                  stroke={pair.isPlaceholder ? "rgba(255,255,255,0.08)" : "rgba(0,229,255,0.25)"}
-                  strokeWidth="2"
-                  strokeDasharray={pair.isPlaceholder ? "4 4" : "0"}
-                  className="transition-all duration-300"
-                />
+                <g key={`connectors-${parentId}`}>
+                  {/* Parent vertical drop stem */}
+                  <path d={stemPath} fill="none" stroke="#ffffff" strokeWidth="1.5" className="opacity-90" />
+                  
+                  {/* Sibling horizontal bar */}
+                  {childCoords.length > 1 && (
+                    <path d={barPath} fill="none" stroke="#ffffff" strokeWidth="1.5" className="opacity-90" />
+                  )}
+
+                  {/* Individual vertical drops down to each child card */}
+                  {childCoords.map((c) => {
+                    const cx = c.x + CARD_WIDTH / 2;
+                    const cy = c.y; // precisely at top center of child avatar
+                    return (
+                      <path
+                        key={`line-${parentId}-${c.id}`}
+                        d={`M ${cx} ${midY} L ${cx} ${cy}`}
+                        fill="none"
+                        stroke="#ffffff"
+                        strokeWidth="1.5"
+                        className="opacity-90"
+                      />
+                    );
+                  })}
+                </g>
               );
             })}
           </g>
@@ -668,29 +614,14 @@ export default function TeamPage() {
         >
           {coordinates.map((item) => {
             const isTarget = item.id === highlightedId;
-
-            if (item.isPlaceholder) {
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    left: item.x,
-                    top: item.y,
-                    width: CARD_WIDTH,
-                    height: CARD_HEIGHT,
-                  }}
-                  className="absolute flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/2 text-center p-3"
-                >
-                  <div className="w-8 h-8 rounded-full border border-dashed border-white/20 bg-white/2 flex items-center justify-center mb-1.5 text-ink-muted text-xs">
-                    +
-                  </div>
-                  <p className="text-[10px] text-ink-muted font-semibold uppercase tracking-wider">Empty slot</p>
-                </div>
-              );
-            }
-
             const isExpanded = treeState[item.id]?.isExpanded;
             const nodeData = item.node!;
+
+            // Choose avatar background color based on status/active
+            // Root is green/blue, active is blue, inactive is red
+            const avatarBg = nodeData.isActive 
+              ? (item.id === rootId ? "bg-[#4CAF50]" : "bg-[#2196F3]") 
+              : "bg-[#F44336]";
 
             return (
               <div
@@ -702,49 +633,36 @@ export default function TeamPage() {
                   width: CARD_WIDTH,
                   height: CARD_HEIGHT,
                 }}
-                className={`absolute rounded-2xl border p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${
-                  item.id === rootId
-                    ? "bg-gradient-to-b from-neon-cyan/15 to-neon-cyan/5 border-neon-cyan shadow-[0_0_15px_rgba(0,229,255,0.15)]"
-                    : isTarget
-                    ? "bg-yellow-400/10 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.25)] animate-pulse"
-                    : nodeData.isActive
-                    ? "bg-neon-green/5 border-neon-green/40 shadow-[0_0_10px_rgba(0,230,118,0.1)] hover:border-neon-green"
-                    : "bg-red-500/5 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.1)] hover:border-red-500"
-                }`}
+                className="absolute flex flex-col items-center justify-start text-center cursor-pointer select-none group"
               >
-                {/* Active Status Ring Avatar */}
+                {/* User Avatar Circle */}
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white mb-1.5 shrink-0 border-2 ${
-                    nodeData.isActive ? "border-neon-green bg-neon-green/20" : "border-red-500 bg-red-500/20"
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-300 ${avatarBg} ${
+                    isTarget ? "ring-4 ring-yellow-400 animate-pulse" : "group-hover:scale-110"
                   }`}
                 >
-                  {nodeData.fullName?.[0]?.toUpperCase() || "?"}
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                  </svg>
                 </div>
 
-                <p className="text-[11px] font-bold text-white truncate w-full px-1">{nodeData.fullName}</p>
-                <p className="text-[9px] text-ink-muted font-mono">{nodeData.memberId}</p>
+                {/* Member ID + Placement (L/R) label */}
+                <span className="text-[9px] font-bold text-white mt-1 leading-none drop-shadow">
+                  {nodeData.memberId} {nodeData.position ? `(${nodeData.position[0].toUpperCase()})` : ""}
+                </span>
 
-                {/* Expand / Collapse trigger badge */}
+                {/* Full Name */}
+                <span className="text-[9px] text-[#e0e0e0] mt-0.5 leading-none truncate max-w-[90px] drop-shadow">
+                  {nodeData.fullName}
+                </span>
+
+                {/* Expand / Collapse trigger arrow */}
                 {nodeData.hasChildren && (
                   <button
                     onClick={(e) => handleExpandToggle(e, nodeData)}
-                    className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border border-white/10 bg-slate-900 text-white hover:text-neon-cyan hover:border-neon-cyan flex items-center justify-center transition-colors shadow-md"
+                    className="mt-1 w-3.5 h-3.5 rounded-full bg-black/40 text-white hover:bg-black/60 flex items-center justify-center transition-colors shadow-sm"
                   >
-                    {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                  </button>
-                )}
-
-                {/* Enter Subtree Quick Access */}
-                {nodeData.hasChildren && item.id !== rootId && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigateTo(nodeData);
-                    }}
-                    title="Enter this member's network"
-                    className="absolute right-1 bottom-1 p-1 rounded-md text-ink-muted hover:text-neon-cyan transition-colors"
-                  >
-                    <Eye size={10} />
+                    {isExpanded ? <ChevronUp size={8} /> : <ChevronDown size={8} />}
                   </button>
                 )}
               </div>
@@ -791,7 +709,7 @@ export default function TeamPage() {
             <Minimize2 size={14} />
           </button>
           <button
-            onClick={handleCenterRoot}
+            onClick={handleZoomReset}
             className="p-2 rounded-lg text-ink-muted hover:text-white hover:bg-white/5 transition"
             title="Center Root"
           >
@@ -811,7 +729,6 @@ export default function TeamPage() {
                 <span className="text-ink-muted text-xs font-mono ml-2">({selectedNode.node.memberId})</span>
               </h3>
             </div>
-            {/* Quick center locator */}
             <button
               onClick={() => {
                 const coords = findNodeCoordinates(selectedNode.node.memberId);
@@ -825,20 +742,8 @@ export default function TeamPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div className="bg-white/5 rounded-xl p-3 text-center">
-              <p className="text-xs text-ink-muted">Left Team</p>
+              <p className="text-xs text-ink-muted">Direct Network Size</p>
               <p className="font-bold text-neon-green text-lg mt-1">{selectedNode.stats?.leftTeamCount ?? 0}</p>
-            </div>
-            <div className="bg-white/5 rounded-xl p-3 text-center">
-              <p className="text-xs text-ink-muted">Right Team</p>
-              <p className="font-bold text-neon-violet text-lg mt-1">{selectedNode.stats?.rightTeamCount ?? 0}</p>
-            </div>
-            <div className="bg-white/5 rounded-xl p-3 text-center">
-              <p className="text-xs text-ink-muted">Total Network</p>
-              <p className="font-bold text-white text-lg mt-1">{selectedNode.stats?.totalTeam ?? 0}</p>
-            </div>
-            <div className="bg-white/5 rounded-xl p-3 text-center">
-              <p className="text-xs text-ink-muted">Total Business</p>
-              <p className="font-bold text-neon-cyan text-lg mt-1">${(selectedNode.stats?.totalBusiness ?? 0).toLocaleString()}</p>
             </div>
             <div className="bg-white/5 rounded-xl p-3 text-center">
               <p className="text-xs text-ink-muted">Left Business</p>
@@ -849,12 +754,8 @@ export default function TeamPage() {
               <p className="font-bold text-neon-violet mt-1">${(selectedNode.stats?.rightCurrentBusiness ?? 0).toLocaleString()}</p>
             </div>
             <div className="bg-white/5 rounded-xl p-3 text-center">
-              <p className="text-xs text-ink-muted">Left Total Business</p>
-              <p className="font-bold mt-1">${(selectedNode.stats?.leftTotalBusiness ?? 0).toLocaleString()}</p>
-            </div>
-            <div className="bg-white/5 rounded-xl p-3 text-center">
-              <p className="text-xs text-ink-muted">Right Total Business</p>
-              <p className="font-bold mt-1">${(selectedNode.stats?.rightTotalBusiness ?? 0).toLocaleString()}</p>
+              <p className="text-xs text-ink-muted">Total Business</p>
+              <p className="font-bold text-neon-cyan text-lg mt-1">${(selectedNode.stats?.totalBusiness ?? 0).toLocaleString()}</p>
             </div>
           </div>
 
@@ -863,6 +764,7 @@ export default function TeamPage() {
               <p className="font-semibold text-white mb-1">Member Information</p>
               <p>Status: <span className={selectedNode.node.isActive ? "text-neon-green font-semibold" : "text-red-400 font-semibold"}>{selectedNode.node.isActive ? "Active" : "Inactive"}</span></p>
               <p>Rank Tier: <span className="text-white font-medium">{selectedNode.node.rank}</span></p>
+              <p>Placement: <span className="text-white capitalize">{selectedNode.node.position || "Left"} side</span></p>
               {selectedNode.node.createdAt && <p>Registered On: <span className="text-white">{new Date(selectedNode.node.createdAt).toLocaleDateString()}</span></p>}
             </div>
             <div className="bg-white/3 rounded-xl p-3 space-y-1">

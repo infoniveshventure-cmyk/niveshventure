@@ -12,7 +12,7 @@ cp .env.example .env
 ## github repo repush  :
 ```
 git add .
-git commit -m "node tree and admin panel feture"
+git commit -m "tree structure change"
 git push -u origin main
 ```
 

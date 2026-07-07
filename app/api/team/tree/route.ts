@@ -17,7 +17,7 @@ async function countDownline(id: string): Promise<number> {
   return count;
 }
 
-// Helper to fetch node info with direct left/right details
+// Fetch node details along with ALL sponsor direct referrals
 async function fetchNodeDetails(memberId: string) {
   const rootUser = await User.findOne({ memberId }).select(
     "memberId fullName rank isActive position sponsorId parentId " +
@@ -28,47 +28,34 @@ async function fetchNodeDetails(memberId: string) {
   );
   if (!rootUser) return null;
 
-  const [leftChild, rightChild] = await Promise.all([
-    User.findOne({ parentId: memberId, position: "left" }).select(
-      "memberId fullName rank isActive position walletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance totalInvestment createdAt profilePhotoUrl"
-    ),
-    User.findOne({ parentId: memberId, position: "right" }).select(
-      "memberId fullName rank isActive position walletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance totalInvestment createdAt profilePhotoUrl"
-    ),
-  ]);
+  // Find all direct referrals of this user (sponsor tree)
+  const directs = await User.find({ sponsorId: memberId }).select(
+    "memberId fullName rank isActive position walletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance totalInvestment createdAt profilePhotoUrl"
+  );
 
-  const [leftHasChildren, rightHasChildren] = await Promise.all([
-    leftChild ? User.countDocuments({ parentId: leftChild.memberId }) : Promise.resolve(0),
-    rightChild ? User.countDocuments({ parentId: rightChild.memberId }) : Promise.resolve(0),
-  ]);
+  // For each child, check if they have children (for expand indicators) and compute their downline count
+  const childrenWithStatus = await Promise.all(
+    directs.map(async (child) => {
+      const childCount = await User.countDocuments({ sponsorId: child.memberId });
+      const teamCount = await countDownline(child.memberId);
+      return {
+        ...child.toObject(),
+        hasChildren: childCount > 0,
+        teamCount,
+      };
+    })
+  );
 
-  const [leftTeamCount, rightTeamCount] = await Promise.all([
-    leftChild ? countDownline(leftChild.memberId) : Promise.resolve(0),
-    rightChild ? countDownline(rightChild.memberId) : Promise.resolve(0),
-  ]);
-
+  const leftTeamCount = await countDownline(memberId); // simple team size
   const totalBusiness = (rootUser.leftTotalBusiness || 0) + (rootUser.rightTotalBusiness || 0);
 
   return {
     node: rootUser,
-    left: leftChild
-      ? {
-          ...leftChild.toObject(),
-          hasChildren: leftHasChildren > 0,
-          teamCount: leftTeamCount,
-        }
-      : null,
-    right: rightChild
-      ? {
-          ...rightChild.toObject(),
-          hasChildren: rightHasChildren > 0,
-          teamCount: rightTeamCount,
-        }
-      : null,
+    children: childrenWithStatus,
     stats: {
       leftTeamCount,
-      rightTeamCount,
-      totalTeam: leftTeamCount + rightTeamCount + (leftChild ? 1 : 0) + (rightChild ? 1 : 0),
+      rightTeamCount: 0,
+      totalTeam: leftTeamCount,
       leftCurrentBusiness: rootUser.leftCurrentBusiness || 0,
       rightCurrentBusiness: rootUser.rightCurrentBusiness || 0,
       leftTotalBusiness: rootUser.leftTotalBusiness || 0,
@@ -96,13 +83,13 @@ export async function GET(req: NextRequest) {
         { memberId: searchParam },
         { fullName: { $regex: searchParam, $options: "i" } },
       ],
-    }).select("memberId parentId fullName");
+    }).select("memberId sponsorId fullName");
 
     if (!targetUser) {
       return NextResponse.json({ error: "Member not found" }, { status: 404 });
     }
 
-    // Trace parent chain up to rootId (session user)
+    // Trace sponsor parent chain up to rootId (session user)
     const path: string[] = [];
     let currentId: string | null = targetUser.memberId;
     let foundRoot = false;
@@ -118,13 +105,13 @@ export async function GET(req: NextRequest) {
         break;
       }
 
-      const parentNode = await User.findOne({ memberId: currentId }).select("parentId");
-      currentId = parentNode?.parentId || null;
+      const parentNode = await User.findOne({ memberId: currentId }).select("sponsorId");
+      currentId = parentNode?.sponsorId || null;
     }
 
     if (!foundRoot && targetUser.memberId !== rootId) {
       return NextResponse.json({
-        error: "Member found but is not in your downline network",
+        error: "Member found but is not in your referral network",
       }, { status: 403 });
     }
 
