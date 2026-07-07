@@ -10,6 +10,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { updateFirebaseUserPasswordByEmail, deleteFirebaseUser } from "@/lib/firebase-admin";
 import { notifyMember } from "@/lib/notification";
 import crypto from "crypto";
+import { processActivationIncomes } from "@/lib/binaryMatching";
 
 export async function GET(req: NextRequest, { params }: { params: { memberId: string } }) {
   const guard = await requireAdmin();
@@ -88,19 +89,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
     const { statusType } = body; // "active", "suspended"
     if (statusType === "active") {
       user.isActive = !user.isActive;
-      if (user.isActive && (!user.accessExpiresAt || user.accessExpiresAt < new Date())) {
-        user.accessExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-      }
-      await user.save();
-
-      // Trigger booster checks if user activated
-      if (user.isActive && user.sponsorId) {
-        try {
-          const { checkAndAwardBooster } = await import("@/lib/booster");
-          await checkAndAwardBooster(user.sponsorId);
-        } catch (e) {
-          console.error("Booster check failed:", e);
-        }
+      if (user.isActive) {
+        // If activating, run the full automated flows
+        await processActivationIncomes(user.memberId);
+      } else {
+        await user.save();
       }
     }
     return NextResponse.json({ success: true, message: "Status toggled successfully", member: user });

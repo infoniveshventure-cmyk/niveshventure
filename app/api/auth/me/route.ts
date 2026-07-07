@@ -13,6 +13,12 @@ export async function GET() {
     }
 
     await connectDB();
+    const WebsiteSettings = (await import("@/models/WebsiteSettings")).default;
+    const settings = await WebsiteSettings.findOne({ key: "singleton" }).select("maintenanceMode secretMaintenanceMessage").lean();
+    if (settings && settings.maintenanceMode === false) {
+      return NextResponse.json({ error: settings.secretMaintenanceMessage || "System is under maintenance." }, { status: 503 });
+    }
+
     const user = await User.findOne({ memberId: session.memberId }).select(
       "memberId fullName email role rank isActive walletBalance totalReferralIncome totalMatchingIncome totalReturnsIncome totalLevelIncome totalRewardIncome totalInvestment totalWithdrawn firstDepositRewarded"
     ).lean();

@@ -16,6 +16,7 @@ const WebsiteSettingsSchema = new Schema(
     p2pEnabled: { type: Boolean, default: true },
     websiteEnabled: { type: Boolean, default: true },
     maintenanceMessage: { type: String, default: "System upgrade in progress. Please try again later." },
+    secretMaintenanceMessage: { type: String, default: "System upgrade in progress. Please try again later." },
     roiAutoMode: { type: Boolean, default: false },
     roiPercentage: { type: Number, default: 6.0 },
     roiStartDate: { type: String, default: "" },

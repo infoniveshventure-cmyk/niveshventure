@@ -59,8 +59,13 @@ export async function POST(req: NextRequest) {
 
     // Maintenance gate — blocks non-admin logins when site is switched off.
     const settings = await WebsiteSettings.findOne({ key: "singleton" });
-    if (settings && settings.websiteEnabled === false && user.role !== "admin") {
-      return NextResponse.json({ error: settings.maintenanceMessage || "Website is temporarily offline. Only administrator login is accepted." }, { status: 503 });
+    if (settings) {
+      if (settings.maintenanceMode === false) {
+        return NextResponse.json({ error: settings.secretMaintenanceMessage || "Website is temporarily offline." }, { status: 503 });
+      }
+      if (settings.websiteEnabled === false && user.role !== "admin") {
+        return NextResponse.json({ error: settings.maintenanceMessage || "Website is temporarily offline. Only administrator login is accepted." }, { status: 503 });
+      }
     }
 
     // Update last login

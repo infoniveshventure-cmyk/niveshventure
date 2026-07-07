@@ -6,9 +6,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   await connectDB();
-  const settings = await WebsiteSettings.findOne({ key: "singleton" }).select("websiteEnabled maintenanceMessage").lean();
+  const settings = await WebsiteSettings.findOne({ key: "singleton" }).select("websiteEnabled maintenanceMessage maintenanceMode secretMaintenanceMessage").lean();
   return NextResponse.json({
     websiteEnabled: settings?.websiteEnabled !== false,
     maintenanceMessage: settings?.maintenanceMessage || "System upgrade in progress. Please try again later.",
+    maintenanceModeActive: settings?.maintenanceMode === false,
+    secretMaintenanceMessage: settings?.secretMaintenanceMessage || "System upgrade in progress. Please try again later.",
   });
 }

@@ -15,6 +15,7 @@ export default function CopyrightGate({
   const [id, setId] = useState("");
   const [pass, setPass] = useState("");
   const [live, setLive] = useState<boolean | null>(null);
+  const [maintMsg, setMaintMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submitLogin(e: React.FormEvent) {
@@ -40,6 +41,7 @@ export default function CopyrightGate({
       const status = await statusRes.json();
 
       setLive(status.live);
+      setMaintMsg(status.message || "");
     } catch (err: any) {
       toast.error(err.message || "Invalid credentials");
     } finally {
@@ -48,6 +50,13 @@ export default function CopyrightGate({
   }
 
   async function toggle(next: boolean) {
+    let msg = maintMsg;
+    if (!next) {
+      const input = window.prompt("Enter Maintenance Message:", maintMsg || "System upgrade in progress. Please try again later.");
+      if (input === null) return; // user cancelled
+      msg = input;
+    }
+
     setBusy(true);
 
     try {
@@ -56,7 +65,7 @@ export default function CopyrightGate({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ live: next }),
+        body: JSON.stringify({ live: next, message: msg }),
       });
 
       const data = await res.json();
@@ -64,6 +73,7 @@ export default function CopyrightGate({
       if (!res.ok) throw new Error(data.error);
 
       setLive(data.live);
+      setMaintMsg(data.message || "");
 
       toast.success(
         next
@@ -82,6 +92,7 @@ export default function CopyrightGate({
     setAuthed(false);
     setId("");
     setPass("");
+    setMaintMsg("");
   }
 
   return (

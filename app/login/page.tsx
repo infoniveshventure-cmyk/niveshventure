@@ -10,18 +10,31 @@ import { auth, signInWithEmailAndPassword } from "@/lib/firebase";
 import CopyrightGate from "@/components/CopyrightGate";
 import { useAuth } from "@/lib/AuthContext";
 
+import { useSearchParams } from "next/navigation";
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [siteSettings, setSiteSettings] = useState({ websiteEnabled: true, maintenanceMessage: "" });
+  const [siteSettings, setSiteSettings] = useState({ 
+    websiteEnabled: true, 
+    maintenanceMessage: "",
+    maintenanceModeActive: false,
+    secretMaintenanceMessage: ""
+  });
 
   useEffect(() => {
     fetch("/api/settings").then((r) => r.json()).then(setSiteSettings).catch(() => {});
-  }, []);
+    
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      toast.error(errorParam, { duration: 6000 });
+    }
+  }, [searchParams]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -31,6 +44,13 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
+      const settingsRes = await fetch("/api/settings").then((r) => r.json()).catch(() => ({}));
+      if (settingsRes.maintenanceModeActive) {
+        toast.error(settingsRes.secretMaintenanceMessage || "System is under maintenance", { duration: 6000 });
+        setLoading(false);
+        return;
+      }
+
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await credential.user.getIdToken();
       if (!idToken) throw new Error("Firebase ID token unavailable");

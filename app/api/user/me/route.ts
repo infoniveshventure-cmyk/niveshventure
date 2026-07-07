@@ -12,6 +12,12 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   await connectDB();
+  const WebsiteSettings = (await import("@/models/WebsiteSettings")).default;
+  const settings = await WebsiteSettings.findOne({ key: "singleton" }).select("maintenanceMode secretMaintenanceMessage").lean();
+  if (settings && settings.maintenanceMode === false) {
+    return NextResponse.json({ error: settings.secretMaintenanceMessage || "System is under maintenance." }, { status: 503 });
+  }
+
   await checkAndRunAutoRoi();
   const user = await User.findOne({ memberId: session.memberId }).select(
     "-accessKeyHash -loginKeyHash -firebaseUid"

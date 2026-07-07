@@ -5,6 +5,7 @@ import User from "@/models/User";
 import { requireAdmin } from "@/lib/require-admin";
 import { getSessionFromCookies } from "@/lib/auth-server";
 import { createAuditLog } from "@/lib/audit";
+import { processActivationIncomes } from "@/lib/binaryMatching";
 
 export const dynamic = "force-dynamic";
 
@@ -137,8 +138,7 @@ export async function PATCH(req: NextRequest) {
   pin.usedAt = new Date();
   await pin.save();
 
-  // Activate user account
-  user.isActive = true;
+  // Set flags on user first
   if (pin.type === "free") {
     user.isPremium = false;
     user.activatedByFreePin = true;
@@ -147,6 +147,9 @@ export async function PATCH(req: NextRequest) {
     user.activatedByFreePin = false;
   }
   await user.save();
+
+  // Activate user account and calculate commissions/matching
+  await processActivationIncomes(user.memberId);
 
   createAuditLog(req, {
     actorId: session.memberId,

@@ -20,11 +20,21 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
-  const [siteSettings, setSiteSettings] = useState({ websiteEnabled: true, maintenanceMessage: "" });
+  const [siteSettings, setSiteSettings] = useState({ 
+    websiteEnabled: true, 
+    maintenanceMessage: "",
+    maintenanceModeActive: false,
+    secretMaintenanceMessage: ""
+  });
 
   useEffect(() => {
     fetch("/api/settings").then((r) => r.json()).then(setSiteSettings).catch(() => {});
-  }, []);
+    
+    const errorParam = params.get("error");
+    if (errorParam) {
+      toast.error(errorParam, { duration: 6000 });
+    }
+  }, [params]);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -66,13 +76,30 @@ export default function RegisterPage() {
 
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.fullName || !form.mobile || !form.email || form.password.length < 6) {
-      toast.error("Fill all fields — password needs 6+ characters"); return;
-    }
-    if (form.sponsorId && sponsorError) { toast.error("Please enter a valid referral code or clear the field"); return; }
-    if (form.sponsorId && validatingSponsor) { toast.error("Validating referral code... please wait."); return; }
     setLoading(true);
     try {
+      const settingsRes = await fetch("/api/settings").then((r) => r.json()).catch(() => ({}));
+      if (settingsRes.maintenanceModeActive) {
+        toast.error(settingsRes.secretMaintenanceMessage || "Registration is temporarily closed.", { duration: 6000 });
+        setLoading(false);
+        return;
+      }
+      if (!form.fullName || !form.mobile || !form.email || form.password.length < 6) {
+        toast.error("Fill all fields — password needs 6+ characters");
+        setLoading(false);
+        return;
+      }
+      if (form.sponsorId && sponsorError) {
+        toast.error("Please enter a valid referral code or clear the field");
+        setLoading(false);
+        return;
+      }
+      if (form.sponsorId && validatingSponsor) {
+        toast.error("Validating referral code... please wait.");
+        setLoading(false);
+        return;
+      }
+
       // Send OTP only — Firebase account is created server-side after OTP verification.
       // This prevents incomplete registrations from permanently blocking the email.
       const res = await fetch("/api/auth/send-otp", {
@@ -92,6 +119,12 @@ export default function RegisterPage() {
     if (cooldown > 0 || loading) return;
     setLoading(true);
     try {
+      const settingsRes = await fetch("/api/settings").then((r) => r.json()).catch(() => ({}));
+      if (settingsRes.maintenanceModeActive) {
+        toast.error(settingsRes.secretMaintenanceMessage || "Registration is temporarily closed.", { duration: 6000 });
+        setLoading(false);
+        return;
+      }
       const res = await fetch("/api/auth/send-otp", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email, purpose: "register" }),
@@ -107,9 +140,19 @@ export default function RegisterPage() {
 
   async function handleVerifyAndRegister(e: React.FormEvent) {
     e.preventDefault();
-    if (form.otp.length !== 6) { toast.error("Enter the 6-digit OTP"); return; }
     setLoading(true);
     try {
+      const settingsRes = await fetch("/api/settings").then((r) => r.json()).catch(() => ({}));
+      if (settingsRes.maintenanceModeActive) {
+        toast.error(settingsRes.secretMaintenanceMessage || "Registration is temporarily closed.", { duration: 6000 });
+        setLoading(false);
+        return;
+      }
+      if (form.otp.length !== 6) {
+        toast.error("Enter the 6-digit OTP");
+        setLoading(false);
+        return;
+      }
       // Send password instead of firebaseIdToken — server creates Firebase account after OTP is verified.
       const res = await fetch("/api/auth/register", {
         method: "POST", headers: { "Content-Type": "application/json" },

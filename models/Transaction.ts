@@ -38,6 +38,14 @@ const TransactionSchema = new Schema(
     receiverMemberId: { type: String, default: "" }, // for p2p transfers
     senderName: { type: String, default: "" },
     receiverName: { type: String, default: "" },
+
+    // Binary matching metadata
+    leftActiveCount: { type: Number, default: 0 },
+    rightActiveCount: { type: Number, default: 0 },
+    matchedPairs: { type: Number, default: 0 },
+    perPairIncome: { type: Number, default: 0 },
+    carryForwardLeft: { type: Number, default: 0 },
+    carryForwardRight: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

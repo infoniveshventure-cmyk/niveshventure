@@ -43,6 +43,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function refreshProfile() {
     try {
       const res = await fetch("/api/user/me", { cache: "no-store" });
+      if (res.status === 503) {
+        const data = await res.json();
+        const { signOut } = await import("@/lib/firebase");
+        await signOut(auth).catch(() => {});
+        await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        setProfile(null);
+        window.location.href = `/login?error=${encodeURIComponent(data.error || "System is under maintenance")}`;
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setProfile(data.user);
@@ -54,6 +63,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const res = await fetch("/api/auth/me", { cache: "no-store" });
+      if (res.status === 503) {
+        const data = await res.json();
+        const { signOut } = await import("@/lib/firebase");
+        await signOut(auth).catch(() => {});
+        await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        setProfile(null);
+        window.location.href = `/login?error=${encodeURIComponent(data.error || "System is under maintenance")}`;
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setProfile(data.user);

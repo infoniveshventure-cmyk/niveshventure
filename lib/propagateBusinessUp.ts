@@ -66,7 +66,7 @@ export async function propagateBusinessUp(
             },
           },
         ],
-        { new: false } // we don't need the returned doc — fire-and-forget style
+        { new: false, updatePipeline: true } // we don't need the returned doc — fire-and-forget style
       );
     } else {
       await User.findOneAndUpdate(
@@ -85,7 +85,7 @@ export async function propagateBusinessUp(
             },
           },
         ],
-        { new: false }
+        { new: false, updatePipeline: true }
       );
     }
 

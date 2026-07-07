@@ -35,8 +35,13 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const settings = await WebsiteSettings.findOne({ key: "singleton" });
-    if (settings && settings.websiteEnabled === false) {
-      return NextResponse.json({ error: settings.maintenanceMessage || "Registration is temporarily closed." }, { status: 503 });
+    if (settings) {
+      if (settings.maintenanceMode === false) {
+        return NextResponse.json({ error: settings.secretMaintenanceMessage || "Registration is temporarily closed." }, { status: 503 });
+      }
+      if (settings.websiteEnabled === false) {
+        return NextResponse.json({ error: settings.maintenanceMessage || "Registration is temporarily closed." }, { status: 503 });
+      }
     }
 
     // 1. Verify OTP first — before creating any Firebase account.

@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   try {
-    const { amount, walletType = "main" } = await req.json();
+    const { amount, walletType = "main", targetMemberId } = await req.json();
     if (!amount || amount < MIN_INVESTMENT) {
       return NextResponse.json({ error: `Minimum investment is $${MIN_INVESTMENT}` }, { status: 400 });
     }
@@ -75,53 +75,108 @@ export async function POST(req: NextRequest) {
     }
 
     await connectDB();
-    const user = await User.findOne({ memberId: session.memberId });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const payer = await User.findOne({ memberId: session.memberId });
+    if (!payer) return NextResponse.json({ error: "Payer user not found" }, { status: 404 });
 
-    const currentBalance = (user as any)[walletInfo.field] ?? 0;
+    const currentBalance = (payer as any)[walletInfo.field] ?? 0;
     if (currentBalance < amount) {
       return NextResponse.json({ error: `Insufficient balance in ${walletInfo.label}` }, { status: 400 });
+    }
+
+    let targetUser = payer;
+    if (targetMemberId && targetMemberId.trim() !== session.memberId) {
+      targetUser = await User.findOne({ memberId: targetMemberId.trim() });
+      if (!targetUser) {
+        return NextResponse.json({ error: "Target user not found" }, { status: 404 });
+      }
     }
 
     const lockInEndsAt = new Date();
     lockInEndsAt.setMonth(lockInEndsAt.getMonth() + LOCK_IN_MONTHS);
 
     const investment = await Investment.create({
-      memberId: user.memberId,
+      memberId: targetUser.memberId,
       amount,
       lockInEndsAt,
       walletUsed: walletType,
     });
 
-    // Deduct from selected wallet and increment total investment volume
-    (user as any)[walletInfo.field] = currentBalance - amount;
-    user.totalInvestment = (user.totalInvestment || 0) + amount;
-    await user.save();
+    // Deduct from payer's selected wallet
+    (payer as any)[walletInfo.field] = currentBalance - amount;
+    await payer.save();
 
-    // Propagate this investment amount up the entire binary-tree upline chain
-    // so every ancestor's leftCurrentBusiness / rightCurrentBusiness is updated
-    // in the database immediately — no manual refresh needed.
-    await propagateBusinessUp(user.memberId, amount);
+    // Increment target user's total investment volume
+    targetUser.totalInvestment = (targetUser.totalInvestment || 0) + amount;
+    await targetUser.save();
 
-    const tx = await Transaction.create({
-      memberId: user.memberId,
-      type: "investment",
-      direction: "debit",
+    // Propagate this investment amount up the entire binary-tree upline chain starting from the target user
+    await propagateBusinessUp(targetUser.memberId, amount);
+
+    // Record transactions
+    if (targetUser.memberId === payer.memberId) {
+      // Self investment
+      await Transaction.create({
+        memberId: payer.memberId,
+        type: "investment",
+        direction: "debit",
+        amount,
+        currency: "USDT",
+        walletType,
+        status: "completed",
+        note: `Nivesh investment using ${walletInfo.label}`,
+        referenceId: investment._id.toString(),
+      });
+    } else {
+      // Invest in another account
+      // Payer's transaction: Debit
+      await Transaction.create({
+        memberId: payer.memberId,
+        type: "investment",
+        direction: "debit",
+        amount,
+        currency: "USDT",
+        walletType,
+        status: "completed",
+        note: `Invested in another account: ${targetUser.fullName} (${targetUser.memberId}) using ${walletInfo.label}`,
+        referenceId: investment._id.toString(),
+        senderMemberId: payer.memberId,
+        senderName: payer.fullName,
+        receiverMemberId: targetUser.memberId,
+        receiverName: targetUser.fullName,
+      });
+
+      // Target's transaction: Credit
+      await Transaction.create({
+        memberId: targetUser.memberId,
+        type: "investment",
+        direction: "credit",
+        amount,
+        currency: "USDT",
+        walletType,
+        status: "completed",
+        note: `Received investment from ${payer.fullName} (${payer.memberId}) using ${walletInfo.label}`,
+        referenceId: investment._id.toString(),
+        senderMemberId: payer.memberId,
+        senderName: payer.fullName,
+        receiverMemberId: targetUser.memberId,
+        receiverName: targetUser.fullName,
+      });
+    }
+
+    await BusinessHistory.create({
+      memberId: targetUser.memberId,
+      kind: "nivesh",
       amount,
-      currency: "USDT",
-      walletType,
-      status: "completed",
-      note: `Nivesh investment using ${walletInfo.label}`,
-      referenceId: investment._id.toString(),
+      note: targetUser.memberId === payer.memberId
+        ? `Investment using ${walletInfo.label}`
+        : `Investment by payer ${payer.fullName} (${payer.memberId})`,
     });
-
-    await BusinessHistory.create({ memberId: user.memberId, kind: "nivesh", amount, note: `Investment using ${walletInfo.label}` });
 
     return NextResponse.json({
       success: true,
       investment: {
         ...investment.toObject(),
-        balanceAfter: (user as any)[walletInfo.field],
+        balanceAfter: (payer as any)[walletInfo.field],
       },
     });
   } catch (err: any) {

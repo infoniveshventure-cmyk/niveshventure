@@ -378,15 +378,81 @@ export default function TeamPage() {
     setIsDragging(false);
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomFactor = 0.05;
-    if (e.deltaY < 0) {
-      setZoom((z) => Math.min(2, z + zoomFactor));
-    } else {
-      setZoom((z) => Math.max(0.3, z - zoomFactor));
+  // Touch panning and pinch zoom state
+  const touchStart = useRef({ x: 0, y: 0 });
+  const initialTouchDistance = useRef<number | null>(null);
+  const initialZoom = useRef<number>(1);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      touchStart.current = {
+        x: e.touches[0].clientX - pan.x,
+        y: e.touches[0].clientY - pan.y,
+      };
+      initialTouchDistance.current = null;
+    } else if (e.touches.length === 2) {
+      setIsDragging(false);
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      initialTouchDistance.current = dist;
+      initialZoom.current = zoom;
     }
   };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isDragging) {
+      setPan({
+        x: e.touches[0].clientX - touchStart.current.x,
+        y: e.touches[0].clientY - touchStart.current.y,
+      });
+    } else if (e.touches.length === 2 && initialTouchDistance.current !== null) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = dist / initialTouchDistance.current;
+      const newZoom = Math.max(0.3, Math.min(2, initialZoom.current * ratio));
+      setZoom(newZoom);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    initialTouchDistance.current = null;
+  };
+
+  // Prevent default scroll behavior while interacting with canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomFactor = 0.05;
+      if (e.deltaY < 0) {
+        setZoom((z) => Math.min(2, z + zoomFactor));
+      } else {
+        setZoom((z) => Math.max(0.3, z - zoomFactor));
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+
+    return () => {
+      canvas.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("touchmove", onTouchMove);
+    };
+  }, []);
 
   const handleZoomIn = () => setZoom((z) => Math.min(2, z + 0.1));
   const handleZoomOut = () => setZoom((z) => Math.max(0.3, z - 0.1));
@@ -521,14 +587,15 @@ export default function TeamPage() {
         </div>
       </div>
 
-      {/* Canvas Viewport */}
       <div
         ref={canvasRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUpOrLeave}
         onMouseLeave={handleMouseUpOrLeave}
-        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         className="relative w-full h-[580px] rounded-2xl overflow-hidden bg-[#424242] border border-[#555] select-none cursor-grab active:cursor-grabbing text-white"
       >
         {/* Top Info Banner - Exactly matching screenshot */}
