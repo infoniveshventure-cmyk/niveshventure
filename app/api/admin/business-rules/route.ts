@@ -37,15 +37,24 @@ const DEFAULT_RULES = [
   { key: "withdrawal_fee_pct", category: "general", label: "Withdrawal Fee %", value: 5, type: "percentage", min: 0, max: 20, unit: "%" },
 ];
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const { searchParams } = new URL(req.url);
+  const getDeleted = searchParams.get("deleted") === "true";
+
+  await connectDB();
+
+  if (getDeleted) {
+    const DeletedRuleLog = (await import("@/models/DeletedRuleLog")).default;
+    const logs = await DeletedRuleLog.find({}).sort({ createdAt: -1 }).lean();
+    return NextResponse.json({ logs });
+  }
 
   const cacheKey = "business_rules_all";
   const cached = appCache.get(cacheKey);
   if (cached) return NextResponse.json(cached);
-
-  await connectDB();
 
   let rules = await BusinessRule.find({}).sort({ category: 1, key: 1 }).lean();
 
@@ -75,22 +84,25 @@ export async function PATCH(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const body = await req.json();
-  const { key, value, note } = body;
+  const { key, value, label, category, type, min, max, unit, description, isEditable, note } = body;
 
-  if (!key || value === undefined)
-    return NextResponse.json({ error: "key and value are required" }, { status: 400 });
+  if (!key)
+    return NextResponse.json({ error: "key is required" }, { status: 400 });
 
   await connectDB();
 
   const rule = await BusinessRule.findOne({ key });
   if (!rule) return NextResponse.json({ error: "Rule not found" }, { status: 404 });
-  if (!rule.isEditable) return NextResponse.json({ error: "This rule is locked and cannot be edited" }, { status: 403 });
 
-  // Validate range
-  if (rule.min !== null && Number(value) < rule.min)
-    return NextResponse.json({ error: `Value must be at least ${rule.min}` }, { status: 400 });
-  if (rule.max !== null && Number(value) > rule.max)
-    return NextResponse.json({ error: `Value must be at most ${rule.max}` }, { status: 400 });
+  // Validate range if value is updated and min/max are defined
+  const targetMin = min !== undefined ? (min === "" || min === null ? null : Number(min)) : rule.min;
+  const targetMax = max !== undefined ? (max === "" || max === null ? null : Number(max)) : rule.max;
+  const targetValue = value !== undefined ? (type === "boolean" ? value : type === "string" ? value : Number(value)) : rule.value;
+
+  if (targetMin !== null && typeof targetValue === "number" && targetValue < targetMin)
+    return NextResponse.json({ error: `Value must be at least ${targetMin}` }, { status: 400 });
+  if (targetMax !== null && typeof targetValue === "number" && targetValue > targetMax)
+    return NextResponse.json({ error: `Value must be at most ${targetMax}` }, { status: 400 });
 
   const adminUser = await User.findOne({ memberId: session.memberId }).select("fullName").lean();
   const adminName = (adminUser as any)?.fullName || session.memberId;
@@ -98,7 +110,17 @@ export async function PATCH(req: NextRequest) {
   // Keep history (last 10)
   const historyEntry = { previousValue: rule.value, changedBy: adminName, changedAt: new Date(), note: note || "" };
   rule.history = [historyEntry, ...(rule.history || [])].slice(0, 10);
-  rule.value = value;
+  
+  if (value !== undefined) rule.value = targetValue;
+  if (label !== undefined) rule.label = label;
+  if (category !== undefined) rule.category = category;
+  if (type !== undefined) rule.type = type;
+  if (min !== undefined) rule.min = min === "" || min === null ? null : Number(min);
+  if (max !== undefined) rule.max = max === "" || max === null ? null : Number(max);
+  if (unit !== undefined) rule.unit = unit;
+  if (description !== undefined) rule.description = description;
+  if (isEditable !== undefined) rule.isEditable = isEditable;
+
   rule.updatedBy = adminName;
   await rule.save();
 
@@ -112,9 +134,59 @@ export async function PATCH(req: NextRequest) {
     actionType: "rule_update",
     resourceType: "BusinessRule",
     resourceId: key,
-    metadata: { previousValue: historyEntry.previousValue, newValue: value, note },
+    metadata: { previousValue: historyEntry.previousValue, newValue: rule.value, note },
     severity: "warning",
   });
 
   return NextResponse.json({ success: true, rule });
+}
+
+export async function DELETE(req: NextRequest) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
+
+  const session = await getSessionFromCookies();
+  if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const key = searchParams.get("key");
+
+  if (!key) return NextResponse.json({ error: "Rule key is required" }, { status: 400 });
+
+  await connectDB();
+
+  const rule = await BusinessRule.findOne({ key });
+  if (!rule) return NextResponse.json({ error: "Rule not found" }, { status: 404 });
+
+  const adminUser = await User.findOne({ memberId: session.memberId }).select("fullName").lean();
+  const adminName = (adminUser as any)?.fullName || session.memberId;
+
+  // Save to DeletedRuleLog
+  const DeletedRuleLog = (await import("@/models/DeletedRuleLog")).default;
+  await DeletedRuleLog.create({
+    key: rule.key,
+    label: rule.label,
+    deletedByAdminId: session.memberId,
+    deletedByAdminName: adminName,
+    previousData: rule.toObject ? rule.toObject() : rule,
+  });
+
+  // Delete the rule
+  await BusinessRule.deleteOne({ key });
+
+  // Bust cache
+  appCache.flush("business_rules");
+
+  createAuditLog(req, {
+    actorId: session.memberId,
+    actorRole: "admin",
+    actorName: adminName,
+    actionType: "rule_delete",
+    resourceType: "BusinessRule",
+    resourceId: key,
+    metadata: { rule: rule.toObject ? rule.toObject() : rule },
+    severity: "warning",
+  });
+
+  return NextResponse.json({ success: true });
 }
