@@ -152,10 +152,28 @@ body {
   backdrop-filter: blur(12px);
   transition: all 0.3s;
 }
+a.btn-landing-ghost,
+a.btn-landing-ghost:link,
+a.btn-landing-ghost:visited,
+a.btn-landing-ghost:hover,
+a.btn-landing-ghost:active {
+  color: white !important;
+  text-decoration: none;
+}
 .btn-landing-ghost:hover {
   border-color: rgba(123,92,255,0.5);
   background: rgba(123,92,255,0.1);
   box-shadow: 0 0 20px rgba(123,92,255,0.2);
+}
+
+/* Prevent browser default link color in landing header */
+header a,
+header a:link,
+header a:visited {
+  text-decoration: none;
+}
+header a span {
+  color: inherit;
 }
 
 .landing-card {

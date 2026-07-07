@@ -62,8 +62,8 @@ export default function LandingHeader() {
             <Image src="/logo1.png" alt="Nivesh Ventures" width={24} height={24} className="object-contain md:w-[30px] md:h-[30px]" />
           </div>
           <div className="flex items-baseline gap-0.5 md:gap-1">
-            <span className="font-display font-bold text-xs md:text-base tracking-[0.12em] text-white">NIVESH</span>
-            <span className="font-display font-bold text-xs md:text-base tracking-[0.12em] text-neon-cyan">VENTURES</span>
+            <span className="font-display font-bold text-xs md:text-base tracking-[0.12em] text-white" style={{ color: 'white' }}>NIVESH</span>
+            <span className="font-display font-bold text-xs md:text-base tracking-[0.12em] text-neon-cyan" style={{ color: '#00E5FF' }}>VENTURES</span>
           </div>
         </a>
 

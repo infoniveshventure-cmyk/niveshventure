@@ -78,6 +78,7 @@ export default function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-neon-violet/30 bg-neon-violet/10 text-sm md:text-base text-neon-cyan font-medium"
+              style={{ color: '#00E5FF' }}
             >
               <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
               Trusted by 50,000+ Investors Worldwide
@@ -111,7 +112,8 @@ export default function HeroSection() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="border-l-2 border-neon-violet pl-3 md:pl-5 italic text-ink-muted text-sm md:text-base"
+              className="border-l-2 border-neon-violet pl-3 md:pl-5 italic text-white text-sm md:text-base"
+              style={{ color: 'rgba(255,255,255,0.75)' }}
             >
               "Your journey starts today. Every successful investment begins with one confident step."
             </motion.blockquote>
@@ -127,7 +129,7 @@ export default function HeroSection() {
                 Get Started Free
                 <ArrowRight size={16} className="md:w-[18px] md:h-[18px]" />
               </Link>
-              <Link href="/login" className="btn-landing-ghost text-white inline-flex items-center gap-1.5 md:gap-2.5 text-sm md:text-lg">
+              <Link href="/login" className="btn-landing-ghost text-white inline-flex items-center gap-1.5 md:gap-2.5 text-sm md:text-lg" style={{ color: 'white' }}>
                 Login to Dashboard
               </Link>
             </motion.div>

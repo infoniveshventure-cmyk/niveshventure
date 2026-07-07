@@ -12,7 +12,7 @@ cp .env.example .env
 ## github repo repush  :
 ```
 git add .
-git commit -m "transection module fix"
+git commit -m "transaction module fix"
 git push -u origin main
 ```
 
