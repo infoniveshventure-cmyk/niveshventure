@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import toast from "react-hot-toast";
 import PasswordInput from "@/components/ui/PasswordInput";
+import TransactionHistory, { TxRecord } from "@/components/TransactionHistory";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function WithdrawalPage() {
-  const [mode, setMode] = useState<"INR" | "USDT">("USDT");
+  const { profile } = useAuth();
+  const [mode, setMode] = useState<"USDT" | "INR">("USDT");
   const [kind, setKind] = useState<"earning" | "capital">("earning");
   const [amount, setAmount] = useState("");
   const [accessKey, setAccessKey] = useState("");
@@ -16,9 +19,15 @@ export default function WithdrawalPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [withdrawalsEnabled, setWithdrawalsEnabled] = useState(true);
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [txHistory, setTxHistory] = useState<TxRecord[]>([]);
+  const [txLoading, setTxLoading] = useState(true);
 
   function loadHistory() {
     fetch("/api/withdrawal", { cache: "no-store" }).then((r) => r.json()).then((d) => setHistory(d.withdrawals || []));
+    fetch("/api/transactions?type=withdrawal", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setTxHistory(d.transactions || []))
+      .finally(() => setTxLoading(false));
   }
   
   useEffect(() => {
@@ -82,7 +91,7 @@ export default function WithdrawalPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <form onSubmit={handleSubmit} className="glass-card p-6 space-y-3">
             <h2 className="font-display font-semibold mb-1">Request Withdrawal</h2>
-            <p className="text-xs text-ink-muted mb-3">Minimum 10 USDT for earnings. 3% processing charge applies.</p>
+            <p className="text-xs text-ink-muted mb-3">Minimum $10 for earnings. 3% processing charge applies.</p>
 
             <div className="flex gap-3">
               {(["earning", "capital"] as const).map((k) => (
@@ -105,7 +114,7 @@ export default function WithdrawalPage() {
               ))}
             </div>
 
-            <input className="input-field" type="number" placeholder="Withdrawal amount" value={amount}
+            <input className="input-field" type="number" placeholder="Withdrawal amount ($)" value={amount}
               onChange={(e) => setAmount(e.target.value)} />
 
             {mode === "USDT" ? (
@@ -129,8 +138,14 @@ export default function WithdrawalPage() {
 
             {numAmount > 0 && (
               <div className="text-xs text-ink-muted bg-base-soft rounded-xl p-3 space-y-1">
-                <div className="flex justify-between"><span>Processing charge (3%)</span><span>{charge}</span></div>
-                <div className="flex justify-between text-neon-green font-medium"><span>Net payable</span><span>{net}</span></div>
+                <div className="flex justify-between"><span>Processing charge (3%)</span><span>${charge}</span></div>
+                <div className="flex justify-between text-neon-green font-medium"><span>Net payable</span><span>${net}</span></div>
+                {mode === "INR" && (
+                  <div className="flex justify-between text-neon-cyan font-bold pt-1 border-t border-white/5 mt-1">
+                    <span>Estimated INR Payout (1 USD = ₹90)</span>
+                    <span>₹{(net * 90).toLocaleString()}</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -140,7 +155,7 @@ export default function WithdrawalPage() {
           </form>
 
           <div className="glass-card p-6">
-            <h2 className="font-display font-semibold mb-4">Withdrawal History</h2>
+            <h2 className="font-display font-semibold mb-4">Withdrawal Requests</h2>
             {!history.length ? (
               <p className="text-sm text-ink-muted py-8 text-center">No withdrawal requests yet.</p>
             ) : (
@@ -148,7 +163,7 @@ export default function WithdrawalPage() {
                 {history.map((w) => (
                   <div key={w._id} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
                     <div>
-                      <p className="text-sm font-medium">{w.mode} · {w.amount}</p>
+                      <p className="text-sm font-medium">{w.mode} · ${w.amount}</p>
                       <p className="text-xs text-ink-muted">{new Date(w.createdAt).toLocaleDateString()}</p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
@@ -162,6 +177,17 @@ export default function WithdrawalPage() {
           </div>
         </div>
       )}
+
+      {/* Full Transaction History */}
+      <div className="mt-6">
+        <TransactionHistory
+          title="Withdrawal Transaction History"
+          transactions={txHistory}
+          loading={txLoading}
+          currentUserName={profile?.fullName || ""}
+          emptyMessage="No withdrawal transactions yet."
+        />
+      </div>
     </DashboardShell>
   );
 }

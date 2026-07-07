@@ -20,6 +20,12 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [siteSettings, setSiteSettings] = useState({ websiteEnabled: true, maintenanceMessage: "" });
+
+  useEffect(() => {
+    fetch("/api/settings").then((r) => r.json()).then(setSiteSettings).catch(() => {});
+  }, []);
+
   const [form, setForm] = useState({
     fullName: "",
     mobile: "",
@@ -142,21 +148,23 @@ export default function RegisterPage() {
           <p className="auth-brand-tagline">TOGETHER WE GROW</p> */}
         </div>
 
-        {/* Step indicator */}
-        <div className="flex items-center justify-center gap-3 mb-5">
-          <div className={`auth-step-dot ${step === 1 ? "active" : "done"}`}>
-            {step > 1 ? "✓" : "1"}
-          </div>
-          <div className={`auth-step-line ${step === 2 ? "active" : ""}`} />
-          <div className={`auth-step-dot ${step === 2 ? "active" : ""}`}>2</div>
-        </div>
+        {siteSettings.websiteEnabled ? (
+          <>
+            {/* Step indicator */}
+            <div className="flex items-center justify-center gap-3 mb-5">
+              <div className={`auth-step-dot ${step === 1 ? "active" : "done"}`}>
+                {step > 1 ? "✓" : "1"}
+              </div>
+              <div className={`auth-step-line ${step === 2 ? "active" : ""}`} />
+              <div className={`auth-step-dot ${step === 2 ? "active" : ""}`}>2</div>
+            </div>
 
-        <h1 className="auth-heading">{step === 1 ? "Register" : "Verify Email"}</h1>
-        <p className="auth-subheading">
-          {step === 1 ? "CREATE YOUR ACCOUNT — STEP 1 OF 2" : "ENTER THE OTP SENT TO YOUR GMAIL"}
-        </p>
+            <h1 className="auth-heading">{step === 1 ? "Register" : "Verify Email"}</h1>
+            <p className="auth-subheading">
+              {step === 1 ? "CREATE YOUR ACCOUNT — STEP 1 OF 2" : "ENTER THE OTP SENT TO YOUR GMAIL"}
+            </p>
 
-        <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.form
               key="step1"
@@ -340,6 +348,22 @@ export default function RegisterPage() {
           Already registered?{" "}
           <Link href="/login" className="auth-link font-semibold">Log in</Link>
         </p>
+          </>
+        ) : (
+          <div className="text-center space-y-4">
+            <h1 className="auth-heading text-neon-magenta">Maintenance Mode</h1>
+            <div className="bg-neon-magenta/15 border border-neon-magenta/30 rounded-xl p-4 my-4 animate-pulse">
+              <p className="text-xs font-bold text-neon-magenta uppercase tracking-wider mb-2">⚠️ Registration Blocked</p>
+              <p className="text-xs text-white leading-relaxed">{siteSettings.maintenanceMessage}</p>
+            </div>
+            <p className="text-sm text-white/40">
+              Please try again later. If you are an administrator, you can log in below:
+            </p>
+            <Link href="/login" className="btn-primary w-full inline-block py-2.5 rounded-xl text-center text-sm font-semibold transition-all">
+              Go to Admin Login
+            </Link>
+          </div>
+        )}
       </motion.div>
       </div>
 

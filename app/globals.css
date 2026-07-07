@@ -145,7 +145,7 @@ body {
   padding: 0.875rem 2rem;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: white;
+  color: white !important;
   border-radius: 0.875rem;
   border: 1px solid rgba(255,255,255,0.15);
   background: rgba(255,255,255,0.04);
@@ -416,5 +416,11 @@ body {
   border-color: #00B4FF;
   background: #00B4FF;
   box-shadow: 0 0 8px rgba(0,180,255,0.5);
+}
+
+/* Calendar Date Picker Icon Color */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(100%) !important;
+  cursor: pointer;
 }
 

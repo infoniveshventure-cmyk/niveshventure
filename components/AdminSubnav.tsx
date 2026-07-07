@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/members", label: "Members" },
-  { href: "/admin/premium", label: "Premium Members" },
   { href: "/admin/withdrawals", label: "Withdrawals" },
   { href: "/admin/deposits", label: "Deposits" },
   { href: "/admin/kyc", label: "KYC" },
   { href: "/admin/commission", label: "Commission" },
   { href: "/admin/monthly-closing", label: "Monthly Closing" },
+  { href: "/admin/income-distribution", label: "Income Distribution" },
   { href: "/admin/rewards", label: "Rewards" },
   { href: "/admin/share-tree", label: "Share Tree" },
   { href: "/admin/notices", label: "Notices" },

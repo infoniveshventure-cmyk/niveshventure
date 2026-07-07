@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const settings = await WebsiteSettings.findOne({ key: "singleton" });
-    if (settings && settings.maintenanceMode === false) {
-      return NextResponse.json({ error: "Registration is closed for maintenance. Try again later." }, { status: 503 });
+    if (settings && settings.websiteEnabled === false) {
+      return NextResponse.json({ error: settings.maintenanceMessage || "Registration is temporarily closed." }, { status: 503 });
     }
 
     // Verify Firebase identity (email/password account already created client-side).

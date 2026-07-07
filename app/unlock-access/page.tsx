@@ -5,7 +5,7 @@ import DashboardShell from "@/components/DashboardShell";
 import { useAuth } from "@/lib/AuthContext";
 import toast from "react-hot-toast";
 import { Unlock, ShieldAlert, Sparkles, Clock } from "lucide-react";
-import { currencySymbol } from "@/lib/currency";
+import TransactionHistory, { TxRecord } from "@/components/TransactionHistory";
 
 export default function UnlockAccessPage() {
   const { profile, refreshProfile } = useAuth();
@@ -13,16 +13,19 @@ export default function UnlockAccessPage() {
   const [busy, setBusy] = useState(false);
   const [countdown, setCountdown] = useState("");
   const [isExpired, setIsExpired] = useState(true);
+  const [txHistory, setTxHistory] = useState<TxRecord[]>([]);
+  const [txLoading, setTxLoading] = useState(true);
 
   function load() {
     fetch("/api/unlock-access", { cache: "no-store" }).then((r) => r.json()).then(setStatus);
+    fetch("/api/transactions?type=activation", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setTxHistory(d.transactions || []))
+      .finally(() => setTxLoading(false));
   }
   
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  // Countdown timer logic
   useEffect(() => {
     if (!status?.accessExpiresAt) {
       setCountdown("");
@@ -49,10 +52,16 @@ export default function UnlockAccessPage() {
     return () => clearInterval(interval);
   }, [status]);
 
+  const [selectedWallet, setSelectedWallet] = useState("main");
+
   async function renew() {
     setBusy(true);
     try {
-      const res = await fetch("/api/unlock-access", { method: "POST" });
+      const res = await fetch("/api/unlock-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletType: selectedWallet }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       toast.success("Access renewed for 365 days");
@@ -75,7 +84,6 @@ export default function UnlockAccessPage() {
       </div>
 
       <div className="glass-card p-8 max-w-lg text-center border border-white/10 relative overflow-hidden bg-gradient-to-b from-white/5 to-transparent">
-        {/* Glow effect */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-neon-cyan/20 rounded-full filter blur-3xl"></div>
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-neon-violet/20 rounded-full filter blur-3xl"></div>
 
@@ -106,12 +114,33 @@ export default function UnlockAccessPage() {
           </div>
         </div>
 
+        {/* Wallet Selector for Account Activation */}
+        {!status?.isActive && status?.wallets && (
+          <div className="mb-6 text-left">
+            <label className="text-xs text-ink-muted block mb-1.5 font-medium">Select Wallet to Pay From</label>
+            <div className="relative">
+              <select
+                className="input-field w-full appearance-none pr-8 text-sm"
+                value={selectedWallet}
+                onChange={(e) => setSelectedWallet(e.target.value)}
+              >
+                {status.wallets.map((w: any) => (
+                  <option key={w.key} value={w.key}>
+                    {w.label} (Balance: ${w.balance.toLocaleString()})
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none">▼</div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-neon-violet/10 border border-neon-violet/20 rounded-2xl p-4 mb-8 text-left flex items-start gap-3">
           <ShieldAlert className="text-neon-violet shrink-0 mt-0.5" size={18} />
           <div>
-            <h4 className="text-xs font-semibold text-white">Renewal Information</h4>
+            <h4 className="text-xs font-semibold text-white">Activation Information</h4>
             <p className="text-[11px] text-ink-muted mt-1 leading-relaxed">
-              Renewing your unlock access requires a fee of <span className="text-neon-cyan font-bold">{currencySymbol(profile?.country)}30</span>. This will guarantee account activation eligibility and binary MLM payout structure access for 365 days.
+              Activating your account requires a fee of <span className="text-neon-cyan font-bold">$30</span>. This will guarantee account activation eligibility and binary MLM payout structure access for 365 days.
             </p>
           </div>
         </div>
@@ -125,8 +154,19 @@ export default function UnlockAccessPage() {
               : "btn-primary shadow-neon text-white hover:scale-[1.02]"
           }`}
         >
-          {busy ? "Processing..." : !isExpired && status?.isActive ? "Access Unlocked (Active)" : "Renew Unlock Access"}
+          {busy ? "Processing..." : !isExpired && status?.isActive ? "Access Unlocked (Active)" : `Activate Account ($30)`}
         </button>
+      </div>
+
+      {/* Activation Transaction History */}
+      <div className="mt-6">
+        <TransactionHistory
+          title="Activation History"
+          transactions={txHistory}
+          loading={txLoading}
+          currentUserName={profile?.fullName || ""}
+          emptyMessage="No activation transactions yet."
+        />
       </div>
     </DashboardShell>
   );

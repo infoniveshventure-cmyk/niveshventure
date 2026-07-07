@@ -4,7 +4,7 @@ import { useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import { useAuth } from "@/lib/AuthContext";
 import toast from "react-hot-toast";
-import { KeyRound, Wallet } from "lucide-react";
+import { KeyRound, Wallet, Mail, RefreshCw } from "lucide-react";
 
 import PasswordInput from "@/components/ui/PasswordInput";
 
@@ -25,6 +25,8 @@ export default function SettingsPage() {
 
   const [usdtAddress, setUsdtAddress] = useState("");
   const [walletBusy, setWalletBusy] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   async function requestOtp(purpose: "login_key_change" | "access_key_change") {
     if (!profile?.email) return;
@@ -171,6 +173,45 @@ export default function SettingsPage() {
               Save
             </button>
           </div>
+        </div>
+
+        {/* Resend Keys Section */}
+        <div className="glass-card p-6 lg:col-span-2 border-neon-violet/20">
+          <div className="flex items-center gap-2 mb-1">
+            <Mail size={17} className="text-neon-violet" />
+            <h2 className="font-display font-semibold">Resend My Keys to Email</h2>
+          </div>
+          <p className="text-xs text-ink-muted mb-4">
+            If you lost your Login Key or Access Key, click below to generate new keys and have them sent to your registered email: <span className="text-ink">{profile?.email}</span>
+          </p>
+          {resendSent ? (
+            <div className="bg-neon-green/10 border border-neon-green/20 rounded-xl p-4 text-sm text-neon-green">
+              ✓ New keys have been generated and sent to your email. Check your inbox (and spam folder).
+            </div>
+          ) : (
+            <button
+              disabled={resendBusy}
+              onClick={async () => {
+                if (!confirm("This will REPLACE your current Login Key and Access Key. Your old keys will no longer work. Continue?")) return;
+                setResendBusy(true);
+                try {
+                  const res = await fetch("/api/auth/resend-keys", { method: "POST" });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error);
+                  setResendSent(true);
+                  toast.success("Keys sent to your email!");
+                } catch (err: any) {
+                  toast.error(err.message || "Failed to resend keys");
+                } finally {
+                  setResendBusy(false);
+                }
+              }}
+              className="btn-primary flex items-center gap-2 text-sm"
+            >
+              <RefreshCw size={15} className={resendBusy ? "animate-spin" : ""} />
+              {resendBusy ? "Generating Keys..." : "Generate & Send New Keys"}
+            </button>
+          )}
         </div>
       </div>
     </DashboardShell>

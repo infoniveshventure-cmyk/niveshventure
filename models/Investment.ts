@@ -7,6 +7,7 @@ const InvestmentSchema = new Schema(
     status: { type: String, enum: ["active", "matured", "withdrawn"], default: "active" },
     lockInEndsAt: { type: Date, required: true }, // 11 months from creation
     paymentMode: { type: String, default: "wallet" },
+    walletUsed: { type: String, default: "main" },
   },
   { timestamps: true }
 );

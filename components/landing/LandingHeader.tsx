@@ -10,7 +10,7 @@ const navLinks = [
   { label: "Home", href: "#hero" },
   { label: "About", href: "#about" },
   { label: "Business", href: "#business" },
-  { label: "Income Plan", href: "#income" },
+  { label: "Income", href: "#income" },
   { label: "FAQ", href: "#faq" },
   { label: "Contact", href: "#contact" },
 ];
@@ -41,11 +41,10 @@ export default function LandingHeader() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-500 ${
-        scrolled
-          ? "bg-[#0A0E1A]/90 backdrop-blur-2xl border-b border-white/10 shadow-[0_4px_32px_rgba(0,0,0,0.5)]"
-          : "bg-transparent"
-      }`}
+      className={`sticky top-0 z-50 w-full transition-all duration-500 ${scrolled
+        ? "bg-[#0A0E1A]/90 backdrop-blur-2xl border-b border-white/10 shadow-[0_4px_32px_rgba(0,0,0,0.5)]"
+        : "bg-transparent"
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-4 flex items-center justify-between gap-3">
         {/* Mobile menu toggle (shown below md) - LEFT */}
@@ -60,7 +59,7 @@ export default function LandingHeader() {
         {/* Logo */}
         <a href="#hero" className="flex items-center gap-2 md:gap-3 group flex-shrink-0 md:flex-1">
           <div className="w-8 md:w-10 h-8 md:h-10 rounded-lg md:rounded-xl bg-[#0d1831] border border-white/10 flex items-center justify-center group-hover:border-neon-violet/50 transition-all duration-300 shadow-neon-sm">
-            <Image src="/logo.png" alt="Nivesh Ventures" width={24} height={24} className="object-contain md:w-[30px] md:h-[30px]" />
+            <Image src="/logo1.png" alt="Nivesh Ventures" width={24} height={24} className="object-contain md:w-[30px] md:h-[30px]" />
           </div>
           <div className="flex items-baseline gap-0.5 md:gap-1">
             <span className="font-display font-bold text-xs md:text-base tracking-[0.12em] text-white">NIVESH</span>
@@ -69,12 +68,12 @@ export default function LandingHeader() {
         </a>
 
         {/* Desktop Nav Links */}
-        <nav className="hidden xl:flex items-center gap-7">
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8 flex-1 justify-center">
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="relative text-sm font-medium text-ink-muted hover:text-white transition-colors duration-200 group py-1"
+              className="relative text-base font-medium text-ink-muted hover:text-white transition-colors duration-200 group py-1"
             >
               {link.label}
               <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-gradient-to-r from-neon-violet to-neon-cyan group-hover:w-full transition-all duration-350 rounded-full" />
@@ -84,10 +83,13 @@ export default function LandingHeader() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex lg:flex items-center gap-2 md:gap-3 flex-shrink-0">
-          <Link href="/login" className="btn-landing-ghost !py-1.5 md:!py-2.5 !px-3 md:!px-5 !text-xs md:!text-sm !rounded-lg md:!rounded-xl">
+          <Link
+            href="/login"
+            className="btn-landing-ghost !text-white hover:!text-white !py-1.5 md:!py-2.5 !px-3 md:!px-5 !text-sm md:!text-base !rounded-lg md:!rounded-xl"
+          >
             Login
           </Link>
-          <Link href="/register" className="btn-landing-primary !py-1.5 md:!py-2.5 !px-3 md:!px-5 !text-xs md:!text-sm !rounded-lg md:!rounded-xl landing-glow-pulse">
+          <Link href="/register" className="btn-landing-primary !py-1.5 md:!py-2.5 !px-3 md:!px-5 !text-sm md:!text-base !rounded-lg md:!rounded-xl landing-glow-pulse">
             Get Started
           </Link>
         </div>
@@ -145,15 +147,15 @@ export default function LandingHeader() {
 
             {/* CTA Buttons at bottom */}
             <div className="px-4 py-4 border-t border-white/10 flex flex-col gap-2">
-              <Link 
-                href="/login" 
-                className="btn-landing-ghost !py-2 !px-4 !text-sm !rounded-lg text-center"
+              <Link
+                href="/login"
+                className="btn-landing-ghost text-white !py-2 !px-4 !text-sm !rounded-lg text-center"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Login
               </Link>
-              <Link 
-                href="/register" 
+              <Link
+                href="/register"
                 className="btn-landing-primary !py-2 !px-4 !text-sm !rounded-lg text-center landing-glow-pulse"
                 onClick={() => setMobileMenuOpen(false)}
               >

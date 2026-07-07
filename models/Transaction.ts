@@ -19,6 +19,10 @@ const TransactionSchema = new Schema(
         "p2p_transfer_out",
         "share_reward",
         "refund",
+        "premium_activation",
+        "premium_renewal",
+        "wallet_transfer",
+        "booster_income",
       ],
       required: true,
     },
@@ -27,8 +31,13 @@ const TransactionSchema = new Schema(
     currency: { type: String, enum: ["INR", "USDT"], default: "USDT" },
     status: { type: String, enum: ["pending", "completed", "failed"], default: "completed" },
     note: { type: String, default: "" },
-    walletType: { type: String, default: "main" },
+    description: { type: String, default: "" }, // human-readable remark
+    walletType: { type: String, default: "main" }, // main | booster | nivesh | usdt
     referenceId: { type: String, default: "" },
+    senderMemberId: { type: String, default: "" }, // for p2p transfers
+    receiverMemberId: { type: String, default: "" }, // for p2p transfers
+    senderName: { type: String, default: "" },
+    receiverName: { type: String, default: "" },
   },
   { timestamps: true }
 );

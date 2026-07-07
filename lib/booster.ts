@@ -22,9 +22,6 @@ export async function checkAndAwardBooster(sponsorId: string) {
   // If not active, they cannot receive booster rewards
   if (!sponsor.isActive) return;
 
-  // Sponsor must also be premium
-  if (!sponsor.isPremium) return;
-
   // We can calculate activation date:
   // If accessExpiresAt exists, it is set to VALIDITY_DAYS (365) days from activation date.
   // Therefore, activationDate = accessExpiresAt - 365 days
@@ -101,8 +98,6 @@ export async function checkAndAwardBooster(sponsorId: string) {
   });
 
   if (count >= 5 && !hasLvl2) {
-    // If not premium, they cannot receive booster rewards
-    if (!sponsor.isPremium) return;
 
     sponsor.totalRewardIncome = (sponsor.totalRewardIncome || 0) + 30;
     sponsor.walletBalance = (sponsor.walletBalance || 0) + 30;

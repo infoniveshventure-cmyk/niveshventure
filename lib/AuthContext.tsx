@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { auth, onAuthStateChanged, User as FirebaseUser } from "@/lib/firebase";
 
 type Profile = {
@@ -11,6 +11,9 @@ type Profile = {
   rank: string;
   isActive: boolean;
   walletBalance: number;
+  boosterWalletBalance: number;
+  nivshWalletBalance: number;
+  usdtWalletBalance: number;
   [key: string]: any;
 };
 
@@ -28,10 +31,14 @@ const AuthContext = createContext<AuthState>({
   refreshProfile: async () => {},
 });
 
+// Poll interval in milliseconds (30 seconds for real-time balance updates)
+const POLL_INTERVAL_MS = 30_000;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function refreshProfile() {
     try {
@@ -42,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
     } catch {
-      // ignore and fall back to Firebase-based state
+      // ignore and fall back to auth/me
     }
 
     try {
@@ -59,6 +66,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   }
 
+  function startPolling() {
+    stopPolling();
+    pollRef.current = setInterval(() => {
+      refreshProfile().catch(() => {});
+    }, POLL_INTERVAL_MS);
+  }
+
+  function stopPolling() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }
+
   useEffect(() => {
     let mounted = true;
 
@@ -67,8 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setFirebaseUser(u);
       if (u) {
         await refreshProfile();
+        startPolling();
       } else {
         setProfile(null);
+        stopPolling();
       }
       if (mounted) {
         setLoading(false);
@@ -80,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await refreshProfile();
       if (mounted) {
         setLoading(false);
+        startPolling();
       }
     };
 
@@ -88,7 +112,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
       unsub();
+      stopPolling();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

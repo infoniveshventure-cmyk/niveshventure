@@ -14,8 +14,24 @@ export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function sendOtp(e: React.FormEvent) {
-    e.preventDefault();
+  const [countdown, setCountdown] = useState(0);
+
+  // Starts the 10s cooldown timer
+  function startResendTimer() {
+    setCountdown(10);
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }
+
+  async function sendOtp(e?: React.FormEvent) {
+    if (e) e.preventDefault();
     if (!email) return toast.error("Enter your email");
     setLoading(true);
     try {
@@ -28,6 +44,7 @@ export default function ResetPasswordPage() {
       if (!res.ok) throw new Error(data.error || "Could not send OTP");
       toast.success("OTP sent to your email");
       setStep(2);
+      startResendTimer();
     } catch (err: any) {
       toast.error(err.message || "Failed to send OTP");
     } finally {
@@ -73,7 +90,29 @@ export default function ResetPasswordPage() {
             <input className="input-field" placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value)} />
             <PasswordInput placeholder="New password (6+ chars)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
             <button disabled={loading} className="btn-primary w-full">{loading ? "Updating..." : "Update password"}</button>
-            <button type="button" className="btn-ghost w-full" onClick={() => setStep(1)}>Back</button>
+            
+            {/* Resend OTP button */}
+            <div className="flex justify-between gap-2 pt-1">
+              <button
+                type="button"
+                disabled={loading || countdown > 0}
+                onClick={() => sendOtp()}
+                className={`flex-1 text-xs py-2 rounded-xl border text-center transition ${
+                  countdown > 0
+                    ? "border-white/5 text-ink-muted cursor-not-allowed bg-white/2"
+                    : "border-neon-cyan/30 text-neon-cyan hover:bg-neon-cyan/5"
+                }`}
+              >
+                {countdown > 0 ? `Resend OTP in ${countdown}s` : "Resend OTP"}
+              </button>
+              <button
+                type="button"
+                className="flex-1 text-xs py-2 rounded-xl border border-white/10 text-ink-muted hover:bg-white/5 transition"
+                onClick={() => setStep(1)}
+              >
+                Back
+              </button>
+            </div>
           </form>
         )}
       </div>

@@ -32,7 +32,7 @@ export async function GET() {
     type: `admin_${a.type}`,
     direction: a.type, // credit or debit
     amount: a.amount,
-    currency: "INR",
+    currency: "USDT",
     status: "completed",
     note: a.adminRemarks,
     createdAt: a.createdAt,

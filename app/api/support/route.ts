@@ -5,22 +5,38 @@ import User from "@/models/User";
 import { getSessionFromCookies } from "@/lib/auth-server";
 import { notifyMember, notifyUser } from "@/lib/notification";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getSessionFromCookies();
-  if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  let memberId = session?.memberId;
+  if (!memberId) {
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader && authHeader.startsWith("Bearer temp_support_")) {
+      memberId = authHeader.replace("Bearer ", "");
+    }
+  }
+  if (!memberId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   await connectDB();
-  const tickets = await SupportTicket.find({ memberId: session.memberId }).sort({ createdAt: -1 });
+  const tickets = await SupportTicket.find({ memberId }).sort({ createdAt: -1 });
   return NextResponse.json({ tickets });
 }
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionFromCookies();
-    if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    let memberId = session?.memberId;
 
     const body = await req.json();
-    const { category, subject, message } = body;
+    const { category, subject, message, token } = body;
+
+    if (!memberId) {
+      const authHeader = req.headers.get("Authorization") || token;
+      if (authHeader && (authHeader.startsWith("Bearer temp_support_") || authHeader.startsWith("temp_support_"))) {
+        memberId = authHeader.replace("Bearer ", "").trim();
+      }
+    }
+
+    if (!memberId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     if (!subject || !message) {
       return NextResponse.json({ error: "Subject and message are required" }, { status: 400 });
@@ -31,7 +47,7 @@ export async function POST(req: NextRequest) {
     const titleSubject = category ? `[${category}] ${subject}` : subject;
 
     const ticket = await SupportTicket.create({
-      memberId: session.memberId,
+      memberId,
       subject: titleSubject,
       message,
       status: "pending",
@@ -44,7 +60,7 @@ export async function POST(req: NextRequest) {
         await notifyUser(
           admin._id,
           "New Support Ticket Created",
-          `User ${session.memberId} raised a support ticket: "${subject}"`,
+          `User ${memberId} raised a support ticket: "${subject}"`,
           "support_ticket",
           ticket._id
         );
@@ -55,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     // Notify user themselves
     notifyMember(
-      session.memberId,
+      memberId,
       "Support Ticket Submitted 🎫",
       `Your support ticket "${titleSubject}" has been submitted. Our team will respond soon.`,
       "support_ticket_created",

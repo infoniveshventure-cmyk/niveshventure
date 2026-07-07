@@ -38,7 +38,7 @@ export default function HeroSection() {
     })), []);
 
   return (
-    <section id="hero" className="relative min-h-screen flex items-center overflow-hidden landing-aurora">
+    <section id="hero" className="relative pt-16 md:pt-24 pb-8 md:pb-16 overflow-hidden landing-aurora">
       {/* Grid overlay */}
       <div className="absolute inset-0 landing-grid-overlay opacity-60 pointer-events-none" />
 
@@ -68,7 +68,7 @@ export default function HeroSection() {
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-neon-cyan/8 blur-[80px] pointer-events-none" style={{ animationDelay: "3s" }} />
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 lg:px-12 w-full pt-8 md:pt-20 pb-8 md:pb-16">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 lg:px-12 w-full pt-2 md:pt-4 pb-2 md:pb-4">
         <div className="grid lg:grid-cols-2 gap-8 md:gap-16 items-center">
           {/* Left: Text */}
           <div className="space-y-4 md:space-y-8">
@@ -77,7 +77,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-neon-violet/30 bg-neon-violet/10 text-xs md:text-sm text-neon-cyan font-medium"
+              className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-neon-violet/30 bg-neon-violet/10 text-sm md:text-base text-neon-cyan font-medium"
             >
               <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
               Trusted by 50,000+ Investors Worldwide
@@ -88,7 +88,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}
-              className="text-2xl sm:text-3xl md:text-5xl xl:text-6xl 2xl:text-7xl font-display font-bold leading-[1.1] tracking-tight"
+              className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl 2xl:text-7xl font-display font-bold leading-[1.1] tracking-tight"
             >
               Build Your{" "}
               <span className="gradient-text">Financial Future</span>{" "}
@@ -100,7 +100,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xs md:text-base text-ink-muted leading-relaxed max-w-xl"
+              className="text-sm md:text-lg text-ink-muted leading-relaxed max-w-xl"
             >
               Nivesh Ventures empowers you with multiple income streams — referral bonuses,
               matching commissions, booster rewards, and monthly returns — all in one transparent platform.
@@ -111,7 +111,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="border-l-2 border-neon-violet pl-3 md:pl-5 italic text-ink-muted text-xs md:text-sm"
+              className="border-l-2 border-neon-violet pl-3 md:pl-5 italic text-ink-muted text-sm md:text-base"
             >
               "Your journey starts today. Every successful investment begins with one confident step."
             </motion.blockquote>
@@ -123,11 +123,11 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="flex items-center gap-2 md:gap-4 flex-wrap"
             >
-              <Link href="/register" className="btn-landing-primary inline-flex items-center gap-1.5 md:gap-2.5 text-xs md:text-base landing-glow-pulse">
+              <Link href="/register" className="btn-landing-primary inline-flex items-center gap-1.5 md:gap-2.5 text-sm md:text-lg landing-glow-pulse">
                 Get Started Free
                 <ArrowRight size={16} className="md:w-[18px] md:h-[18px]" />
               </Link>
-              <Link href="/login" className="btn-landing-ghost inline-flex items-center gap-1.5 md:gap-2.5 text-xs md:text-base">
+              <Link href="/login" className="btn-landing-ghost text-white inline-flex items-center gap-1.5 md:gap-2.5 text-sm md:text-lg">
                 Login to Dashboard
               </Link>
             </motion.div>
@@ -145,8 +145,8 @@ export default function HeroSection() {
                 { label: "Countries", value: "50+" },
               ].map((s) => (
                 <div key={s.label}>
-                  <div className="text-lg md:text-xl font-bold text-white">{s.value}</div>
-                  <div className="text-xs md:text-xs text-ink-muted">{s.label}</div>
+                  <div className="text-xl md:text-2xl font-bold text-white">{s.value}</div>
+                  <div className="text-sm text-ink-muted">{s.label}</div>
                 </div>
               ))}
             </motion.div>
@@ -231,8 +231,8 @@ export default function HeroSection() {
                 <div className="w-10 h-10 rounded-full bg-neon-magenta/20 flex items-center justify-center mx-auto mb-2">
                   <BarChart2 size={16} className="text-neon-magenta" />
                 </div>
-                <p className="text-lg font-bold gradient-text">30%</p>
-                <p className="text-[10px] text-ink-muted">Monthly ROI</p>
+                <p className="text-lg font-bold gradient-text">6.0%</p>
+                <p className="text-[10px] text-ink-muted">Monthly ROI Yield</p>
               </div>
             </FloatingCard>
 
@@ -251,7 +251,7 @@ export default function HeroSection() {
               {/* Logo center */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full overflow-hidden flex items-center justify-center pointer-events-none bg-white/5">
                 <Image
-                  src="/logo.png"
+                  src="/logo1.png"
                   alt="Logo"
                   width={160}
                   height={160}
@@ -269,7 +269,7 @@ export default function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-ink-muted"
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-ink-muted"
       >
         <span className="text-xs tracking-widest uppercase">Scroll</span>
         <motion.div

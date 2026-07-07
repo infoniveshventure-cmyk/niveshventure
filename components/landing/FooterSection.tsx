@@ -72,7 +72,7 @@ export default function FooterSection() {
           <div className="md:col-span-2 lg:col-span-2 space-y-6">
             <div className="flex items-center gap-2 md:gap-3">
               <div className="w-8 md:w-10 h-8 md:h-10 rounded-lg md:rounded-xl bg-[#0d1831] border border-white/10 flex items-center justify-center">
-                <Image src="/logo.png" alt="Nivesh Ventures" width={24} height={24} className="object-contain md:w-[30px] md:h-[30px]" />
+                <Image src="/logo1.png" alt="Nivesh Ventures" width={24} height={24} className="object-contain md:w-[30px] md:h-[30px]" />
               </div>
               <div className="flex items-baseline gap-0.5 md:gap-1">
                 <span className="font-display font-bold text-xs md:text-base tracking-[0.12em] text-white">NIVESH</span>

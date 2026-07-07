@@ -38,7 +38,7 @@ const links = [
   { href: "/transfer", label: "P2P Transfer", icon: Send },
   { href: "/rewards", label: "Rank & Reward", icon: Trophy },
   { href: "/team", label: "My Network", icon: Users },
-  { href: "/income", label: "Income", icon: TrendingUp },
+  { href: "/income", label: "My Earnings", icon: TrendingUp },
   { href: "/wallet", label: "Wallet", icon: Wallet },
   { href: "/booster-wallet", label: "Booster Wallet", icon: Zap },
   { href: "/statement", label: "Account Statement", icon: FileText },
@@ -81,7 +81,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
       >
         <div className="flex items-center justify-between px-5 py-5 border-b border-white/10">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Nivesh Ventures" width={36} height={36} className="rounded-lg" />
+            <Image src="/logo1.png" alt="Nivesh Ventures" width={36} height={36} className="rounded-lg" />
             <span className="font-display font-bold tracking-wide">Nivesh Ventures</span>
           </Link>
           <button onClick={onClose} className="lg:hidden text-ink-muted">

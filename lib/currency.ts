@@ -1,17 +1,10 @@
-const symbolMap: Record<string, string> = {
-  India: "₹",
-  Nepal: "Rs",
-  Bangladesh: "৳",
-  "United States": "$",
-  "United Kingdom": "£",
-  "United Arab Emirates": "AED ",
-};
+// Always use $ (USD) for all monetary displays across the entire platform.
+// No country-specific currency symbols are shown.
 
-export function currencySymbol(country?: string) {
-  if (!country) return "$";
-  return symbolMap[country] || "$";
+export function currencySymbol(_country?: string) {
+  return "$";
 }
 
-export function formatMoney(amount: number, country?: string) {
-  return `${currencySymbol(country)}${(amount ?? 0).toLocaleString()}`;
+export function formatMoney(amount: number, _country?: string) {
+  return `$${(amount ?? 0).toLocaleString()}`;
 }

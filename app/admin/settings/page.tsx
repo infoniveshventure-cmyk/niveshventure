@@ -105,6 +105,59 @@ export default function AdminSettingsPage() {
             ))}
           </div>
 
+          <div className="glass-card p-6 space-y-4">
+            <h2 className="font-display font-semibold mb-1">Feature Switches</h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-white">Website status (ON/OFF)</p>
+                <p className="text-[10px] text-ink-muted">Turn ON to allow login/register; OFF blocks access for regular members</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5 rounded border-white/10 accent-neon-cyan cursor-pointer"
+                checked={s.websiteEnabled !== false}
+                onChange={(e) => setS({ ...s, websiteEnabled: e.target.checked })}
+              />
+            </div>
+
+            {s.websiteEnabled === false && (
+              <div className="pt-2 border-t border-white/5 space-y-1.5 animate-fadeIn">
+                <label className="text-[11px] text-neon-magenta block font-bold">Custom Maintenance Message</label>
+                <textarea
+                  className="input-field w-full text-xs py-2 h-16 min-h-[64px]"
+                  placeholder="e.g. Please try again later. System upgrade in progress."
+                  value={s.maintenanceMessage || ""}
+                  onChange={(e) => setS({ ...s, maintenanceMessage: e.target.value })}
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2 border-t border-white/5">
+              <div>
+                <p className="text-xs font-semibold text-white">P2P Transfers</p>
+                <p className="text-[10px] text-ink-muted">Enable or disable member-to-member transfers</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5 rounded border-white/10 accent-neon-cyan cursor-pointer"
+                checked={s.p2pEnabled !== false}
+                onChange={(e) => setS({ ...s, p2pEnabled: e.target.checked })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-white">Withdrawals</p>
+                <p className="text-[10px] text-ink-muted">Enable or disable member withdrawal requests</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5 rounded border-white/10 accent-neon-cyan cursor-pointer"
+                checked={s.withdrawalsEnabled !== false}
+                onChange={(e) => setS({ ...s, withdrawalsEnabled: e.target.checked })}
+              />
+            </div>
+          </div>
+
           <div className="glass-card p-6 space-y-3">
             <h2 className="font-display font-semibold mb-1">Pricing</h2>
             {pricingFields.map((f) => (

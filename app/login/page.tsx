@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,6 +17,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [siteSettings, setSiteSettings] = useState({ websiteEnabled: true, maintenanceMessage: "" });
+
+  useEffect(() => {
+    fetch("/api/settings").then((r) => r.json()).then(setSiteSettings).catch(() => {});
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -77,6 +82,13 @@ export default function LoginPage() {
         {/* Heading */}
         <h1 className="auth-heading">Login</h1>
         <p className="auth-subheading">WELCOME BACK! PLEASE LOGIN TO YOUR ACCOUNT</p>
+
+        {!siteSettings.websiteEnabled && (
+          <div className="bg-neon-magenta/15 border border-neon-magenta/30 rounded-xl p-3 text-center mt-4">
+            <p className="text-xs font-bold text-neon-magenta uppercase tracking-wider mb-1">⚠️ Maintenance Mode Active</p>
+            <p className="text-[11px] text-white leading-relaxed">{siteSettings.maintenanceMessage}</p>
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="mt-6 space-y-4">
           {/* Email */}

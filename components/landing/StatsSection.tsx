@@ -8,7 +8,7 @@ const STATS = [
   { icon: Users, label: "Active Members", value: 50000, display: "50,000+", color: "text-neon-violet", bg: "bg-neon-violet/15" },
   { icon: TrendingUp, label: "Total Volume", value: 5, display: "$5M+", suffix: "M", color: "text-neon-cyan", bg: "bg-neon-cyan/15" },
   { icon: Globe, label: "Countries", value: 50, display: "50+", color: "text-neon-green", bg: "bg-neon-green/15" },
-  { icon: Award, label: "Monthly Returns", value: 30, display: "30%", suffix: "%", color: "text-neon-magenta", bg: "bg-neon-magenta/15" },
+  { icon: Award, label: "Monthly Growth Yield", value: 6, display: "6%", suffix: "%", color: "text-neon-magenta", bg: "bg-neon-magenta/15" },
 ];
 
 function AnimatedCounter({ end, suffix = "", duration = 2200 }: { end: number; suffix?: string; duration?: number }) {
@@ -40,7 +40,7 @@ function AnimatedCounter({ end, suffix = "", duration = 2200 }: { end: number; s
   }, [end, duration]);
 
   return (
-    <div ref={ref} className="font-display font-bold text-xl md:text-3xl text-white tabular-nums">
+    <div ref={ref} className="font-display font-bold text-2xl md:text-4xl text-white tabular-nums">
       {count.toLocaleString()}{suffix}
     </div>
   );
@@ -80,7 +80,7 @@ export default function StatsSection() {
                   <Icon size={16} className={`${stat.color} md:w-[22px] md:h-[22px]`} />
                 </div>
                 <AnimatedCounter end={stat.value} suffix={stat.display.replace(stat.value.toString(), "").replace("$", "")} />
-                <div className="text-xs md:text-xs text-ink-muted mt-1 md:mt-2">{stat.label}</div>
+                <div className="text-sm md:text-base text-ink-muted mt-1 md:mt-2">{stat.label}</div>
               </motion.div>
             );
           })}

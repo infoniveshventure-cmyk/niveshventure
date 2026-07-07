@@ -26,7 +26,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
  
         {/* Logo + brand name — only visible on mobile (hidden on lg where sidebar shows) */}
         <div className="flex items-center gap-2 lg:hidden">
-          <Image src="/logo.png" alt="Nivesh Ventures" width={32} height={32} className="rounded-lg object-contain" />
+          <Image src="/logo1.png" alt="Nivesh Ventures" width={32} height={32} className="rounded-lg object-contain" />
           <span className="font-display font-bold text-sm tracking-wide text-ink">NIVESH VENTURES</span>
         </div>
       </div>
@@ -46,15 +46,15 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
             </span>
           )}
         </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center text-xs font-bold text-base">
+        <Link href="/profile" className="flex items-center gap-2 group cursor-pointer">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center text-xs font-bold text-base group-hover:shadow-neon-sm transition">
             {profile?.fullName?.[0]?.toUpperCase() || "U"}
           </div>
           <div className="hidden sm:block">
-            <p className="text-sm font-medium leading-tight">{profile?.fullName || "Member"}</p>
+            <p className="text-sm font-medium leading-tight group-hover:text-neon-cyan transition">{profile?.fullName || "Member"}</p>
             <p className="text-xs text-ink-muted leading-tight">ID: {profile?.memberId || "—"}</p>
           </div>
-        </div>
+        </Link>
       </div>
     </header>
   );

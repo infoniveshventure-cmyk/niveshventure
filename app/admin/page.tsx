@@ -90,8 +90,8 @@ export default function AdminDashboard() {
         <div className="stat-card bg-gradient-to-br from-neon-cyan/10 to-transparent border border-neon-cyan/20">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs text-ink-muted">Premium Members</p>
-              <p className="font-display text-2xl font-bold mt-1 text-white">{data.premiumMembers}</p>
+              <p className="text-xs text-ink-muted">Active Members</p>
+              <p className="font-display text-2xl font-bold mt-1 text-white">{data.activeMembers}</p>
             </div>
             <UserCheck className="text-neon-cyan" size={20} />
           </div>

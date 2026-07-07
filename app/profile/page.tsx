@@ -1,18 +1,25 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import DashboardShell from "@/components/DashboardShell";
 import ReferralQRCard from "@/components/ReferralQRCard";
 import { useAuth } from "@/lib/AuthContext";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { compressImage } from "@/lib/imageCompress";
-import { Edit2, Loader2, Key } from "lucide-react";
+import { Edit2, Loader2, Key, Save, X, User } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function ProfilePage() {
   const { profile, firebaseUser, refreshProfile } = useAuth();
   const [photoUploading, setPhotoUploading] = useState(false);
+
+  // Edit Profile State
+  const [editMode, setEditMode] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [updatingProfile, setUpdatingProfile] = useState(false);
 
   // USDT Address Change State
   const [newUsdtAddress, setNewUsdtAddress] = useState("");
@@ -20,23 +27,17 @@ export default function ProfilePage() {
   const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.fullName || "");
+      setEmail(profile.email || "");
+      setMobile(profile.mobile || "");
+    }
+  }, [profile]);
+
   const displayName = profile?.fullName || firebaseUser?.displayName || "User";
   const displayEmail = profile?.email || firebaseUser?.email || "—";
   const displayAvatar = profile?.profilePhotoUrl || firebaseUser?.photoURL || "";
-
-  const rows = useMemo(
-    () => [
-      { label: "Full Name", value: displayName },
-      { label: "Member ID", value: profile?.memberId || "—" },
-      { label: "Email", value: displayEmail },
-      { label: "Mobile", value: profile?.mobile || "—" },
-      { label: "Country", value: profile?.country || "—" },
-      { label: "Sponsor ID", value: profile?.sponsorId || "—" },
-      { label: "Rank", value: profile?.rank || "Unranked" },
-      { label: "Joined", value: profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "—" },
-    ],
-    [displayEmail, displayName, profile],
-  );
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -62,6 +63,31 @@ export default function ProfilePage() {
       toast.error(err.message || "Photo upload failed");
     } finally {
       setPhotoUploading(false);
+    }
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!fullName.trim() || !email.trim()) {
+      toast.error("Full Name and Email are required");
+      return;
+    }
+    setUpdatingProfile(true);
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName, email, mobile }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update profile");
+      toast.success("Profile details updated successfully");
+      setEditMode(false);
+      await refreshProfile();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update profile");
+    } finally {
+      setUpdatingProfile(false);
     }
   }
 
@@ -127,46 +153,165 @@ export default function ProfilePage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Profile Card */}
           <div className="glass-card p-6">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative group w-16 h-16 rounded-full overflow-hidden">
-                {displayAvatar ? (
-                  <Image src={displayAvatar} alt={displayName} fill sizes="64px" unoptimized className="object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center text-xl font-bold text-base">
-                    {displayName?.[0]?.toUpperCase() || "U"}
-                  </div>
-                )}
-                {/* Upload Hover Overlay */}
-                <label className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  {photoUploading ? (
-                    <Loader2 size={16} className="animate-spin text-white" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="relative group w-16 h-16 rounded-full overflow-hidden">
+                  {displayAvatar ? (
+                    <Image src={displayAvatar} alt={displayName} fill sizes="64px" unoptimized className="object-cover" />
                   ) : (
-                    <Edit2 size={16} className="text-white" />
+                    <div className="w-full h-full bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center text-xl font-bold text-base">
+                      {displayName?.[0]?.toUpperCase() || "U"}
+                    </div>
                   )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    disabled={photoUploading}
-                    onChange={handlePhotoUpload}
-                  />
-                </label>
-              </div>
-              <div>
-                <p className="font-display text-lg font-semibold">{displayName}</p>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  profile?.isActive ? "bg-neon-green/15 text-neon-green" : "bg-white/5 text-ink-muted"
-                }`}>{profile?.isActive ? "Active" : "Inactive"}</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {rows.map((r) => (
-                <div key={r.label}>
-                  <p className="text-xs text-ink-muted">{r.label}</p>
-                  <p className="text-sm font-medium mt-0.5">{r.value || "—"}</p>
+                  {/* Upload Hover Overlay */}
+                  <label className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {photoUploading ? (
+                      <Loader2 size={16} className="animate-spin text-white" />
+                    ) : (
+                      <Edit2 size={16} className="text-white" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={photoUploading}
+                      onChange={handlePhotoUpload}
+                    />
+                  </label>
                 </div>
-              ))}
+                <div>
+                  <p className="font-display text-lg font-semibold">{displayName}</p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    profile?.isActive ? "bg-neon-green/15 text-neon-green" : "bg-white/5 text-ink-muted"
+                  }`}>{profile?.isActive ? "Active" : "Inactive"}</span>
+                </div>
+              </div>
+
+              {!editMode && (
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="text-xs px-3 py-1.5 rounded-xl border border-white/10 hover:border-white/20 text-ink flex items-center gap-1.5 transition"
+                >
+                  <Edit2 size={13} /> Edit Profile
+                </button>
+              )}
             </div>
+
+            {editMode ? (
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-ink-muted block mb-1">Full Name</label>
+                    <input
+                      className="input-field text-sm"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-ink-muted block mb-1">Email Address</label>
+                    <input
+                      className="input-field text-sm"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-ink-muted block mb-1">Mobile Number</label>
+                    <input
+                      className="input-field text-sm"
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-ink-muted block mb-1">Country</label>
+                    <input
+                      className="input-field text-sm opacity-50 cursor-not-allowed"
+                      value={profile?.country || "—"}
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-ink-muted block mb-1">Member ID</label>
+                    <input
+                      className="input-field text-sm opacity-50 cursor-not-allowed"
+                      value={profile?.memberId || "—"}
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-ink-muted block mb-1">Sponsor ID</label>
+                    <input
+                      className="input-field text-sm opacity-50 cursor-not-allowed"
+                      value={profile?.sponsorId || "—"}
+                      disabled
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditMode(false);
+                      setFullName(profile?.fullName || "");
+                      setEmail(profile?.email || "");
+                      setMobile(profile?.mobile || "");
+                    }}
+                    className="text-xs px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-ink-muted flex items-center gap-1.5 transition"
+                  >
+                    <X size={13} /> Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updatingProfile}
+                    className="btn-primary text-xs px-4 py-2 rounded-xl flex items-center gap-1.5"
+                  >
+                    {updatingProfile ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-ink-muted">Full Name</p>
+                  <p className="text-sm font-medium mt-0.5">{displayName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-ink-muted">Member ID</p>
+                  <p className="text-sm font-medium mt-0.5">{profile?.memberId || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-ink-muted">Email</p>
+                  <p className="text-sm font-medium mt-0.5">{displayEmail}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-ink-muted">Mobile</p>
+                  <p className="text-sm font-medium mt-0.5">{profile?.mobile || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-ink-muted">Country</p>
+                  <p className="text-sm font-medium mt-0.5">{profile?.country || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-ink-muted">Sponsor ID</p>
+                  <p className="text-sm font-medium mt-0.5">{profile?.sponsorId || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-ink-muted">Rank</p>
+                  <p className="text-sm font-medium mt-0.5">{profile?.rank || "Unranked"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-ink-muted">Joined</p>
+                  <p className="text-sm font-medium mt-0.5">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "—"}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* USDT Wallet Management */}

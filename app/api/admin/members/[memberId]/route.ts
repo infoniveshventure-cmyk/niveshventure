@@ -187,6 +187,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
 
     await adminTx.save();
 
+    // Create a regular Transaction record for the member's history
+    await Transaction.create({
+      memberId: user.memberId,
+      type: "wallet_transfer",
+      direction,
+      amount,
+      currency: "USDT",
+      status: "completed",
+      note: adminRemarks,
+      description: `${direction === "credit" ? "Admin Credit" : "Admin Debit"} - ${adminRemarks}`,
+      walletType,
+      referenceId: adminTx._id.toString(),
+    });
+
     // Update user balance
     (user as any)[balanceField] = newBalance;
     await user.save();

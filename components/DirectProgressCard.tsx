@@ -4,7 +4,7 @@ import { Check, Rocket } from "lucide-react";
 
 const PER_LEVEL = 5;
 
-export default function DirectProgressCard({ directCount }: { directCount: number }) {
+export default function DirectProgressCard({ directCount, isActive = false }: { directCount: number; isActive?: boolean }) {
   const level = Math.floor(directCount / PER_LEVEL) + 1;
   const inLevel = directCount % PER_LEVEL;
   const percent = Math.round((inLevel / PER_LEVEL) * 100);
@@ -13,7 +13,14 @@ export default function DirectProgressCard({ directCount }: { directCount: numbe
   return (
     <div className="glass-card p-6">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="font-display font-semibold">Your Direct Progress</h2>
+        <h2 className="font-display font-semibold flex items-center gap-2">
+          Your Direct Progress
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+            isActive ? "bg-neon-green/20 text-neon-green border border-neon-green/45" : "bg-neon-magenta/20 text-neon-magenta border border-neon-magenta/45"
+          }`}>
+            {isActive ? "Active" : "Inactive"}
+          </span>
+        </h2>
         <span className="text-xs px-3 py-1 rounded-full bg-neon-violet/20 text-neon-violet border border-neon-violet/40 flex items-center gap-1">
           ★ Level {level}
         </span>

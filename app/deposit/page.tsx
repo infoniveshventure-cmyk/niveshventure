@@ -6,8 +6,11 @@ import DashboardShell from "@/components/DashboardShell";
 import { QRCodeCanvas } from "qrcode.react";
 import FileUploadField from "@/components/FileUploadField";
 import toast from "react-hot-toast";
+import TransactionHistory, { TxRecord } from "@/components/TransactionHistory";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function DepositPage() {
+  const { profile } = useAuth();
   const [walletAddress, setWalletAddress] = useState("");
   const [paymentQrUrl, setPaymentQrUrl] = useState("");
   const [bankDetails, setBankDetails] = useState<any>(null);
@@ -16,6 +19,8 @@ export default function DepositPage() {
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [deposits, setDeposits] = useState<any[]>([]);
+  const [txHistory, setTxHistory] = useState<TxRecord[]>([]);
+  const [txLoading, setTxLoading] = useState(true);
 
   function load() {
     fetch("/api/deposit", { cache: "no-store" }).then((r) => r.json()).then((d) => {
@@ -24,6 +29,10 @@ export default function DepositPage() {
       setPaymentQrUrl(d.paymentQrUrl || "");
       setBankDetails(d.bankDetails || null);
     });
+    fetch("/api/transactions?type=deposit", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setTxHistory(d.transactions || []))
+      .finally(() => setTxLoading(false));
   }
   useEffect(() => { load(); }, []);
 
@@ -71,7 +80,7 @@ export default function DepositPage() {
 
           {bankDetails?.accountNumber && (
             <div className="mt-4 bg-base-soft rounded-xl p-3 text-left text-xs space-y-1">
-              <p className="text-ink-muted mb-1">Or bank transfer (INR):</p>
+              <p className="text-ink-muted mb-1">Or bank transfer (USD):</p>
               <p>Bank: <span className="text-ink">{bankDetails.bankName}</span></p>
               <p>Account: <span className="text-ink">{bankDetails.accountNumber}</span></p>
               <p>IFSC: <span className="text-ink">{bankDetails.ifsc}</span></p>
@@ -91,23 +100,51 @@ export default function DepositPage() {
         </form>
       </div>
 
+      {/* Deposit Submissions */}
       <div className="glass-card p-5 mt-6">
-        <h2 className="font-display font-semibold mb-4">Your Deposit History</h2>
+        <h2 className="font-display font-semibold mb-4">Deposit Submissions</h2>
         {!deposits.length ? (
           <p className="text-sm text-ink-muted py-8 text-center">No deposits submitted yet.</p>
         ) : (
-          <div className="space-y-2">
-            {deposits.map((d) => (
-              <div key={d._id} className="flex justify-between text-sm py-2 border-b border-white/5 last:border-0">
-                <span>{d.txnHash}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
-                  d.status === "verified" ? "bg-neon-green/15 text-neon-green" :
-                  d.status === "pending" ? "bg-yellow-500/15 text-yellow-400" : "bg-neon-magenta/15 text-neon-magenta"
-                }`}>{d.status}</span>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-ink-muted border-b border-white/10 text-xs">
+                  <th className="py-2 pr-4">Transaction Hash</th>
+                  <th className="py-2 pr-4">Amount</th>
+                  <th className="py-2 pr-4">Date</th>
+                  <th className="py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deposits.map((d) => (
+                  <tr key={d._id} className="border-b border-white/5 last:border-0">
+                    <td className="py-2 pr-4 font-mono text-xs text-ink-muted">{d.txnHash}</td>
+                    <td className="py-2 pr-4">{d.amount ? `$${d.amount}` : "—"}</td>
+                    <td className="py-2 pr-4 text-ink-muted text-xs">{new Date(d.createdAt).toLocaleDateString()}</td>
+                    <td className="py-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                        d.status === "verified" ? "bg-neon-green/15 text-neon-green" :
+                        d.status === "pending" ? "bg-yellow-500/15 text-yellow-400" : "bg-neon-magenta/15 text-neon-magenta"
+                      }`}>{d.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
+      </div>
+
+      {/* Full Transaction History */}
+      <div className="mt-6">
+        <TransactionHistory
+          title="Deposit Transaction History"
+          transactions={txHistory}
+          loading={txLoading}
+          currentUserName={profile?.fullName || ""}
+          emptyMessage="No deposit transactions yet."
+        />
       </div>
     </DashboardShell>
   );
