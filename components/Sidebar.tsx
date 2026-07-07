@@ -42,6 +42,7 @@ const links = [
   { href: "/wallet", label: "Wallet", icon: Wallet },
   { href: "/booster-wallet", label: "Booster Wallet", icon: Zap },
   { href: "/statement", label: "Account Statement", icon: FileText },
+  { href: "/business-plan", label: "Business Plan", icon: FileText },
   { href: "/withdrawal", label: "Withdrawal", icon: ArrowLeftRight },
   { href: "/kyc", label: "KYC Verification", icon: FileCheck },
   { href: "/notices", label: "Notice Board", icon: Bell },

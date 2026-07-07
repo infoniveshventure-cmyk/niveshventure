@@ -30,11 +30,12 @@ export async function GET() {
   const directCount = directsList.length;
 
   // Full downline count via parentId chain (BFS)
-  async function countTeamWithBusiness(rootId: string): Promise<{ count: number; activeCount: number; business: number }> {
+  async function countTeamWithBusiness(rootIds: string[]): Promise<{ count: number; activeCount: number; business: number }> {
+    if (rootIds.length === 0) return { count: 0, activeCount: 0, business: 0 };
     let total = 0;
     let activeCount = 0;
     let business = 0;
-    let frontier = [rootId];
+    let frontier = [...rootIds];
     while (frontier.length) {
       const children = await User.find({ parentId: { $in: frontier } }).select(
         "memberId isActive walletBalance totalInvestment boosterWalletBalance nivshWalletBalance usdtWalletBalance"
@@ -63,22 +64,11 @@ export async function GET() {
     User.find({ parentId: user.memberId, position: "right" }).select("memberId isActive totalInvestment"),
   ]);
 
-  // Aggregate stats across all left-side children and their entire downlines
-  const leftStatsList = await Promise.all(
-    leftChildren.map((child: any) => countTeamWithBusiness(child.memberId))
-  );
-  const rightStatsList = await Promise.all(
-    rightChildren.map((child: any) => countTeamWithBusiness(child.memberId))
-  );
-
-  const leftStats = leftStatsList.reduce(
-    (acc, s) => ({ count: acc.count + s.count, activeCount: acc.activeCount + s.activeCount, business: acc.business + s.business }),
-    { count: 0, activeCount: 0, business: 0 }
-  );
-  const rightStats = rightStatsList.reduce(
-    (acc, s) => ({ count: acc.count + s.count, activeCount: acc.activeCount + s.activeCount, business: acc.business + s.business }),
-    { count: 0, activeCount: 0, business: 0 }
-  );
+  // Aggregate stats in bulk per side in parallel
+  const [leftStats, rightStats] = await Promise.all([
+    countTeamWithBusiness(leftChildren.map((c: any) => c.memberId)),
+    countTeamWithBusiness(rightChildren.map((c: any) => c.memberId)),
+  ]);
 
   const totalTeam = leftStats.count + rightStats.count + leftChildren.length + rightChildren.length;
 

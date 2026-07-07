@@ -10,9 +10,9 @@ const UserSchema = new Schema(
     country: { type: String, required: true },
     profilePhotoUrl: { type: String, default: "" },
 
-    sponsorId: { type: String, default: null }, // referring member's memberId
+    sponsorId: { type: String, default: null, index: true }, // referring member's memberId
     position: { type: String, enum: ["left", "right", null], default: null },
-    parentId: { type: String, default: null }, // placement parent in binary tree
+    parentId: { type: String, default: null, index: true }, // placement parent in binary tree
     accessKeyHash: { type: String, required: true },
     loginKeyHash: { type: String, required: true },
 
