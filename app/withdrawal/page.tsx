@@ -17,13 +17,21 @@ export default function WithdrawalPage() {
   const [usdtAddress, setUsdtAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [minWithdrawal, setMinWithdrawal] = useState(10);
+  const [feeRate, setFeeRate] = useState(3);
   const [withdrawalsEnabled, setWithdrawalsEnabled] = useState(true);
   const [checkingStatus, setCheckingStatus] = useState(true);
-  const [txHistory, setTxHistory] = useState<TxRecord[]>([]);
+  const [txHistory, setTxHistory] = useState<any[]>([]);
   const [txLoading, setTxLoading] = useState(true);
 
   function loadHistory() {
-    fetch("/api/withdrawal", { cache: "no-store" }).then((r) => r.json()).then((d) => setHistory(d.withdrawals || []));
+    fetch("/api/withdrawal", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        setHistory(d.withdrawals || []);
+        if (d.minWithdrawal !== undefined) setMinWithdrawal(d.minWithdrawal);
+        if (d.feeRate !== undefined) setFeeRate(d.feeRate);
+      });
     fetch("/api/transactions?type=withdrawal", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setTxHistory(d.transactions || []))
@@ -44,7 +52,7 @@ export default function WithdrawalPage() {
   }, []);
 
   const numAmount = parseFloat(amount) || 0;
-  const charge = Number((numAmount * 0.03).toFixed(2));
+  const charge = Number((numAmount * (feeRate / 100)).toFixed(2));
   const net = Number((numAmount - charge).toFixed(2));
   const filteredHistory = history.filter((w) => (w.withdrawalKind || "earning") === kind);
 
@@ -92,7 +100,7 @@ export default function WithdrawalPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <form onSubmit={handleSubmit} className="glass-card p-6 space-y-3">
             <h2 className="font-display font-semibold mb-1">Request Withdrawal</h2>
-            <p className="text-xs text-ink-muted mb-3">Minimum $10 for earnings. 3% processing charge applies.</p>
+            <p className="text-xs text-ink-muted mb-3">Minimum ${minWithdrawal} for earnings. {feeRate}% processing charge applies.</p>
 
             <div className="flex gap-3">
               {(["earning", "capital"] as const).map((k) => {
@@ -149,7 +157,7 @@ export default function WithdrawalPage() {
 
             {numAmount > 0 && (
               <div className="text-xs text-ink-muted bg-base-soft rounded-xl p-3 space-y-1">
-                <div className="flex justify-between"><span>Processing charge (3%)</span><span>${charge}</span></div>
+                <div className="flex justify-between"><span>Processing charge ({feeRate}%)</span><span>${charge}</span></div>
                 <div className="flex justify-between text-neon-green font-medium"><span>Net payable</span><span>${net}</span></div>
                 {mode === "INR" && (
                   <div className="flex justify-between text-neon-cyan font-bold pt-1 border-t border-white/5 mt-1">

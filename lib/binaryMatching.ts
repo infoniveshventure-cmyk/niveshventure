@@ -3,7 +3,6 @@ import User from "@/models/User";
 import Transaction from "@/models/Transaction";
 import WebsiteSettings from "@/models/WebsiteSettings";
 import BusinessRule from "@/models/BusinessRule";
-import Commission from "@/models/Commission";
 import { notifyMember } from "@/lib/notification";
 import { checkAndAwardBooster } from "@/lib/booster";
 
@@ -34,8 +33,8 @@ export async function processActivationIncomes(targetMemberId: string, customPri
   // 2. Release Referral Income
   if (user.sponsorId) {
     try {
-      const commConfig = await Commission.findOne({ key: "singleton" }) || await Commission.create({ key: "singleton" });
-      const level1Pct = commConfig?.level1 ?? 5; // Default to 5%
+      const rule = await BusinessRule.findOne({ key: "referral_level1_pct" });
+      const level1Pct = rule ? Number(rule.value) : 5;
       
       const referralIncomeAmount = activationPrice * (level1Pct / 100);
       

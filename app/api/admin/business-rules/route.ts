@@ -29,9 +29,11 @@ const DEFAULT_RULES = [
   { key: "returns_level8_pct", category: "returns", label: "Returns Level 8 %", value: 0.5, type: "percentage", min: 0, max: 5, unit: "%" },
   { key: "returns_level9_pct", category: "returns", label: "Returns Level 9 %", value: 0.5, type: "percentage", min: 0, max: 5, unit: "%" },
   { key: "returns_level10_pct", category: "returns", label: "Returns Level 10 %", value: 0.5, type: "percentage", min: 0, max: 5, unit: "%" },
-  { key: "reward_rank_star", category: "rewards", label: "Star Rank Reward ($)", value: 100, type: "number", min: 0, unit: "$" },
-  { key: "reward_rank_gold", category: "rewards", label: "Gold Rank Reward ($)", value: 250, type: "number", min: 0, unit: "$" },
-  { key: "reward_rank_diamond", category: "rewards", label: "Diamond Rank Reward ($)", value: 500, type: "number", min: 0, unit: "$" },
+  { key: "reward_rank_x1", category: "rewards", label: "Rank X1 Reward ($)", value: 100, type: "number", min: 0, unit: "$" },
+  { key: "reward_rank_x2", category: "rewards", label: "Rank X2 Reward ($)", value: 300, type: "number", min: 0, unit: "$" },
+  { key: "reward_rank_x3", category: "rewards", label: "Rank X3 Reward ($)", value: 700, type: "number", min: 0, unit: "$" },
+  { key: "reward_rank_x4", category: "rewards", label: "Rank X4 Reward ($)", value: 2000, type: "number", min: 0, unit: "$" },
+  { key: "reward_rank_x5", category: "rewards", label: "Rank X5 Reward ($)", value: 5000, type: "number", min: 0, unit: "$" },
   { key: "min_investment_amount", category: "general", label: "Minimum Investment Amount ($)", value: 30, type: "number", min: 10, unit: "$" },
   { key: "withdrawal_min_amount", category: "general", label: "Minimum Withdrawal Amount ($)", value: 10, type: "number", min: 1, unit: "$" },
   { key: "withdrawal_fee_pct", category: "general", label: "Withdrawal Fee %", value: 5, type: "percentage", min: 0, max: 20, unit: "%" },
@@ -52,17 +54,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ logs });
   }
 
+  // Cleanup obsolete rules if they exist
+  await BusinessRule.deleteMany({ key: { $in: ["reward_rank_star", "reward_rank_gold", "reward_rank_diamond"] } });
+
+  // Seed any missing default rules
+  for (const r of DEFAULT_RULES) {
+    const exists = await BusinessRule.findOne({ key: r.key });
+    if (!exists) {
+      await BusinessRule.create({ ...r, updatedBy: "system", history: [] });
+    }
+  }
+
   const cacheKey = "business_rules_all";
   const cached = appCache.get(cacheKey);
   if (cached) return NextResponse.json(cached);
 
-  let rules = await BusinessRule.find({}).sort({ category: 1, key: 1 }).lean();
-
-  // Seed defaults if empty
-  if (rules.length === 0) {
-    await BusinessRule.insertMany(DEFAULT_RULES.map((r) => ({ ...r, updatedBy: "system", history: [] })));
-    rules = await BusinessRule.find({}).sort({ category: 1, key: 1 }).lean();
-  }
+  const rules = await BusinessRule.find({}).sort({ category: 1, key: 1 }).lean();
 
   // Group by category
   const grouped = rules.reduce((acc: any, rule: any) => {

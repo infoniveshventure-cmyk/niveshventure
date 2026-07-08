@@ -16,7 +16,14 @@ export async function GET() {
 
   await connectDB();
   const withdrawals = await Withdrawal.find({ memberId: session.memberId }).sort({ createdAt: -1 });
-  return NextResponse.json({ withdrawals });
+
+  const BusinessRule = (await import("@/models/BusinessRule")).default;
+  const minRule = await BusinessRule.findOne({ key: "withdrawal_min_amount" });
+  const feeRule = await BusinessRule.findOne({ key: "withdrawal_fee_pct" });
+  const minWithdrawal = minRule ? Number(minRule.value) : MIN_EARNING_WITHDRAWAL_USDT;
+  const feeRate = feeRule ? Number(feeRule.value) : 3;
+
+  return NextResponse.json({ withdrawals, minWithdrawal, feeRate });
 }
 
 export async function POST(req: NextRequest) {
@@ -28,6 +35,12 @@ export async function POST(req: NextRequest) {
     const { amount, mode, bankDetails, usdtAddress, accessKey, withdrawalKind } = body;
 
     await connectDB();
+    const BusinessRule = (await import("@/models/BusinessRule")).default;
+    const minRule = await BusinessRule.findOne({ key: "withdrawal_min_amount" });
+    const feeRule = await BusinessRule.findOne({ key: "withdrawal_fee_pct" });
+    const minWithdrawal = minRule ? Number(minRule.value) : MIN_EARNING_WITHDRAWAL_USDT;
+    const feeRate = feeRule ? Number(feeRule.value) / 100 : CHARGE_RATE;
+
     const settings = await WebsiteSettings.findOne({ key: "singleton" });
     if (settings && settings.withdrawalsEnabled === false) {
       return NextResponse.json(
@@ -39,9 +52,9 @@ export async function POST(req: NextRequest) {
     if (!amount || !mode || !accessKey) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-    if (amount < MIN_EARNING_WITHDRAWAL_USDT && withdrawalKind !== "capital") {
+    if (amount < minWithdrawal && withdrawalKind !== "capital") {
       return NextResponse.json(
-        { error: `Minimum withdrawal amount is ${MIN_EARNING_WITHDRAWAL_USDT} USDT` },
+        { error: `Minimum withdrawal amount is ${minWithdrawal} USDT` },
         { status: 400 }
       );
     }
@@ -67,7 +80,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Insufficient wallet balance" }, { status: 400 });
     }
 
-    const processingCharge = Number((amount * CHARGE_RATE).toFixed(2));
+    const processingCharge = Number((amount * feeRate).toFixed(2));
     const netPayable = Number((amount - processingCharge).toFixed(2));
 
     const withdrawal = await Withdrawal.create({

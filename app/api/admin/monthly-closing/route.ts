@@ -6,7 +6,7 @@ import Investment from "@/models/Investment";
 import BusinessHistory from "@/models/BusinessHistory";
 import RewardHistory from "@/models/RewardHistory";
 import MonthlyClosing from "@/models/MonthlyClosing";
-import Commission from "@/models/Commission";
+import BusinessRule from "@/models/BusinessRule";
 import ManualOverrideLog from "@/models/ManualOverrideLog";
 import { requireAdmin } from "@/lib/require-admin";
 import { notifyMember } from "@/lib/notification";
@@ -138,8 +138,13 @@ export async function POST(req: NextRequest) {
     const returnPct = Number(monthlyReturnPercentage || 6);
     const distPct = Number(distributionPercentage !== undefined ? distributionPercentage : 100);
 
-    if (returnPct < 5 || returnPct > 7) {
-      return NextResponse.json({ error: "Monthly return percentage must be between 5% and 7%" }, { status: 400 });
+    const minReturnRule = await BusinessRule.findOne({ key: "monthly_returns_min_pct" });
+    const maxReturnRule = await BusinessRule.findOne({ key: "monthly_returns_max_pct" });
+    const minReturn = minReturnRule ? Number(minReturnRule.value) : 5;
+    const maxReturn = maxReturnRule ? Number(maxReturnRule.value) : 7;
+
+    if (returnPct < minReturn || returnPct > maxReturn) {
+      return NextResponse.json({ error: `Monthly return percentage must be between ${minReturn}% and ${maxReturn}%` }, { status: 400 });
     }
 
     // Freeze calculations
@@ -190,10 +195,6 @@ export async function POST(req: NextRequest) {
     ]);
     closing.totalMonthlyBusiness = monthlyBusinessAgg[0]?.total || 0;
 
-    // Fetch commission configuration
-    let commConfig = await Commission.findOne({ key: "singleton" });
-    if (!commConfig) commConfig = await Commission.create({ key: "singleton" });
-
     // Loop through each member and compute their staged earnings
     for (const member of members) {
       const memberId = member.memberId;
@@ -226,8 +227,9 @@ export async function POST(req: NextRequest) {
 
         const totalDownlineBusiness = totalDownlineInvestAmount + totalRenewalAmount;
 
-        const rateKey = `level${level}`;
-        const commRate = (commConfig as any)[rateKey] || 0;
+        const ruleKey = `referral_level${level}_pct`;
+        const rule = await BusinessRule.findOne({ key: ruleKey });
+        const commRate = rule ? Number(rule.value) : 0;
         stagedReferralIncome += totalDownlineBusiness * (commRate / 100);
       }
       stagedReferralIncome = stagedReferralIncome * (distPct / 100);
@@ -237,7 +239,9 @@ export async function POST(req: NextRequest) {
       const leftTotal = (member.leftCurrentBusiness || 0) + (member.leftCarryForward || 0);
       const rightTotal = (member.rightCurrentBusiness || 0) + (member.rightCarryForward || 0);
       const matchedVolume = Math.min(leftTotal, rightTotal);
-      const stagedMatchingIncome = matchedVolume * 0.1 * (distPct / 100); // 10% matching rate default
+      const matchingRule = await BusinessRule.findOne({ key: "matching_income_pct" });
+      const matchingRate = matchingRule ? Number(matchingRule.value) : 10;
+      const stagedMatchingIncome = matchedVolume * (matchingRate / 100) * (distPct / 100);
 
       // D. Booster Income
       // Check if they got any booster reward in this month
@@ -285,7 +289,9 @@ export async function POST(req: NextRequest) {
       for (const [dId, level] of Object.entries(downlineMapL10)) {
         const downlineStaged = stagedIncomeMap.get(dId);
         if (downlineStaged && downlineStaged.monthlyReturns > 0) {
-          const rate = DEFAULT_RETURNS_LEVELS[level - 1] || 0;
+          const ruleKey = `returns_level${level}_pct`;
+          const rule = await BusinessRule.findOne({ key: ruleKey });
+          const rate = rule ? Number(rule.value) : (DEFAULT_RETURNS_LEVELS[level - 1] || 0);
           stagedReturnsLevelIncome += downlineStaged.monthlyReturns * (rate / 100);
         }
       }

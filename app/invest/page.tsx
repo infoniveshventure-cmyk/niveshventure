@@ -3,13 +3,13 @@
 import { useEffect, useState, useMemo } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import { useAuth } from "@/lib/AuthContext";
-import { 
-  PiggyBank, 
-  Wallet, 
-  Calendar, 
-  Search, 
-  RefreshCw, 
-  Clock, 
+import {
+  DollarSign,
+  Wallet,
+  Calendar,
+  Search,
+  RefreshCw,
+  Clock,
   ChevronDown
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -36,6 +36,7 @@ export default function InvestPage() {
   const [wallets, setWallets] = useState<any[]>([]);
   const [selectedWallet, setSelectedWallet] = useState("main");
   const [amount, setAmount] = useState("");
+  const [minInvestment, setMinInvestment] = useState(100);
   const [busy, setBusy] = useState(false);
   const [investments, setInvestments] = useState<InvestmentRecord[]>([]);
 
@@ -52,7 +53,7 @@ export default function InvestPage() {
   const [modalAmount, setModalAmount] = useState("");
   const [modalWallet, setModalWallet] = useState("main");
   const [modalBusy, setModalBusy] = useState(false);
-  
+
   // Date filters
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -62,13 +63,14 @@ export default function InvestPage() {
     let url = "/api/nivesh?";
     if (activeFilters.from) url += `startDate=${activeFilters.from}&`;
     if (activeFilters.to) url += `endDate=${activeFilters.to}`;
-    
+
     try {
       const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
         const d = await res.json();
         setInvestments(d.investments || []);
         if (d.wallets) setWallets(d.wallets);
+        if (d.minInvestment !== undefined) setMinInvestment(d.minInvestment);
       }
     } catch {
       toast.error("Failed to load investments");
@@ -138,8 +140,8 @@ export default function InvestPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const numAmount = Number(amount);
-    if (!numAmount || numAmount < 100) {
-      toast.error("Minimum investment is $100");
+    if (!numAmount || numAmount < minInvestment) {
+      toast.error(`Minimum investment is $${minInvestment}`);
       return;
     }
     if (!selectedWalletInfo) {
@@ -160,7 +162,7 @@ export default function InvestPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      
+
       toast.success(`Successfully invested $${numAmount.toLocaleString()} using ${selectedWalletInfo.label}`);
       setAmount("");
       await refreshProfile(); // Sync dashboard balance
@@ -208,11 +210,11 @@ export default function InvestPage() {
   return (
     <DashboardShell>
       <h1 className="font-display text-2xl font-bold mb-6 flex items-center gap-2">
-        <PiggyBank className="text-neon-cyan" /> Nivesh (Investment)
+        <DollarSign className="text-neon-cyan" /> Nivesh (Investment)
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        
+
         {/* Do Investment Form */}
         <form onSubmit={submit} className="glass-card p-6 space-y-4 border-neon-cyan/20 h-fit">
           <h2 className="font-display font-semibold mb-1">New Investment</h2>
@@ -252,26 +254,26 @@ export default function InvestPage() {
             <input
               className="input-field"
               type="number"
-              min="100"
+              min={minInvestment}
               step="1"
-              placeholder="Min $100"
+              placeholder={`Min $${minInvestment}`}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
             <p className="text-[10px] text-ink-muted mt-1 leading-relaxed">
-              * Minimum investment amount is $100. No maximum limit.
+              * Minimum investment amount is ${minInvestment}. No maximum limit.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <button 
-              type="submit" 
-              disabled={busy || !amount || Number(amount) < 100}
+            <button
+              type="submit"
+              disabled={busy || !amount || Number(amount) < minInvestment}
               className="btn-primary flex-1 py-2.5 flex items-center justify-center gap-2 disabled:opacity-50 text-xs"
             >
               {busy ? "Processing..." : "Invest Now"}
             </button>
-            
+
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
@@ -327,7 +329,7 @@ export default function InvestPage() {
           <div className="pt-2">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-semibold text-sm">Nivesh History</h2>
-              <button 
+              <button
                 onClick={loadData}
                 className="text-xs text-neon-cyan hover:underline flex items-center gap-1"
               >
@@ -375,13 +377,12 @@ export default function InvestPage() {
                             {dateStr} <span className="text-[10px] ml-1">{timeStr}</span>
                           </td>
                           <td className="py-2 pr-3">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                              statusLabel === "Success" 
-                                ? "bg-neon-green/10 text-neon-green border border-neon-green/20" 
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${statusLabel === "Success"
+                                ? "bg-neon-green/10 text-neon-green border border-neon-green/20"
                                 : statusLabel === "Pending"
-                                ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                                : "bg-neon-magenta/10 text-neon-magenta border border-neon-magenta/20"
-                            }`}>
+                                  ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                                  : "bg-neon-magenta/10 text-neon-magenta border border-neon-magenta/20"
+                              }`}>
                               {statusLabel}
                             </span>
                           </td>
@@ -407,9 +408,9 @@ export default function InvestPage() {
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="glass-card max-w-md w-full p-6 space-y-4 border border-white/10 relative overflow-hidden bg-gradient-to-b from-white/5 to-transparent">
             <h3 className="font-display text-lg font-bold text-white flex items-center gap-2">
-              <PiggyBank className="text-neon-cyan" size={18} /> Invest in Another Account
+              <DollarSign className="text-neon-cyan" size={18} /> Invest in Another Account
             </h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-xs text-ink-muted block mb-1.5 font-medium">Target User ID</label>
@@ -484,11 +485,10 @@ export default function InvestPage() {
                       key={pkg}
                       type="button"
                       onClick={() => setModalAmount(pkg)}
-                      className={`py-1.5 rounded-lg text-xs font-semibold border ${
-                        modalAmount === pkg
+                      className={`py-1.5 rounded-lg text-xs font-semibold border ${modalAmount === pkg
                           ? "border-neon-cyan bg-neon-cyan/15 text-white"
                           : "border-white/10 text-ink-muted hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       ${pkg}
                     </button>
@@ -501,7 +501,7 @@ export default function InvestPage() {
                 <label className="text-xs text-ink-muted block mb-1.5 font-medium">Investment Amount ($)</label>
                 <input
                   type="number"
-                  placeholder="Min $100"
+                  placeholder={`Min $${minInvestment}`}
                   className="input-field w-full"
                   value={modalAmount}
                   onChange={(e) => setModalAmount(e.target.value)}
@@ -511,7 +511,7 @@ export default function InvestPage() {
 
             <div className="flex gap-3 pt-2">
               <button
-                disabled={modalBusy || !targetInfo || !modalAmount || Number(modalAmount) < 100 || (modalWalletInfo && modalWalletInfo.balance < Number(modalAmount))}
+                disabled={modalBusy || !targetInfo || !modalAmount || Number(modalAmount) < minInvestment || (modalWalletInfo && modalWalletInfo.balance < Number(modalAmount))}
                 onClick={async () => {
                   setModalBusy(true);
                   try {
@@ -539,11 +539,10 @@ export default function InvestPage() {
                     setModalBusy(false);
                   }
                 }}
-                className={`flex-1 py-2.5 rounded-xl font-display font-semibold transition-all duration-300 ${
-                  modalBusy || !targetInfo || !modalAmount || Number(modalAmount) < 100 || (modalWalletInfo && modalWalletInfo.balance < Number(modalAmount))
+                className={`flex-1 py-2.5 rounded-xl font-display font-semibold transition-all duration-300 ${modalBusy || !targetInfo || !modalAmount || Number(modalAmount) < minInvestment || (modalWalletInfo && modalWalletInfo.balance < Number(modalAmount))
                     ? "bg-white/5 text-ink-muted border border-white/5 cursor-not-allowed"
                     : "btn-primary shadow-neon text-white hover:scale-[1.02]"
-                }`}
+                  }`}
               >
                 {modalBusy ? "Processing..." : modalWalletInfo && modalWalletInfo.balance < Number(modalAmount) ? "Insufficient Balance" : "Invest"}
               </button>
@@ -615,13 +614,12 @@ export default function InvestPage() {
                       <td className="py-3 pr-3 capitalize">{WALLET_LABELS[tx.walletType || "main"] || "Main Wallet"}</td>
                       <td className="py-3 pr-3 font-bold text-white">${tx.amount.toLocaleString()}</td>
                       <td className="py-3 pr-3">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
-                          tx.status === "completed" 
-                            ? "bg-neon-green/10 text-neon-green border border-neon-green/20" 
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${tx.status === "completed"
+                            ? "bg-neon-green/10 text-neon-green border border-neon-green/20"
                             : tx.status === "pending"
-                            ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                            : "bg-neon-magenta/10 text-neon-magenta border border-neon-magenta/20"
-                        }`}>
+                              ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                              : "bg-neon-magenta/10 text-neon-magenta border border-neon-magenta/20"
+                          }`}>
                           {tx.status === "completed" ? "Success" : tx.status}
                         </span>
                       </td>

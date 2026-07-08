@@ -12,7 +12,7 @@ cp .env.example .env
 ## github repo repush  :
 ```
 git add .
-git commit -m "business plane commission % change"
+git commit -m "business rule"
 git push -u origin main
 ```
 

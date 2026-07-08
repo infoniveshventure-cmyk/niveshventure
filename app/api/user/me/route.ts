@@ -98,12 +98,19 @@ export async function GET() {
   }
 
   // Real-time rank qualifications — based on Left/Right MEMBER COUNTS, not business volume.
+  const BusinessRule = (await import("@/models/BusinessRule")).default;
+  const ruleX1 = await BusinessRule.findOne({ key: "reward_rank_x1" });
+  const ruleX2 = await BusinessRule.findOne({ key: "reward_rank_x2" });
+  const ruleX3 = await BusinessRule.findOne({ key: "reward_rank_x3" });
+  const ruleX4 = await BusinessRule.findOne({ key: "reward_rank_x4" });
+  const ruleX5 = await BusinessRule.findOne({ key: "reward_rank_x5" });
+
   const RANK_RULES = [
-    { code: "X1", level: "Level 1", left: 20,  right: 20,  reward: 100  },
-    { code: "X2", level: "Level 2", left: 50,  right: 50,  reward: 300  },
-    { code: "X3", level: "Level 3", left: 100, right: 100, reward: 700  },
-    { code: "X4", level: "Level 4", left: 250, right: 250, reward: 2000 },
-    { code: "X5", level: "Level 5", left: 500, right: 500, reward: 5000 },
+    { code: "X1", level: "Level 1", left: 20,  right: 20,  reward: ruleX1 ? Number(ruleX1.value) : 100  },
+    { code: "X2", level: "Level 2", left: 50,  right: 50,  reward: ruleX2 ? Number(ruleX2.value) : 300  },
+    { code: "X3", level: "Level 3", left: 100, right: 100, reward: ruleX3 ? Number(ruleX3.value) : 700  },
+    { code: "X4", level: "Level 4", left: 250, right: 250, reward: ruleX4 ? Number(ruleX4.value) : 2000 },
+    { code: "X5", level: "Level 5", left: 500, right: 500, reward: ruleX5 ? Number(ruleX5.value) : 5000 },
   ];
 
   // Member counts (direct children + their full downlines per side)

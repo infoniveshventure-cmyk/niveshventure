@@ -11,7 +11,6 @@ const tabs = [
   { href: "/admin/withdrawals", label: "Withdrawals" },
   { href: "/admin/deposits", label: "Deposits" },
   { href: "/admin/kyc", label: "KYC" },
-  { href: "/admin/commission", label: "Commission" },
   { href: "/admin/monthly-closing", label: "Monthly Closing" },
   { href: "/admin/income-distribution", label: "Income Distribution" },
   { href: "/admin/rewards", label: "Rewards" },

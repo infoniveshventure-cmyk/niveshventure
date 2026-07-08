@@ -17,7 +17,7 @@ import {
   ShieldCheck,
   X,
   Unlock,
-  PiggyBank,
+  DollarSign,
   Download,
   Send,
   FileCheck,
@@ -33,7 +33,7 @@ const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/profile", label: "My Profile", icon: User },
   { href: "/unlock-access", label: "Unlock Access", icon: Unlock },
-  { href: "/invest", label: "Nivesh", icon: PiggyBank },
+  { href: "/invest", label: "Nivesh", icon: DollarSign },
   { href: "/deposit", label: "Deposit Fund", icon: Download },
   { href: "/transfer", label: "P2P Transfer", icon: Send },
   { href: "/rewards", label: "Rank & Reward", icon: Trophy },
@@ -99,11 +99,10 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
                 key={l.href}
                 href={l.href}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
-                  active
-                    ? "bg-gradient-to-r from-neon-violet/25 to-neon-cyan/10 text-neon-cyan border border-neon-violet/40 shadow-neon-sm"
-                    : "text-ink-muted hover:bg-white/5 hover:text-ink"
-                }`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${active
+                  ? "bg-gradient-to-r from-neon-violet/25 to-neon-cyan/10 text-neon-cyan border border-neon-violet/40 shadow-neon-sm"
+                  : "text-ink-muted hover:bg-white/5 hover:text-ink"
+                  }`}
               >
                 <Icon size={17} />
                 {l.label}
@@ -114,11 +113,10 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
             <Link
               href="/admin"
               onClick={onClose}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
-                pathname.startsWith("/admin")
-                  ? "bg-gradient-to-r from-neon-magenta/25 to-neon-violet/10 text-neon-magenta border border-neon-magenta/40"
-                  : "text-ink-muted hover:bg-white/5 hover:text-ink"
-              }`}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${pathname.startsWith("/admin")
+                ? "bg-gradient-to-r from-neon-magenta/25 to-neon-violet/10 text-neon-magenta border border-neon-magenta/40"
+                : "text-ink-muted hover:bg-white/5 hover:text-ink"
+                }`}
             >
               <ShieldCheck size={17} />
               Admin Panel

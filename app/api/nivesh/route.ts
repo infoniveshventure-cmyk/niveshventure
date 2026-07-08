@@ -48,8 +48,13 @@ export async function GET(req: NextRequest) {
     "walletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance"
   );
 
+  const BusinessRule = (await import("@/models/BusinessRule")).default;
+  const rule = await BusinessRule.findOne({ key: "min_investment_amount" });
+  const minInvestment = rule ? Number(rule.value) : 100;
+
   return NextResponse.json({
     investments,
+    minInvestment,
     wallets: [
       { key: "main", label: "Main Wallet", balance: user?.walletBalance ?? 0 },
       { key: "booster", label: "Booster Wallet", balance: user?.boosterWalletBalance ?? 0 },
@@ -65,8 +70,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const { amount, walletType = "main", targetMemberId } = await req.json();
-    if (!amount || amount < MIN_INVESTMENT) {
-      return NextResponse.json({ error: `Minimum investment is $${MIN_INVESTMENT}` }, { status: 400 });
+    await connectDB();
+
+    const BusinessRule = (await import("@/models/BusinessRule")).default;
+    const rule = await BusinessRule.findOne({ key: "min_investment_amount" });
+    const minInvestment = rule ? Number(rule.value) : MIN_INVESTMENT;
+
+    if (!amount || amount < minInvestment) {
+      return NextResponse.json({ error: `Minimum investment is $${minInvestment}` }, { status: 400 });
     }
 
     const walletInfo = WALLET_FIELDS[walletType];
@@ -74,7 +85,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid wallet type selected" }, { status: 400 });
     }
 
-    await connectDB();
     const payer = await User.findOne({ memberId: session.memberId });
     if (!payer) return NextResponse.json({ error: "Payer user not found" }, { status: 404 });
 
