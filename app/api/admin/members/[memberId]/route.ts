@@ -7,7 +7,7 @@ import Deposit from "@/models/Deposit";
 import Withdrawal from "@/models/Withdrawal";
 import AuditLog from "@/models/AuditLog";
 import { requireAdmin } from "@/lib/require-admin";
-import { updateFirebaseUserPasswordByEmail, deleteFirebaseUser } from "@/lib/firebase-admin";
+import { updateFirebaseUserPasswordByEmail, deleteFirebaseUser, updateFirebaseUser } from "@/lib/firebase-admin";
 import { notifyMember } from "@/lib/notification";
 import crypto from "crypto";
 import { processActivationIncomes } from "@/lib/binaryMatching";
@@ -76,12 +76,79 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
   }
 
   if (action === "update_profile") {
-    if (fullName && fullName.trim()) user.fullName = fullName.trim();
-    if (email) user.email = email.toLowerCase().trim();
-    if (mobile) user.mobile = mobile;
-    if (usdtWalletAddress !== undefined) user.usdtWalletAddress = usdtWalletAddress;
-    if (body.withdrawalsEnabled !== undefined) user.withdrawalsEnabled = body.withdrawalsEnabled;
-    await user.save();
+    const originalEmail = user.email;
+    const originalMobile = user.mobile;
+    const originalFullName = user.fullName;
+
+    const targetEmail = email ? email.toLowerCase().trim() : originalEmail;
+    const targetMobile = mobile ? mobile.trim() : originalMobile;
+    const targetFullName = fullName && fullName.trim() ? fullName.trim() : originalFullName;
+
+    // Check duplicate email
+    if (targetEmail !== originalEmail) {
+      const duplicateEmail = await User.findOne({ email: targetEmail, memberId: { $ne: memberId } });
+      if (duplicateEmail) {
+        return NextResponse.json({ error: "Email is already in use by another account" }, { status: 400 });
+      }
+    }
+
+    // Check duplicate phone
+    if (targetMobile !== originalMobile) {
+      const duplicateMobile = await User.findOne({ mobile: targetMobile, memberId: { $ne: memberId } });
+      if (duplicateMobile) {
+        return NextResponse.json({ error: "Phone number is already in use by another account" }, { status: 400 });
+      }
+    }
+
+    // Sync with Firebase
+    const firebaseUpdates: any = {};
+    if (targetFullName !== originalFullName) firebaseUpdates.displayName = targetFullName;
+    if (targetEmail !== originalEmail) firebaseUpdates.email = targetEmail;
+    if (targetMobile !== originalMobile && targetMobile.startsWith("+")) {
+      firebaseUpdates.phoneNumber = targetMobile;
+    }
+
+    let firebaseSuccess = false;
+    try {
+      if (Object.keys(firebaseUpdates).length > 0 && user.firebaseUid) {
+        await updateFirebaseUser(user.firebaseUid, firebaseUpdates);
+        firebaseSuccess = true;
+      }
+    } catch (fbError: any) {
+      console.error("Admin user sync to Firebase failed:", fbError);
+      return NextResponse.json({
+        error: `Authentication server sync failed: ${fbError.message || "Invalid update properties"}`
+      }, { status: 400 });
+    }
+
+    try {
+      user.fullName = targetFullName;
+      user.email = targetEmail;
+      user.mobile = targetMobile;
+      if (usdtWalletAddress !== undefined) user.usdtWalletAddress = usdtWalletAddress;
+      if (body.withdrawalsEnabled !== undefined) user.withdrawalsEnabled = body.withdrawalsEnabled;
+
+      await user.save();
+    } catch (mongoError: any) {
+      console.error("Admin save user details to MongoDB failed, rolling back Firebase:", mongoError);
+
+      if (firebaseSuccess && user.firebaseUid) {
+        const rollbackProps: any = {};
+        if (targetFullName !== originalFullName) rollbackProps.displayName = originalFullName;
+        if (targetEmail !== originalEmail) rollbackProps.email = originalEmail;
+        if (targetMobile !== originalMobile && originalMobile.startsWith("+")) {
+          rollbackProps.phoneNumber = originalMobile;
+        }
+        try {
+          await updateFirebaseUser(user.firebaseUid, rollbackProps);
+        } catch (rollError) {
+          console.error("Critical admin Firebase rollback failed:", rollError);
+        }
+      }
+
+      return NextResponse.json({ error: "Failed to save profile changes to database. Action rolled back." }, { status: 500 });
+    }
+
     return NextResponse.json({ success: true, message: "Profile updated successfully", member: user });
   }
 

@@ -17,6 +17,7 @@ import {
   ArrowDownRight,
   Zap,
   ShieldCheck,
+  Clock,
 } from "lucide-react";
 import { currencySymbol } from "@/lib/currency";
 import Link from "next/link";
@@ -61,13 +62,23 @@ export default function WalletPage() {
   const [data, setData] = useState<WalletData | null>(null);
   const [loading, setLoading] = useState(true);
   const [txFilter, setTxFilter] = useState<string>("all");
+  const [userRank, setUserRank] = useState<string>("Unranked");
+  const [dailyReturnPending, setDailyReturnPending] = useState(0);
+  const [totalDailyReturnSettled, setTotalDailyReturnSettled] = useState(0);
 
   const sym = currencySymbol(profile?.country);
 
   useEffect(() => {
-    fetch("/api/wallet", { cache: "no-store" })
-      .then((r) => r.json())
-      .then(setData)
+    Promise.all([
+      fetch("/api/wallet", { cache: "no-store" }).then((r) => r.json()),
+      fetch("/api/user/me", { cache: "no-store" }).then((r) => r.json()),
+    ])
+      .then(([walletData, meData]) => {
+        setData(walletData);
+        setUserRank(meData?.user?.rank || meData?.stats?.rank || "Unranked");
+        setDailyReturnPending(meData?.stats?.dailyReturnPending || 0);
+        setTotalDailyReturnSettled(meData?.stats?.totalDailyReturnSettled || 0);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -296,6 +307,49 @@ export default function WalletPage() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section 3.5: Rank & Daily Return Status ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {/* Current Rank */}
+        <Link href="/rewards" className="stat-card group border border-amber-500/20">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: "linear-gradient(135deg, #f5c842 0%, #e0a020 100%)" }}>
+              <Trophy size={22} className="text-black" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-ink-muted font-semibold uppercase tracking-wide">Current Rank</p>
+              <p className="font-display text-xl font-bold mt-0.5 text-amber-400 group-hover:text-amber-300 transition">
+                {loading ? "—" : (profile?.rank || userRank || "Unranked")}
+              </p>
+              <p className="text-xs text-ink-muted mt-0.5">View rank rewards →</p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Daily Return Pending */}
+        <div className="stat-card border border-yellow-400/20">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-yellow-400/15 flex items-center justify-center shrink-0">
+              <Clock size={22} className="text-yellow-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-ink-muted font-semibold uppercase tracking-wide">Daily Return (Pending)</p>
+              <p className="font-display text-xl font-bold mt-0.5 text-yellow-400">
+                {loading ? "—" : `$${dailyReturnPending.toLocaleString(undefined, { maximumFractionDigits: 4 })}`}
+              </p>
+              <p className="text-[10px] text-yellow-400/60 mt-0.5 leading-snug">
+                Available for withdrawal after monthly settlement
+              </p>
+              {totalDailyReturnSettled > 0 && (
+                <p className="text-[10px] text-neon-green/70 mt-1">
+                  Total settled: ${totalDailyReturnSettled.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

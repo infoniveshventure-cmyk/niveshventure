@@ -180,6 +180,8 @@ export async function GET() {
       rightTotalBusiness: user.rightTotalBusiness,
       leftCarryForward: user.leftCarryForward,
       rightCarryForward: user.rightCarryForward,
+      dailyReturnPending: user.dailyReturnPending || 0,
+      totalDailyReturnSettled: user.totalDailyReturnSettled || 0,
     },
   });
 }

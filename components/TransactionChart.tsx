@@ -10,7 +10,7 @@ import {
   Tooltip,
   ReferenceLine,
 } from "recharts";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Tx = {
@@ -24,14 +24,35 @@ type Tx = {
 
 interface ChartPoint {
   date: string;          // "DD MMM"
-  income: number;        // cumulative credits that day
+  income: number;        // cumulative earnings that day
   expense: number;       // cumulative debits that day
-  balance: number;       // running net balance
-  incomeDay: number;     // credits on that day only
+  balance: number;       // running net balance (income - expense)
+  incomeDay: number;     // earnings on that day only
   expenseDay: number;    // debits on that day only
   incomePercent: number;
   expensePercent: number;
   balancePercent: number;
+}
+
+// Helper to identify earnings/income transactions
+function isIncomeTransaction(tx: { type: string; direction: string }): boolean {
+  const incomeTypes = [
+    "referral_income",
+    "matching_income",
+    "returns_income",
+    "daily_return",
+    "level_income",
+    "reward_income",
+    "share_reward",
+    "booster_income",
+    "refund"
+  ];
+  return tx.direction === "credit" && incomeTypes.includes(tx.type);
+}
+
+// Helper to identify expense/spend/outflow transactions
+function isExpenseTransaction(tx: { direction: string }): boolean {
+  return tx.direction === "debit";
 }
 
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
@@ -88,9 +109,8 @@ function CustomLegend() {
 // ─── Helper: bucket transactions by day ──────────────────────────────────────
 function buildChartData(transactions: Tx[]): ChartPoint[] {
   if (!transactions.length) {
-    // No data → return a single neutral point so lines render centred
     const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
-    return [{ date: today, income: 0, expense: 0, balance: 0, incomeDay: 0, expenseDay: 0, incomePercent: 50, expensePercent: 50, balancePercent: 50 }];
+    return [{ date: today, income: 0, expense: 0, balance: 0, incomeDay: 0, expenseDay: 0, incomePercent: 100, expensePercent: 0, balancePercent: 100 }];
   }
 
   // Sort oldest → newest
@@ -103,9 +123,9 @@ function buildChartData(transactions: Tx[]): ChartPoint[] {
   for (const tx of sorted) {
     const dateStr = new Date(tx.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
     const prev = byDay.get(dateStr) ?? { incomeDay: 0, expenseDay: 0 };
-    if (tx.direction === "credit") {
+    if (isIncomeTransaction(tx)) {
       prev.incomeDay += tx.amount;
-    } else {
+    } else if (isExpenseTransaction(tx)) {
       prev.expenseDay += tx.amount;
     }
     byDay.set(dateStr, prev);
@@ -132,20 +152,53 @@ function buildChartData(transactions: Tx[]): ChartPoint[] {
     ...d,
     incomePercent: (d.income / maxIncome) * 100,
     expensePercent: (d.expense / maxExpense) * 100,
-    // Balance: map from [-max, max] → [0, 100] so it centres at 50
     balancePercent: 50 + (d.balance / maxAbsBalance) * 50,
   }));
 }
 
 // ─── Main export ─────────────────────────────────────────────────────────────
 export default function TransactionChart({ transactions }: { transactions: Tx[] }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const data = useMemo(() => buildChartData(transactions), [transactions]);
   const hasData = transactions.length > 0;
+
+  // ─── Calculate Dynamic Summary Statistics ───
+  const { totalIncome, totalExpense, netBalance, incomePct, expensePct, balancePct } = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    for (const tx of transactions) {
+      if (isIncomeTransaction(tx)) {
+        income += tx.amount;
+      } else if (isExpenseTransaction(tx)) {
+        expense += tx.amount;
+      }
+    }
+    const balance = income - expense;
+
+    // Income % represents baseline earnings (always 100% if income > 0)
+    const inPct = income > 0 ? 100 : 0;
+    const exPct = income > 0 ? (expense / income) * 100 : 0;
+    const balPct = income > 0 ? (balance / income) * 100 : 0;
+
+    return {
+      totalIncome: income,
+      totalExpense: expense,
+      netBalance: balance,
+      incomePct: parseFloat(inPct.toFixed(1)),
+      expensePct: parseFloat(exPct.toFixed(1)),
+      balancePct: parseFloat(balPct.toFixed(1)),
+    };
+  }, [transactions]);
 
   return (
     <div className="glass-card p-5 mt-6 relative overflow-hidden">
       {/* accent strip */}
-      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-80" />
+      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-neon-green via-yellow-500 to-neon-magenta opacity-80" />
 
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -158,75 +211,147 @@ export default function TransactionChart({ transactions }: { transactions: Tx[] 
         </div>
         {!hasData && (
           <span className="text-[10px] px-2 py-1 rounded-full border border-white/10 text-ink-muted">
-            Demo view
+            Empty State
           </span>
         )}
       </div>
 
-      <ResponsiveContainer width="100%" height={220}>
-        <LineChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+      {/* Graph Area */}
+      <div className="h-[220px] w-full">
+        {!mounted ? (
+          <div className="w-full h-full bg-white/5 animate-pulse rounded-xl flex items-center justify-center text-xs text-ink-muted">
+            Loading chart...
+          </div>
+        ) : !hasData ? (
+          <div className="w-full h-full border border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center text-center p-6 bg-white/[0.02]">
+            <p className="text-sm font-semibold text-ink-muted">No Transaction Records Found</p>
+            <p className="text-xs text-ink-muted/70 mt-1 max-w-[280px]">
+              Once deposit, investment, or income transactions are completed, your activity graph will render here automatically.
+            </p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
 
-          <XAxis
-            dataKey="date"
-            tick={{ fill: "#8888aa", fontSize: 10 }}
-            axisLine={false}
-            tickLine={false}
-            interval="preserveStartEnd"
-          />
+              <XAxis
+                dataKey="date"
+                tick={{ fill: "#8888aa", fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                interval="preserveStartEnd"
+              />
 
-          <YAxis
-            domain={[0, 100]}
-            tickFormatter={(v) => `${v}%`}
-            tick={{ fill: "#8888aa", fontSize: 10 }}
-            axisLine={false}
-            tickLine={false}
-            ticks={[0, 25, 50, 75, 100]}
-          />
+              <YAxis
+                domain={[0, 100]}
+                tickFormatter={(v) => `${v}%`}
+                tick={{ fill: "#8888aa", fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                ticks={[0, 25, 50, 75, 100]}
+              />
 
-          {/* Centre reference at 50% (zero for balance) */}
-          <ReferenceLine
-            y={50}
-            stroke="rgba(255,255,255,0.08)"
-            strokeDasharray="4 4"
-          />
+              <ReferenceLine
+                y={50}
+                stroke="rgba(255,255,255,0.08)"
+                strokeDasharray="4 4"
+              />
 
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.12)", strokeWidth: 1 }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.12)", strokeWidth: 1 }} />
 
-          {/* Green = income */}
-          <Line
-            type="monotone"
-            dataKey="incomePercent"
-            stroke="#22c55e"
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4, fill: "#22c55e", strokeWidth: 0 }}
-          />
+              <Line
+                type="monotone"
+                dataKey="incomePercent"
+                stroke="#22c55e"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: "#22c55e", strokeWidth: 0 }}
+              />
 
-          {/* Red = expense */}
-          <Line
-            type="monotone"
-            dataKey="expensePercent"
-            stroke="#ef4444"
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4, fill: "#ef4444", strokeWidth: 0 }}
-          />
+              <Line
+                type="monotone"
+                dataKey="expensePercent"
+                stroke="#ef4444"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: "#ef4444", strokeWidth: 0 }}
+              />
 
-          {/* Yellow = net balance */}
-          <Line
-            type="monotone"
-            dataKey="balancePercent"
-            stroke="#eab308"
-            strokeWidth={2}
-            strokeDasharray="6 3"
-            dot={false}
-            activeDot={{ r: 4, fill: "#eab308", strokeWidth: 0 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+              <Line
+                type="monotone"
+                dataKey="balancePercent"
+                stroke="#eab308"
+                strokeWidth={2}
+                strokeDasharray="6 3"
+                dot={false}
+                activeDot={{ r: 4, fill: "#eab308", strokeWidth: 0 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
 
-      <CustomLegend />
+      {hasData && (
+        <div className="mt-2">
+          <CustomLegend />
+        </div>
+      )}
+
+      {/* ─── Detailed Financial Data Summary Cards ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-white/5">
+        {/* Income Card */}
+        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 flex flex-col justify-between hover:border-white/10 transition-colors">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[10px] text-ink-muted uppercase font-bold tracking-wider">Total Income</p>
+              <span className="text-xs font-bold text-neon-green font-mono">{incomePct}%</span>
+            </div>
+            <p className="text-lg font-bold font-display text-white mt-1">
+              ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          {/* Progress Bar */}
+          <div className="w-full bg-white/10 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-neon-green h-full rounded-full transition-all duration-500" style={{ width: `${incomePct}%` }} />
+          </div>
+        </div>
+
+        {/* Expense Card */}
+        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 flex flex-col justify-between hover:border-white/10 transition-colors">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[10px] text-ink-muted uppercase font-bold tracking-wider">Total Expense</p>
+              <span className="text-xs font-bold text-neon-magenta font-mono">{expensePct}%</span>
+            </div>
+            <p className="text-lg font-bold font-display text-white mt-1">
+              ${totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          {/* Progress Bar */}
+          <div className="w-full bg-white/10 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-neon-magenta h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, expensePct))}%` }} />
+          </div>
+        </div>
+
+        {/* Net Balance Card */}
+        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 flex flex-col justify-between hover:border-white/10 transition-colors">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[10px] text-ink-muted uppercase font-bold tracking-wider">Net Balance</p>
+              <span className="text-xs font-bold text-yellow-400 font-mono">
+                {balancePct}%
+              </span>
+            </div>
+            <p className={`text-lg font-bold font-display mt-1 ${netBalance >= 0 ? "text-yellow-400" : "text-neon-magenta"}`}>
+              {netBalance < 0 ? "-" : ""}${Math.abs(netBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          {/* Progress Bar */}
+          <div className="w-full bg-white/10 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-yellow-400 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, balancePct))}%` }} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -37,6 +37,14 @@ const DEFAULT_RULES = [
   { key: "min_investment_amount", category: "general", label: "Minimum Investment Amount ($)", value: 30, type: "number", min: 10, unit: "$" },
   { key: "withdrawal_min_amount", category: "general", label: "Minimum Withdrawal Amount ($)", value: 10, type: "number", min: 1, unit: "$" },
   { key: "withdrawal_fee_pct", category: "general", label: "Withdrawal Fee %", value: 5, type: "percentage", min: 0, max: 20, unit: "%" },
+  // Daily Return System
+  { key: "daily_return_mode", category: "returns", label: "Return Mode (auto / manual)", value: "auto", type: "string", min: null as unknown as number, max: null as unknown as number, unit: "" },
+  { key: "daily_return_monthly_pct", category: "returns", label: "Monthly Return %", value: 6, type: "percentage", min: 0, max: 30, unit: "%" },
+  { key: "daily_return_manual_pct", category: "returns", label: "Manual Daily Return %", value: 0.2, type: "percentage", min: 0, max: 5, unit: "%" },
+  { key: "prediction_free_misses", category: "returns", label: "Allowed Free Misses Per Month", value: 3, type: "number", min: 0, max: 31, unit: "days" },
+  { key: "production_completed_monthly_rate", category: "returns", label: "Production Completed Monthly Rate %", value: 7, type: "number", min: 0, max: 30, unit: "%" },
+  { key: "production_missed_monthly_rate", category: "returns", label: "Production Missed Monthly Rate %", value: 5, type: "number", min: 0, max: 30, unit: "%" },
+  { key: "production_max_miss_limit", category: "returns", label: "Production Max Miss Limit", value: 2, type: "number", min: 0, max: 31, unit: "days" },
 ];
 
 export async function GET(req: NextRequest) {
@@ -57,12 +65,26 @@ export async function GET(req: NextRequest) {
   // Cleanup obsolete rules if they exist
   await BusinessRule.deleteMany({ key: { $in: ["reward_rank_star", "reward_rank_gold", "reward_rank_diamond"] } });
 
-  // Seed any missing default rules
-  for (const r of DEFAULT_RULES) {
-    const exists = await BusinessRule.findOne({ key: r.key });
-    if (!exists) {
-      await BusinessRule.create({ ...r, updatedBy: "system", history: [] });
+  // ── Deduplicate: remove extras if any key has more than one document ──
+  const dupKeys = await BusinessRule.aggregate([
+    { $group: { _id: "$key", count: { $sum: 1 }, ids: { $push: "$_id" } } },
+    { $match: { count: { $gt: 1 } } },
+  ]);
+  for (const dup of dupKeys) {
+    // Keep the last id (most recently inserted), delete the rest
+    const [keep, ...remove] = [...dup.ids].reverse();
+    if (remove.length) {
+      await BusinessRule.deleteMany({ _id: { $in: remove } });
     }
+  }
+
+  // ── Seed any missing default rules (upsert — never errors on duplicates) ──
+  for (const r of DEFAULT_RULES) {
+    await BusinessRule.updateOne(
+      { key: r.key },
+      { $setOnInsert: { ...r, updatedBy: "system", history: [] } },
+      { upsert: true }
+    );
   }
 
   const cacheKey = "business_rules_all";

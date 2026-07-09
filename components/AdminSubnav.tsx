@@ -12,6 +12,8 @@ const tabs = [
   { href: "/admin/deposits", label: "Deposits" },
   { href: "/admin/kyc", label: "KYC" },
   { href: "/admin/monthly-closing", label: "Monthly Closing" },
+  { href: "/admin/daily-return", label: "Daily Returns" },
+  { href: "/admin/predictions", label: "Predictions" },
   { href: "/admin/income-distribution", label: "Income Distribution" },
   { href: "/admin/rewards", label: "Rewards" },
   { href: "/admin/share-tree", label: "Share Tree" },

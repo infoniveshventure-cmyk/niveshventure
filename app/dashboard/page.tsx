@@ -4,20 +4,31 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import DashboardShell from "@/components/DashboardShell";
 import { useAuth } from "@/lib/AuthContext";
-import { Wallet, TrendingUp, Users, Trophy, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Wallet, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react";
 import Link from "next/link";
 import DirectProgressCard from "@/components/DirectProgressCard";
 import TransactionChart from "@/components/TransactionChart";
+import toast from "react-hot-toast";
 
 type Tx = { _id: string; type: string; direction: "credit" | "debit"; amount: number; currency: string; createdAt: string; note: string };
 
 export default function DashboardPage() {
   const { profile } = useAuth();
   const [stats, setStats] = useState<any>(null);
+  const [dailyReturnPending, setDailyReturnPending] = useState(0);
   const [transactions, setTransactions] = useState<Tx[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bannerUrl, setBannerUrl] = useState("");
+
+  // Prediction system state
+  const [predQuestion, setPredQuestion] = useState<any>(null);
+  const [predSubmission, setPredSubmission] = useState<any>(null);
+  const [monthlyMissCount, setMonthlyMissCount] = useState(0);
+  const [remainingFreeMisses, setRemainingFreeMisses] = useState(0);
+  const [submittingPrediction, setSubmittingPrediction] = useState(false);
+  const [productionStatus, setProductionStatus] = useState("active");
+  const [currentReturnPlan, setCurrentReturnPlan] = useState(7);
 
   useEffect(() => {
     async function load() {
@@ -30,6 +41,7 @@ export default function DashboardPage() {
         if (meRes.ok) {
           const me = await meRes.json();
           setStats(me.stats);
+          setDailyReturnPending(me.stats?.dailyReturnPending || 0);
         }
         if (walletRes.ok) {
           const w = await walletRes.json();
@@ -38,6 +50,18 @@ export default function DashboardPage() {
         if (settingsRes.ok) {
           const s = await settingsRes.json();
           setBannerUrl(s.settings?.dashboardWelcomeBannerUrl || "");
+        }
+
+        // Fetch prediction details
+        const predRes = await fetch("/api/user/predictions", { cache: "no-store" });
+        if (predRes.ok) {
+          const pred = await predRes.json();
+          setPredQuestion(pred.dailyQuestion);
+          setPredSubmission(pred.submission);
+          setMonthlyMissCount(pred.monthlyMissCount || 0);
+          setRemainingFreeMisses(pred.remainingFreeMisses || 0);
+          setProductionStatus(pred.productionStatus || "active");
+          setCurrentReturnPlan(pred.currentReturnPlan || 7);
         }
       } finally {
         setLoading(false);
@@ -48,14 +72,47 @@ export default function DashboardPage() {
   }, []);
 
   const cards = [
-    { label: "Wallet Balance", value: profile?.walletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet" },
-    { label: "Total Earnings", value:
+    { label: "Wallet Balance",       value: profile?.walletBalance ?? 0,  icon: Wallet,    prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Total Earnings",       value:
         (profile?.totalReferralIncome || 0) + (profile?.totalMatchingIncome || 0) +
-        (profile?.totalReturnsIncome || 0) + (profile?.totalLevelIncome || 0) + (profile?.totalRewardIncome || 0),
-      icon: TrendingUp, prefix: "$", href: "/income" },
-    { label: "Total Team", value: stats?.totalTeam ?? 0, icon: Users, prefix: "", href: "/team" },
-    { label: "Current Rank", value: profile?.rank ?? "Unranked", icon: Trophy, prefix: "", href: "/rewards" },
+        (profile?.totalReturnsIncome  || 0) + (profile?.totalLevelIncome  || 0) + (profile?.totalRewardIncome || 0),
+      icon: TrendingUp, prefix: "$", href: "/income", color: "text-neon-green" },
+    { label: "Daily Return (Pending)", value: dailyReturnPending, icon: Clock, prefix: "$", href: "/income", color: "text-yellow-400", isPending: true },
+    { label: "Total Team",           value: stats?.totalTeam ?? 0,        icon: Users,     prefix: "",  href: "/team",   color: "" },
   ];
+
+  async function handlePredict(answer: "yes" | "no") {
+    if (submittingPrediction) return;
+    setSubmittingPrediction(true);
+    try {
+      const res = await fetch("/api/user/predictions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+
+      setPredSubmission(data.submission);
+      toast.success("Prediction Submitted Successfully!");
+      
+      // Reload me stats
+      const meRes = await fetch("/api/user/predictions", { cache: "no-store" });
+      if (meRes.ok) {
+        const pred = await meRes.json();
+        setPredQuestion(pred.dailyQuestion);
+        setPredSubmission(pred.submission);
+        setMonthlyMissCount(pred.monthlyMissCount || 0);
+        setRemainingFreeMisses(pred.remainingFreeMisses || 0);
+        setProductionStatus(pred.productionStatus || "active");
+        setCurrentReturnPlan(pred.currentReturnPlan || 7);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit prediction");
+    } finally {
+      setSubmittingPrediction(false);
+    }
+  }
 
   return (
     <DashboardShell>
@@ -130,6 +187,80 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ── Daily Market Prediction Card ── */}
+      <div className="mb-6 glass-card p-5 border border-neon-cyan/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex-1">
+            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+              productionStatus === "closed"
+                ? "bg-neon-magenta/25 text-neon-magenta"
+                : "bg-neon-cyan/25 text-neon-cyan"
+            }`}>
+              {productionStatus === "closed"
+                ? `${currentReturnPlan}% Plan Active – Production Closed`
+                : `${currentReturnPlan}% Monthly Plan Active - Daily Production Active`}
+            </span>
+            <p className={`text-md font-display font-medium mt-3 mb-1 ${
+              productionStatus === "closed" ? "text-ink-muted line-through" : "text-white"
+            }`}>
+              {predQuestion ? `"${predQuestion.questionText}"` : "Today's prediction question is being generated..."}
+            </p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-ink-muted">
+              <span>Monthly Misses: <strong className="text-white font-mono">{monthlyMissCount}</strong></span>
+              <span>•</span>
+              <span>Remaining Free Misses: <strong className="text-yellow-400 font-mono">{remainingFreeMisses}</strong></span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {productionStatus === "closed" ? (
+              <div className="flex gap-2">
+                <button
+                  disabled={true}
+                  className="px-5 py-2 text-xs font-semibold rounded-xl bg-white/5 text-ink-muted cursor-not-allowed transition"
+                >
+                  YES
+                </button>
+                <button
+                  disabled={true}
+                  className="px-5 py-2 text-xs font-semibold rounded-xl bg-white/5 text-ink-muted cursor-not-allowed transition"
+                >
+                  NO
+                </button>
+              </div>
+            ) : predSubmission ? (
+              <div className="flex flex-col items-end gap-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-right">
+                <span className="text-xs text-neon-green font-bold flex items-center gap-1">
+                  ✓ Prediction Submitted Successfully
+                </span>
+                <span className="text-[10px] text-ink-muted">
+                  You predicted: <strong className="text-neon-cyan uppercase font-bold">{predSubmission.answer}</strong>
+                </span>
+              </div>
+            ) : predQuestion ? (
+              <div className="flex gap-2">
+                <button
+                  disabled={submittingPrediction}
+                  onClick={() => handlePredict("yes")}
+                  className="px-5 py-2 text-xs font-semibold rounded-xl bg-neon-green text-black hover:bg-neon-green/80 disabled:opacity-50 transition"
+                >
+                  YES
+                </button>
+                <button
+                  disabled={submittingPrediction}
+                  onClick={() => handlePredict("no")}
+                  className="px-5 py-2 text-xs font-semibold rounded-xl bg-neon-magenta text-white hover:bg-neon-magenta/80 disabled:opacity-50 transition"
+                >
+                  NO
+                </button>
+              </div>
+            ) : (
+              <span className="text-xs text-ink-muted italic">Waiting for daily generation...</span>
+            )}
+          </div>
+        </div>
+      </div>
+
       {offers.length > 0 && (
         <div className="flex gap-3 overflow-x-auto mb-6 pb-1">
           {offers.map((o) => (
@@ -147,13 +278,20 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {cards.map((c) => (
           <Link key={c.label} href={c.href} className="stat-card group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center mb-3">
-              <c.icon size={18} className="text-base" />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
+              c.isPending
+                ? "bg-yellow-400/20"
+                : "bg-gradient-to-br from-neon-violet to-neon-cyan"
+            }`}>
+              <c.icon size={18} className={c.isPending ? "text-yellow-400" : "text-base"} />
             </div>
             <p className="text-xs text-ink-muted">{c.label}</p>
-            <p className="font-display text-xl font-bold mt-1 group-hover:text-neon-cyan transition">
-              {c.prefix}{typeof c.value === "number" ? c.value.toLocaleString() : c.value}
+            <p className={`font-display text-xl font-bold mt-1 group-hover:text-neon-cyan transition ${c.color || ""}`}>
+              {c.prefix}{typeof c.value === "number" ? c.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : c.value}
             </p>
+            {c.isPending && (
+              <p className="text-[10px] text-yellow-400/70 mt-1 leading-snug">Available after monthly settlement</p>
+            )}
           </Link>
         ))}
       </div>

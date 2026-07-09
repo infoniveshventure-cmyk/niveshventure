@@ -39,6 +39,12 @@ export async function verifyFirebaseToken(idToken: string) {
   return getAuth(app).verifyIdToken(idToken);
 }
 
+export async function updateFirebaseUser(uid: string, properties: { email?: string; phoneNumber?: string; displayName?: string }) {
+  const app = getAdminApp();
+  const auth = getAuth(app);
+  return auth.updateUser(uid, properties);
+}
+
 export async function updateFirebaseUserPasswordByEmail(email: string, newPassword: string) {
   const app = getAdminApp();
   const auth = getAuth(app);

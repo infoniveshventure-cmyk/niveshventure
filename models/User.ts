@@ -51,6 +51,12 @@ const UserSchema = new Schema(
     totalRewardIncome: { type: Number, default: 0 },
     totalInvestment: { type: Number, default: 0 },
     totalWithdrawn: { type: Number, default: 0 },
+    dailyReturnPending: { type: Number, default: 0 },       // accumulates each day, not withdrawable
+    totalDailyReturnSettled: { type: Number, default: 0 },  // lifetime total settled to wallet
+    monthlyMissCount: { type: Number, default: 0 },
+    lastMissResetMonth: { type: String, default: "" }, // YYYY-MM format
+    currentReturnPlan: { type: Number, default: 7 },
+    productionStatus: { type: String, enum: ["active", "closed"], default: "active" },
 
     leftCarryForward: { type: Number, default: 0 },
     rightCarryForward: { type: Number, default: 0 },

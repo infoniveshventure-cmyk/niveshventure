@@ -9,6 +9,7 @@ const TransactionSchema = new Schema(
         "referral_income",
         "matching_income",
         "returns_income",
+        "daily_return",
         "level_income",
         "reward_income",
         "investment",
