@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="graphFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00FFA3" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#00FFA3" stop-opacity="0.0"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect x="1" y="1" width="318" height="198" rx="16" fill="url(#cardGrad)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5"/>
+  
+  <!-- Header -->
+  <text x="24" y="36" fill="#94A3B8" font-family="'Inter', sans-serif" font-size="11" font-weight="600" letter-spacing="1">ROI YIELD STATISTICS</text>
+  
+  <!-- Large rate display -->
+  <text x="24" y="72" fill="#00FFA3" font-family="'Space Grotesk', sans-serif" font-size="32" font-weight="700">6.0%</text>
+  <text x="110" y="65" fill="#FFFFFF" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Stable Monthly Yield</text>
+  <text x="110" y="80" fill="#94A3B8" font-family="'Inter', sans-serif" font-size="9">Calculated Daily at 12:00 AM</text>
+
+  <!-- Bar/Area graph in background -->
+  <path d="M 24 160 L 60 145 L 100 152 L 140 130 L 180 138 L 220 110 L 260 120 L 296 90 L 296 170 L 24 170 Z" fill="url(#graphFill)"/>
+  <path d="M 24 160 L 60 145 L 100 152 L 140 130 L 180 138 L 220 110 L 260 120 L 296 90" fill="none" stroke="#00FFA3" stroke-width="2"/>
+  
+  <!-- Vertical grid marker lines -->
+  <line x1="140" y1="90" x2="140" y2="170" stroke="rgba(255,255,255,0.08)" stroke-dasharray="2 2"/>
+  <line x1="220" y1="90" x2="220" y2="170" stroke="rgba(255,255,255,0.08)" stroke-dasharray="2 2"/>
+  
+  <!-- Dot at peak -->
+  <circle cx="296" cy="90" r="3" fill="#FFFFFF"/>
+</svg>

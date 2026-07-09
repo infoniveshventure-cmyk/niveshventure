@@ -9,6 +9,8 @@ import Link from "next/link";
 import DirectProgressCard from "@/components/DirectProgressCard";
 import TransactionChart from "@/components/TransactionChart";
 import toast from "react-hot-toast";
+import { CountUpNumber } from "@/components/motion/CountUpNumber";
+import { PremiumTiltGlow } from "@/components/motion/PremiumTiltGlow";
 
 type Tx = { _id: string; type: string; direction: "credit" | "debit"; amount: number; currency: string; createdAt: string; note: string };
 

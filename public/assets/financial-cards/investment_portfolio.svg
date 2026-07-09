@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Card Background -->
+  <rect x="1" y="1" width="318" height="198" rx="16" fill="url(#cardGrad)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5"/>
+  
+  <!-- Header Title -->
+  <text x="24" y="36" fill="#94A3B8" font-family="'Inter', sans-serif" font-size="11" font-weight="600" letter-spacing="1">INVESTMENT PORTFOLIO</text>
+  
+  <!-- Total Portfolio Value -->
+  <text x="24" y="68" fill="#FFFFFF" font-family="'Space Grotesk', sans-serif" font-size="28" font-weight="700">$50,000</text>
+  <text x="24" y="86" fill="#94A3B8" font-family="'Inter', sans-serif" font-size="11">Total Active Investment</text>
+
+  <!-- Circular Ring Progress indicators -->
+  <circle cx="230" cy="100" r="50" fill="none" stroke="#1E293B" stroke-width="12"/>
+  
+  <!-- Segment 1 (70% - Neon Violet) -->
+  <circle cx="230" cy="100" r="50" fill="none" stroke="#7B5CFF" stroke-width="12" stroke-dasharray="220 314" stroke-dashoffset="0" transform="rotate(-90 230 100)" stroke-linecap="round"/>
+  
+  <!-- Segment 2 (20% - Neon Cyan) -->
+  <circle cx="230" cy="100" r="50" fill="none" stroke="#00E5FF" stroke-width="12" stroke-dasharray="60 314" stroke-dashoffset="-220" transform="rotate(-90 230 100)" stroke-linecap="round"/>
+
+  <!-- Legend -->
+  <g transform="translate(24, 115)">
+    <!-- Legend item 1 -->
+    <rect x="0" y="0" width="8" height="8" rx="2" fill="#7B5CFF"/>
+    <text x="16" y="8" fill="#FFFFFF" font-family="'Inter', sans-serif" font-size="11" font-weight="600">72% Equity</text>
+    
+    <!-- Legend item 2 -->
+    <rect x="0" y="18" width="8" height="8" rx="2" fill="#00E5FF"/>
+    <text x="16" y="26" fill="#FFFFFF" font-family="'Inter', sans-serif" font-size="11" font-weight="600">20% Crypto</text>
+
+    <!-- Legend item 3 -->
+    <rect x="0" y="36" width="8" height="8" rx="2" fill="#64748B"/>
+    <text x="16" y="44" fill="#64748B" font-family="'Inter', sans-serif" font-size="11">8% Cash</text>
+  </g>
+</svg>

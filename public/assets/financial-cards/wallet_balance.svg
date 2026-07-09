@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="neonGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7B5CFF"/>
+      <stop offset="100%" stop-color="#00E5FF"/>
+    </linearGradient>
+    <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer Card Glass Border -->
+  <rect x="1" y="1" width="318" height="198" rx="16" fill="url(#cardGrad)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5"/>
+  
+  <!-- Subtle Internal Grid Gridlines -->
+  <path d="M 0 40 L 320 40 M 0 80 L 320 80 M 0 120 L 320 120 M 0 160 L 320 160 M 80 0 L 80 200 M 160 0 L 160 200 M 240 0 L 240 200" stroke="rgba(255, 255, 255, 0.03)" stroke-width="1"/>
+  
+  <!-- Card Header -->
+  <text x="24" y="36" fill="#94A3B8" font-family="'Inter', sans-serif" font-size="11" font-weight="600" letter-spacing="1">WALLET BALANCE</text>
+  
+  <!-- Microchip Symbol -->
+  <rect x="24" y="52" width="36" height="26" rx="4" fill="#334155" opacity="0.4" stroke="rgba(255,255,255,0.1)"/>
+  <path d="M 36 52 L 36 78 M 48 52 L 48 78 M 24 60 L 60 60 M 24 70 L 60 70" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+
+  <!-- Balance Value -->
+  <text x="24" y="112" fill="#FFFFFF" font-family="'Space Grotesk', sans-serif" font-size="24" font-weight="700">$124,580.00</text>
+  <text x="24" y="132" fill="#00FFA3" font-family="'Inter', sans-serif" font-size="11" font-weight="600">↑ +18.4% This Month</text>
+
+  <!-- Miniature Neon Sparkline Chart -->
+  <path d="M 180 140 Q 200 120 220 135 T 260 90 T 296 85" fill="none" stroke="url(#neonGlow)" stroke-width="3" stroke-linecap="round" filter="url(#glowEffect)"/>
+  <circle cx="296" cy="85" r="4" fill="#00E5FF"/>
+  
+  <!-- Footer Detail -->
+  <text x="24" y="174" fill="#64748B" font-family="'Inter', sans-serif" font-size="9" font-weight="500" letter-spacing="0.5">NIVESH PREMIUM MEMBER</text>
+</svg>

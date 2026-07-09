@@ -80,7 +80,7 @@ export default function FooterSection() {
               </div>
             </div>
 
-            <p className="text-ink-muted text-xs md:text-sm leading-relaxed max-w-xs">
+            <p className="text-white text-xs md:text-sm leading-relaxed max-w-xs">
               Building the future of financial freedom through transparent investments, 
               community growth, and multiple income streams for everyone.
             </p>
@@ -94,7 +94,7 @@ export default function FooterSection() {
                     key={s.label}
                     href={s.href}
                     aria-label={s.label}
-                    className="w-8 md:w-9 h-8 md:h-9 rounded-lg md:rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-ink-muted hover:text-white hover:border-neon-violet/40 hover:bg-neon-violet/10 transition-all duration-200"
+                    className="w-8 md:w-9 h-8 md:h-9 rounded-lg md:rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:text-white hover:border-neon-violet/40 hover:bg-neon-violet/10 transition-all duration-200"
                   >
                     <Icon size={14} className="md:w-[15px] md:h-[15px]" />
                   </a>
@@ -117,14 +117,14 @@ export default function FooterSection() {
               ) : (
                 <form onSubmit={handleSubscribe} className="flex flex-col md:flex-row gap-2">
                   <div className="relative flex-1">
-                    <Mail size={12} className="md:w-[13px] md:h-[13px] absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+                    <Mail size={12} className="md:w-[13px] md:h-[13px] absolute left-3 top-1/2 -translate-y-1/2 text-white" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email"
                       required
-                      className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl pl-8 md:pl-9 pr-2 md:pr-3 py-2 md:py-2.5 text-xs text-white placeholder:text-ink-muted focus:outline-none focus:border-neon-violet/50 transition-all"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl pl-8 md:pl-9 pr-2 md:pr-3 py-2 md:py-2.5 text-xs text-white placeholder:text-white focus:outline-none focus:border-neon-violet/50 transition-all"
                     />
                   </div>
                   <button
@@ -147,7 +147,7 @@ export default function FooterSection() {
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="text-xs md:text-sm text-ink-muted hover:text-white transition-colors duration-200 relative group"
+                      className="text-xs md:text-sm text-white hover:text-white transition-colors duration-200 relative group"
                     >
                       <span className="group-hover:text-neon-cyan transition-colors">{link.label}</span>
                     </a>
@@ -160,10 +160,10 @@ export default function FooterSection() {
 
         {/* Bottom bar */}
         <div className="pt-6 md:pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 md:gap-4">
-          <p className="text-xs text-ink-muted text-center sm:text-left">
+          <p className="text-xs text-white text-center sm:text-left">
             © {new Date().getFullYear()} Nivesh Ventures. All rights reserved.
           </p>
-          <div className="flex items-center gap-3 md:gap-4 text-xs text-ink-muted flex-wrap justify-center sm:justify-end">
+          <div className="flex items-center gap-3 md:gap-4 text-xs text-white flex-wrap justify-center sm:justify-end">
             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
             <span className="w-px h-3 bg-white/10" />
             <a href="#" className="hover:text-white transition-colors">Terms of Service</a>

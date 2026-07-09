@@ -2,31 +2,36 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { useRef, useMemo } from "react";
+import { motion, useInView } from "framer-motion";
 import { ArrowRight, TrendingUp, DollarSign, Users, BarChart2 } from "lucide-react";
+import { ScrollMouseInteractive } from "@/components/motion/ScrollMouseInteractive";
 
 const PARTICLES = 40;
 
-function FloatingCard({ className, delay = 0, children }: {
-  className?: string; delay?: number; children: React.ReactNode;
+function FloatingCard({ className, delay = 0, children, isInView }: {
+  className?: string; delay?: number; children: React.ReactNode; isInView: boolean;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: [0, -12, 0] }}
-      transition={{
-        opacity: { duration: 0.6, delay },
-        y: { duration: 5 + delay, repeat: Infinity, ease: "easeInOut", delay },
-      }}
-      className={`absolute landing-card p-4 ${className}`}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ opacity: { duration: 0.6, delay } }}
+      className={`absolute ${className}`}
     >
-      {children}
+      <ScrollMouseInteractive isInView={isInView} depth="front" maxTranslateY={25} maxTilt={12}>
+        <div className="landing-card p-4 w-full h-full">
+          {children}
+        </div>
+      </ScrollMouseInteractive>
     </motion.div>
   );
 }
 
 export default function HeroSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
+
   const particles = useMemo(() =>
     Array.from({ length: PARTICLES }, (_, i) => ({
       id: i,
@@ -38,7 +43,7 @@ export default function HeroSection() {
     })), []);
 
   return (
-    <section id="hero" className="relative pt-16 md:pt-24 pb-8 md:pb-16 overflow-hidden landing-aurora">
+    <section ref={sectionRef} id="hero" className="relative pt-16 md:pt-24 pb-8 md:pb-16 overflow-hidden landing-aurora">
       {/* Grid overlay */}
       <div className="absolute inset-0 landing-grid-overlay opacity-60 pointer-events-none" />
 
@@ -101,7 +106,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-sm md:text-lg text-ink-muted leading-relaxed max-w-xl"
+              className="text-sm md:text-lg text-white leading-relaxed max-w-xl"
             >
               Nivesh Ventures empowers you with multiple income streams — referral bonuses,
               matching commissions, booster rewards, and monthly returns — all in one transparent platform.
@@ -148,7 +153,7 @@ export default function HeroSection() {
               ].map((s) => (
                 <div key={s.label}>
                   <div className="text-xl md:text-2xl font-bold text-white">{s.value}</div>
-                  <div className="text-sm text-ink-muted">{s.label}</div>
+                  <div className="text-sm text-white">{s.label}</div>
                 </div>
               ))}
             </motion.div>
@@ -161,80 +166,84 @@ export default function HeroSection() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="absolute inset-x-8 top-8 landing-card p-6 landing-glow-pulse"
+              className="absolute inset-x-8 top-8 z-10"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-xs text-ink-muted">Monthly Portfolio Growth</p>
-                  <p className="text-2xl font-display font-bold text-white mt-1">+₹48,250</p>
-                  <p className="text-xs text-neon-green mt-1">↑ +18.4% this month</p>
-                </div>
-                <div className="w-12 h-12 rounded-2xl bg-neon-violet/20 flex items-center justify-center">
-                  <TrendingUp size={22} className="text-neon-violet" />
-                </div>
-              </div>
+              <ScrollMouseInteractive isInView={isInView} depth="middle" maxTranslateY={18} maxTilt={10}>
+                <div className="landing-card p-6 landing-glow-pulse">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-xs text-white">Monthly Portfolio Growth</p>
+                      <p className="text-2xl font-display font-bold text-white mt-1">+₹48,250</p>
+                      <p className="text-xs text-neon-green mt-1">↑ +18.4% this month</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-neon-violet/20 flex items-center justify-center">
+                      <TrendingUp size={22} className="text-neon-violet" />
+                    </div>
+                  </div>
 
-              {/* Mini chart SVG */}
-              <svg viewBox="0 0 280 60" className="w-full h-14" fill="none">
-                <defs>
-                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#7B5CFF" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#7B5CFF" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <motion.path
-                  d="M0,50 L40,40 L80,35 L120,20 L160,25 L200,10 L240,15 L280,5"
-                  stroke="url(#lineGrad1)"
-                  strokeWidth="2.5"
-                  fill="none"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 2, delay: 0.8, ease: "easeInOut" }}
-                />
-                <defs>
-                  <linearGradient id="lineGrad1" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#7B5CFF" />
-                    <stop offset="100%" stopColor="#00E5FF" />
-                  </linearGradient>
-                </defs>
-                <path d="M0,50 L40,40 L80,35 L120,20 L160,25 L200,10 L240,15 L280,5 L280,60 L0,60Z" fill="url(#chartGrad)" />
-              </svg>
+                  {/* Mini chart SVG */}
+                  <svg viewBox="0 0 280 60" className="w-full h-14" fill="none">
+                    <defs>
+                      <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#7B5CFF" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="#7B5CFF" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <motion.path
+                      d="M0,50 L40,40 L80,35 L120,20 L160,25 L200,10 L240,15 L280,5"
+                      stroke="url(#lineGrad1)"
+                      strokeWidth="2.5"
+                      fill="none"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 2, delay: 0.8, ease: "easeInOut" }}
+                    />
+                    <defs>
+                      <linearGradient id="lineGrad1" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#7B5CFF" />
+                        <stop offset="100%" stopColor="#00E5FF" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M0,50 L40,40 L80,35 L120,20 L160,25 L200,10 L240,15 L280,5 L280,60 L0,60Z" fill="url(#chartGrad)" />
+                  </svg>
+                </div>
+              </ScrollMouseInteractive>
             </motion.div>
 
             {/* Floating income card */}
-            <FloatingCard className="bottom-24 -left-4 w-52" delay={0.5}>
+            <FloatingCard className="bottom-24 -left-4 w-52" delay={0.5} isInView={isInView}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-neon-green/20 flex items-center justify-center flex-shrink-0">
                   <DollarSign size={16} className="text-neon-green" />
                 </div>
                 <div>
-                  <p className="text-xs text-ink-muted">Referral Bonus</p>
+                  <p className="text-xs text-white">Referral Bonus</p>
                   <p className="text-sm font-bold text-neon-green">+$127.50</p>
                 </div>
               </div>
             </FloatingCard>
 
             {/* Floating members card */}
-            <FloatingCard className="bottom-8 right-0 w-52" delay={1}>
+            <FloatingCard className="bottom-8 right-0 w-52" delay={1} isInView={isInView}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-neon-cyan/20 flex items-center justify-center flex-shrink-0">
                   <Users size={16} className="text-neon-cyan" />
                 </div>
                 <div>
-                  <p className="text-xs text-ink-muted">Team Members</p>
+                  <p className="text-xs text-white">Team Members</p>
                   <p className="text-sm font-bold text-neon-cyan">1,248 Active</p>
                 </div>
               </div>
             </FloatingCard>
 
             {/* Floating ROI card */}
-            <FloatingCard className="top-1/2 -right-4 w-44" delay={1.5}>
+            <FloatingCard className="top-1/2 -right-4 w-44" delay={1.5} isInView={isInView}>
               <div className="text-center">
                 <div className="w-10 h-10 rounded-full bg-neon-magenta/20 flex items-center justify-center mx-auto mb-2">
                   <BarChart2 size={16} className="text-neon-magenta" />
                 </div>
                 <p className="text-lg font-bold gradient-text">6.0%</p>
-                <p className="text-[10px] text-ink-muted">Monthly ROI Yield</p>
+                <p className="text-[10px] text-white">Monthly ROI Yield</p>
               </div>
             </FloatingCard>
 
@@ -271,7 +280,7 @@ export default function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2 }}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-ink-muted"
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-white"
       >
         <span className="text-xs tracking-widest uppercase">Scroll</span>
         <motion.div

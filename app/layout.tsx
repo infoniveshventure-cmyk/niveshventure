@@ -48,6 +48,10 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+import { MotionProvider } from "@/components/motion/MotionProvider";
+import { LenisProvider } from "@/components/motion/LenisProvider";
+import { GlobalCursorTrail } from "@/components/motion/GlobalCursorTrail";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -56,16 +60,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-body bg-base text-ink bg-grid-glow min-h-screen">
         <AuthProvider>
-          <ChatbotProvider>
-            {children}
-            <ChatbotWidget />
-            <Toaster
-              position="top-center"
-              toastOptions={{
-                style: { background: "#131A33", color: "#E8E8F0", border: "1px solid rgba(255,255,255,0.1)" },
-              }}
-            />
-          </ChatbotProvider>
+          <MotionProvider>
+            <GlobalCursorTrail />
+            <LenisProvider>
+              <ChatbotProvider>
+                {children}
+                <ChatbotWidget />
+                <Toaster
+                  position="top-center"
+                  toastOptions={{
+                    style: { background: "#131A33", color: "#E8E8F0", border: "1px solid rgba(255,255,255,0.1)" },
+                  }}
+                />
+              </ChatbotProvider>
+            </LenisProvider>
+          </MotionProvider>
         </AuthProvider>
         <script
           dangerouslySetInnerHTML={{

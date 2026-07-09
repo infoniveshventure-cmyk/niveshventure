@@ -1,10 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { useInView, motion } from "framer-motion";
 import {
   AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
   ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
+import { ScrollMouseInteractive } from "@/components/motion/ScrollMouseInteractive";
 
 const monthlyGrowthData = [
   { month: "Jan", value: 8200 },
@@ -49,7 +51,7 @@ function ChartCard({ title, subtitle, children }: {
     <div className="landing-card p-6 h-full">
       <div className="mb-5">
         <h3 className="font-display font-bold text-white text-lg">{title}</h3>
-        <p className="text-xs text-ink-muted mt-1">{subtitle}</p>
+        <p className="text-xs text-white mt-1">{subtitle}</p>
       </div>
       {children}
     </div>
@@ -57,51 +59,31 @@ function ChartCard({ title, subtitle, children }: {
 }
 
 export default function DataVizSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
+
   return (
-    <section className="relative py-8 md:py-20 bg-[#0A0E1A]">
+    <section ref={sectionRef} className="relative py-8 md:py-20 bg-[#0A0E1A]">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-violet/30 to-transparent" />
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
         {/* Header */}
         <div className="text-center mb-6 md:mb-12">
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-xs md:text-xs font-medium text-neon-cyan tracking-widest uppercase mb-2 md:mb-2"
-          >
+          <p className="text-xs md:text-xs font-medium text-neon-cyan tracking-widest uppercase mb-2 md:mb-2">
             Live Metrics
-          </motion.p>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white"
-          >
-            Real-time{" "}
-            <span className="gradient-text">Growth Analytics</span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15 }}
-            className="text-ink-muted mt-2 md:mt-3 max-w-xl mx-auto text-xs md:text-base"
-          >
+          </p>
+          <h2 className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white">
+            Real-time <span className="gradient-text">Growth Analytics</span>
+          </h2>
+          <p className="text-white mt-2 md:mt-3 max-w-xl mx-auto text-xs md:text-base">
             Transparent, data-driven performance across all investment categories
-          </motion.p>
+          </p>
         </div>
 
         {/* Charts row */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
           {/* Monthly Growth */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
+          <ScrollMouseInteractive isInView={isInView} depth="front" maxTranslateY={35} maxTilt={15} className="h-full">
             <ChartCard title="Portfolio Growth" subtitle="Monthly USDT volume (7 months)">
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={monthlyGrowthData}>
@@ -131,15 +113,10 @@ export default function DataVizSection() {
                 </AreaChart>
               </ResponsiveContainer>
             </ChartCard>
-          </motion.div>
+          </ScrollMouseInteractive>
 
           {/* Investment Distribution */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.12 }}
-          >
+          <ScrollMouseInteractive isInView={isInView} depth="middle" maxTranslateY={35} maxTilt={15} className="h-full">
             <ChartCard title="Investment Distribution" subtitle="Allocation across 5 verticals">
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
@@ -168,21 +145,16 @@ export default function DataVizSection() {
                 {distributionData.map((d) => (
                   <div key={d.name} className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: d.color }} />
-                    <span className="text-[10px] text-ink-muted truncate">{d.name}</span>
+                    <span className="text-[10px] text-white truncate">{d.name}</span>
                     <span className="text-[10px] text-white ml-auto">{d.value}%</span>
                   </div>
                 ))}
               </div>
             </ChartCard>
-          </motion.div>
+          </ScrollMouseInteractive>
 
           {/* Active Members */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.24 }}
-          >
+          <ScrollMouseInteractive isInView={isInView} depth="back" maxTranslateY={35} maxTilt={15} className="h-full">
             <ChartCard title="Community Growth" subtitle="Active & new members (7 months)">
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={membersData}>
@@ -220,11 +192,11 @@ export default function DataVizSection() {
                 </LineChart>
               </ResponsiveContainer>
               <div className="flex gap-5 mt-3">
-                <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-neon-cyan" /><span className="text-[10px] text-ink-muted">Active</span></div>
-                <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-neon-green" /><span className="text-[10px] text-ink-muted">New</span></div>
+                <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-neon-cyan" /><span className="text-[10px] text-white">Active</span></div>
+                <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-neon-green" /><span className="text-[10px] text-white">New</span></div>
               </div>
             </ChartCard>
-          </motion.div>
+          </ScrollMouseInteractive>
         </div>
       </div>
     </section>

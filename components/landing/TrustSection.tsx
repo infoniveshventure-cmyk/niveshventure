@@ -1,7 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { useInView } from "framer-motion";
 import { Shield, Eye, Target, Users, CheckCircle } from "lucide-react";
+import { PremiumTiltGlow } from "@/components/motion/PremiumTiltGlow";
+import { RevealOnScroll } from "@/components/motion/RevealOnScroll";
+import { ScrollMouseInteractive } from "@/components/motion/ScrollMouseInteractive";
 
 const TRUST_PILLARS = [
   {
@@ -35,8 +39,11 @@ const TRUST_PILLARS = [
 ];
 
 export default function TrustSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
+
   return (
-    <section id="about" className="relative py-8 md:py-20 bg-[#0A0E1A] overflow-hidden">
+    <section ref={sectionRef} id="about" className="relative py-8 md:py-20 bg-[#0A0E1A] overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-magenta/30 to-transparent" />
 
       {/* Background accent */}
@@ -44,64 +51,58 @@ export default function TrustSection() {
 
       <div className="relative max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
         {/* Header */}
-        <div className="text-center mb-6 md:mb-12">
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-xs md:text-xs font-medium text-neon-magenta tracking-widest uppercase mb-2 md:mb-2"
-          >
+        <RevealOnScroll className="text-center mb-6 md:mb-12">
+          <p className="text-xs md:text-xs font-medium text-neon-magenta tracking-widest uppercase mb-2 md:mb-2">
             Why Choose Us
-          </motion.p>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white"
-          >
-            Built on{" "}
-            <span className="gradient-text">Trust & Integrity</span>
-          </motion.h2>
-        </div>
+          </p>
+          <h2 className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white">
+            Built on <span className="gradient-text">Trust & Integrity</span>
+          </h2>
+        </RevealOnScroll>
 
         {/* Trust pillars grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
           {TRUST_PILLARS.map((pillar, i) => {
             const Icon = pillar.icon;
             return (
-              <motion.div
+              <RevealOnScroll
                 key={pillar.title}
-                initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.65, delay: i * 0.12 }}
-                className="landing-card p-8 flex gap-6 group"
+                delay={i * 0.1}
+                variant={i % 2 === 0 ? "slideRight" : "fadeIn"}
+                className="h-full"
               >
-                {/* Left: Icon */}
-                <div className="flex-shrink-0">
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                    style={{ background: `${pillar.color}18`, boxShadow: `0 0 20px ${pillar.color}30` }}
+                <ScrollMouseInteractive isInView={isInView} depth={i % 2 === 0 ? "front" : "middle"} maxTranslateY={20} maxTilt={10} className="h-full">
+                  <PremiumTiltGlow
+                    glowColor={`${pillar.color}20`}
+                    className="landing-card p-8 flex gap-6 group h-full"
+                    maxTilt={6}
                   >
-                    <Icon size={26} style={{ color: pillar.color }} />
-                  </div>
-                </div>
+                    {/* Left: Icon */}
+                    <div className="flex-shrink-0">
+                      <div
+                        className="w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                        style={{ background: `${pillar.color}18`, boxShadow: `0 0 20px ${pillar.color}30` }}
+                      >
+                        <Icon size={26} style={{ color: pillar.color }} />
+                      </div>
+                    </div>
 
-                {/* Right: Content */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-display font-bold text-white text-xl mb-3">{pillar.title}</h3>
-                  <p className="text-ink-muted text-sm leading-relaxed mb-4">{pillar.description}</p>
-                  <ul className="space-y-2">
-                    {pillar.points.map((pt) => (
-                      <li key={pt} className="flex items-center gap-2 text-sm text-ink-muted">
-                        <CheckCircle size={14} style={{ color: pillar.color, flexShrink: 0 }} />
-                        {pt}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </motion.div>
+                    {/* Right: Content */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-display font-bold text-white text-xl mb-3">{pillar.title}</h3>
+                      <p className="text-white text-sm leading-relaxed mb-4">{pillar.description}</p>
+                      <ul className="space-y-2">
+                        {pillar.points.map((pt) => (
+                          <li key={pt} className="flex items-center gap-2 text-sm text-white">
+                            <CheckCircle size={14} style={{ color: pillar.color, flexShrink: 0 }} />
+                            {pt}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </PremiumTiltGlow>
+                </ScrollMouseInteractive>
+              </RevealOnScroll>
             );
           })}
         </div>

@@ -73,7 +73,7 @@ export default function LandingHeader() {
             <a
               key={link.label}
               href={link.href}
-              className="relative text-base font-medium text-ink-muted hover:text-white transition-colors duration-200 group py-1"
+              className="relative text-base font-medium text-white hover:text-white transition-colors duration-200 group py-1"
             >
               {link.label}
               <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-gradient-to-r from-neon-violet to-neon-cyan group-hover:w-full transition-all duration-350 rounded-full" />
@@ -138,7 +138,7 @@ export default function LandingHeader() {
                   key={link.label}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm text-ink-muted hover:text-white hover:bg-white/5 transition-colors py-2.5 px-3 rounded-lg"
+                  className="text-sm text-white hover:text-white hover:bg-white/5 transition-colors py-2.5 px-3 rounded-lg"
                 >
                   {link.label}
                 </a>

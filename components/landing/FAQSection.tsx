@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef } from "react";
+import { useInView, motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { ScrollMouseInteractive } from "@/components/motion/ScrollMouseInteractive";
 
 const FAQS = [
   {
@@ -41,41 +42,26 @@ const FAQS = [
 
 export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
 
   return (
-    <section id="faq" className="relative py-8 md:py-20 bg-[#050914]">
+    <section ref={sectionRef} id="faq" className="relative py-8 md:py-20 bg-[#050914]">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
 
       <div className="max-w-4xl mx-auto px-4 md:px-8 lg:px-12">
         {/* Header */}
         <div className="text-center mb-6 md:mb-12">
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-xs md:text-xs font-medium text-neon-cyan tracking-widest uppercase mb-2 md:mb-2"
-          >
+          <p className="text-xs md:text-xs font-medium text-neon-cyan tracking-widest uppercase mb-2 md:mb-2">
             Frequently Asked
-          </motion.p>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white"
-          >
-            Got{" "}
-            <span className="gradient-text">Questions?</span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15 }}
-            className="text-ink-muted mt-2 md:mt-3 text-xs md:text-base"
-          >
+          </p>
+          <h2 className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white">
+            Got <span className="gradient-text">Questions?</span>
+          </h2>
+          <p className="text-white mt-2 md:mt-3 text-xs md:text-base">
             Everything you need to know about the platform
-          </motion.p>
+          </p>
         </div>
 
         {/* Accordion */}
@@ -83,68 +69,59 @@ export default function FAQSection() {
           {FAQS.map((faq, i) => {
             const isOpen = openIndex === i;
             return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.07 }}
-                className={`landing-card overflow-hidden transition-all duration-300 ${
-                  isOpen ? "border-neon-violet/40" : ""
-                }`}
-              >
-                <button
-                  onClick={() => setOpenIndex(isOpen ? null : i)}
-                  className="w-full px-7 py-5 flex items-center justify-between text-left gap-4"
+              <ScrollMouseInteractive key={i} isInView={isInView} depth={i % 2 === 0 ? "front" : "middle"} maxTranslateY={30} maxTilt={10}>
+                <div
+                  className={`landing-card overflow-hidden transition-all duration-300 ${
+                    isOpen ? "border-neon-violet/40" : ""
+                  }`}
                 >
-                  <span className={`font-medium text-base transition-colors duration-200 ${isOpen ? "text-neon-cyan" : "text-white"}`}>
-                    {faq.q}
-                  </span>
-                  <motion.div
-                    animate={{ rotate: isOpen ? 180 : 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="flex-shrink-0"
+                  <button
+                    onClick={() => setOpenIndex(isOpen ? null : i)}
+                    className="w-full px-7 py-5 flex items-center justify-between text-left gap-4"
                   >
-                    <ChevronDown
-                      size={18}
-                      className={`transition-colors duration-200 ${isOpen ? "text-neon-cyan" : "text-ink-muted"}`}
-                    />
-                  </motion.div>
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {isOpen && (
+                    <span className={`font-medium text-base transition-colors duration-200 ${isOpen ? "text-neon-cyan" : "text-white"}`}>
+                      {faq.q}
+                    </span>
                     <motion.div
-                      key="answer"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden"
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="flex-shrink-0"
                     >
-                      <div className="px-7 pb-6">
-                        <div className="h-px bg-gradient-to-r from-neon-violet/30 to-transparent mb-4" />
-                        <p className="text-ink-muted text-sm leading-relaxed">{faq.a}</p>
-                      </div>
+                      <ChevronDown
+                        size={18}
+                        className={`transition-colors duration-200 ${isOpen ? "text-neon-cyan" : "text-white"}`}
+                      />
                     </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        key="answer"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-7 pb-6">
+                          <div className="h-px bg-gradient-to-r from-neon-violet/30 to-transparent mb-4" />
+                          <p className="text-white text-sm leading-relaxed">{faq.a}</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </ScrollMouseInteractive>
             );
           })}
         </div>
 
         {/* Bottom CTA */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="text-center mt-14"
-        >
-          <p className="text-ink-muted mb-5">Still have questions? Our AI assistant is ready 24/7.</p>
-          <p className="text-sm text-ink-muted">Click the chat icon in the bottom-right corner →</p>
-        </motion.div>
+        <div className="text-center mt-14">
+          <p className="text-white mb-5">Still have questions? Our AI assistant is ready 24/7.</p>
+          <p className="text-sm text-white">Click the chat icon in the bottom-right corner →</p>
+        </div>
       </div>
     </section>
   );

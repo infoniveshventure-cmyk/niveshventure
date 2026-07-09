@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useInView, motion, AnimatePresence } from "framer-motion";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { ScrollMouseInteractive } from "@/components/motion/ScrollMouseInteractive";
 
 const TESTIMONIALS = [
   {
@@ -58,6 +59,9 @@ const TESTIMONIALS = [
 export default function TestimonialsSection() {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
 
   const next = useCallback(() => setCurrent((c) => (c + 1) % TESTIMONIALS.length), []);
   const prev = () => setCurrent((c) => (c - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
@@ -75,31 +79,19 @@ export default function TestimonialsSection() {
   ];
 
   return (
-    <section className="relative py-12 md:py-28 bg-[#0A0E1A] overflow-hidden">
+    <section ref={sectionRef} className="relative py-12 md:py-28 bg-[#0A0E1A] overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-violet/30 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-neon-violet/3 to-transparent pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-8 lg:px-12">
         {/* Header */}
         <div className="text-center mb-20">
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-sm font-medium text-neon-cyan tracking-widest uppercase mb-3"
-          >
+          <p className="text-sm font-medium text-neon-cyan tracking-widest uppercase mb-3">
             Community Voice
-          </motion.p>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl xl:text-5xl font-display font-bold text-white"
-          >
-            What Our{" "}
-            <span className="gradient-text">Members Say</span>
-          </motion.h2>
+          </p>
+          <h2 className="text-4xl xl:text-5xl font-display font-bold text-white">
+            What Our <span className="gradient-text">Members Say</span>
+          </h2>
         </div>
 
         {/* Carousel */}
@@ -113,40 +105,35 @@ export default function TestimonialsSection() {
               {visibleIndices.map((idx, pos) => {
                 const t = TESTIMONIALS[idx];
                 return (
-                  <motion.div
-                    key={`${idx}-${pos}`}
-                    initial={{ opacity: 0, x: 60 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -60 }}
-                    transition={{ duration: 0.45, ease: "easeInOut" }}
-                    className="landing-card p-8 flex flex-col gap-5"
-                  >
-                    {/* Stars */}
-                    <div className="flex gap-1">
-                      {Array.from({ length: t.rating }).map((_, i) => (
-                        <Star key={i} size={14} className="text-[#FFD700] fill-[#FFD700]" />
-                      ))}
-                    </div>
-
-                    {/* Quote */}
-                    <p className="text-ink-muted text-sm leading-relaxed flex-1 italic">
-                      "{t.quote}"
-                    </p>
-
-                    {/* Author */}
-                    <div className="flex items-center gap-3 pt-2 border-t border-white/5">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                        style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}88)` }}
-                      >
-                        {t.initials}
+                  <ScrollMouseInteractive key={`${idx}-${pos}`} isInView={isInView} depth={pos === 1 ? "front" : "middle"} maxTranslateY={35} maxTilt={15}>
+                    <div className="landing-card p-8 flex flex-col gap-5 h-full">
+                      {/* Stars */}
+                      <div className="flex gap-1">
+                        {Array.from({ length: t.rating }).map((_, i) => (
+                          <Star key={i} size={14} className="text-[#FFD700] fill-[#FFD700]" />
+                        ))}
                       </div>
-                      <div>
-                        <p className="font-semibold text-white text-sm">{t.name}</p>
-                        <p className="text-[11px] text-ink-muted">{t.role}</p>
+
+                      {/* Quote */}
+                      <p className="text-white text-sm leading-relaxed flex-1 italic">
+                        "{t.quote}"
+                      </p>
+
+                      {/* Author */}
+                      <div className="flex items-center gap-3 pt-2 border-t border-white/5">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                          style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}88)` }}
+                        >
+                          {t.initials}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white text-sm">{t.name}</p>
+                          <p className="text-[11px] text-white">{t.role}</p>
+                        </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </ScrollMouseInteractive>
                 );
               })}
             </AnimatePresence>
@@ -156,7 +143,7 @@ export default function TestimonialsSection() {
           <div className="flex items-center justify-center gap-4 mt-10">
             <button
               onClick={prev}
-              className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-ink-muted hover:text-white hover:border-neon-violet/50 transition-all duration-200"
+              className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white hover:text-white hover:border-neon-violet/50 transition-all duration-200"
             >
               <ChevronLeft size={18} />
             </button>
@@ -176,7 +163,7 @@ export default function TestimonialsSection() {
 
             <button
               onClick={next}
-              className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-ink-muted hover:text-white hover:border-neon-violet/50 transition-all duration-200"
+              className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white hover:text-white hover:border-neon-violet/50 transition-all duration-200"
             >
               <ChevronRight size={18} />
             </button>

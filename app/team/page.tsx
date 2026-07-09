@@ -16,10 +16,11 @@ import {
   Eye,
   Moon,
   Sun,
-  ChevronUp,
-  MapPin
+  MapPin,
+  ChevronUp
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { motion, useSpring, AnimatePresence } from "framer-motion";
 
 type TreeNode = {
   memberId: string;
@@ -95,6 +96,23 @@ export default function TeamPage() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Smooth springs for translation/zoom
+  const springX = useSpring(0, { stiffness: 95, damping: 18 });
+  const springY = useSpring(50, { stiffness: 95, damping: 18 });
+  const springZoom = useSpring(1, { stiffness: 95, damping: 18 });
+
+  useEffect(() => {
+    springX.set(pan.x);
+  }, [pan.x, springX]);
+
+  useEffect(() => {
+    springY.set(pan.y);
+  }, [pan.y, springY]);
+
+  useEffect(() => {
+    springZoom.set(zoom);
+  }, [zoom, springZoom]);
 
   // Load a single level of the tree
   const loadNode = useCallback(async (memberId: string, expandAfterLoad = false) => {
@@ -604,10 +622,12 @@ export default function TeamPage() {
         </div>
 
         {/* SVG Connector Lines Layer */}
-        <svg
+        <motion.svg
           className="absolute inset-0 pointer-events-none w-full h-full overflow-visible"
           style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            x: springX,
+            y: springY,
+            scale: springZoom,
             transformOrigin: "0 0",
           }}
         >
@@ -644,25 +664,46 @@ export default function TeamPage() {
               return (
                 <g key={`connectors-${parentId}`}>
                   {/* Parent vertical drop stem */}
-                  <path d={stemPath} fill="none" stroke="#ffffff" strokeWidth="1.5" className="opacity-90" />
+                  <motion.path 
+                    d={stemPath} 
+                    fill="none" 
+                    stroke="#ffffff" 
+                    strokeWidth="1.5" 
+                    className="opacity-60" 
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
 
                   {/* Sibling horizontal bar */}
                   {childCoords.length > 1 && (
-                    <path d={barPath} fill="none" stroke="#ffffff" strokeWidth="1.5" className="opacity-90" />
+                    <motion.path 
+                      d={barPath} 
+                      fill="none" 
+                      stroke="#ffffff" 
+                      strokeWidth="1.5" 
+                      className="opacity-60" 
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+                    />
                   )}
 
                   {/* Individual vertical drops down to each child card */}
-                  {childCoords.map((c) => {
+                  {childCoords.map((c, idx) => {
                     const cx = c.x + CARD_WIDTH / 2;
                     const cy = c.y; // precisely at top center of child avatar
                     return (
-                      <path
+                      <motion.path
                         key={`line-${parentId}-${c.id}`}
                         d={`M ${cx} ${midY} L ${cx} ${cy}`}
                         fill="none"
                         stroke="#ffffff"
                         strokeWidth="1.5"
-                        className="opacity-90"
+                        className="opacity-60"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 0.4, ease: "easeOut", delay: 0.15 + idx * 0.05 }}
                       />
                     );
                   })}
@@ -670,71 +711,86 @@ export default function TeamPage() {
               );
             })}
           </g>
-        </svg>
+        </motion.svg>
 
         {/* Nodes Layer */}
-        <div
-          className="absolute transform-gpu origin-top-left transition-transform duration-75"
+        <motion.div
+          className="absolute origin-top-left"
           style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            x: springX,
+            y: springY,
+            scale: springZoom,
           }}
         >
-          {coordinates.map((item) => {
-            const isTarget = item.id === highlightedId;
-            const isExpanded = treeState[item.id]?.isExpanded;
-            const nodeData = item.node!;
+          <AnimatePresence>
+            {coordinates.map((item) => {
+              const isTarget = item.id === highlightedId;
+              const isExpanded = treeState[item.id]?.isExpanded;
+              const nodeData = item.node!;
 
-            // Choose avatar background color based on status/active
-            // Root is green/blue, active is blue, inactive is red
-            const avatarBg = nodeData.isActive
-              ? (item.id === rootId ? "bg-[#4CAF50]" : "bg-[#2196F3]")
-              : "bg-[#F44336]";
+              // Choose avatar background color based on status/active
+              // Root is green/blue, active is blue, inactive is red
+              const avatarBg = nodeData.isActive
+                ? (item.id === rootId ? "bg-[#4CAF50]" : "bg-[#2196F3]")
+                : "bg-[#F44336]";
 
-            return (
-              <div
-                key={item.id}
-                onClick={(e) => handleNodeCardClick(e, nodeData)}
-                style={{
-                  left: item.x,
-                  top: item.y,
-                  width: CARD_WIDTH,
-                  height: CARD_HEIGHT,
-                }}
-                className="absolute flex flex-col items-center justify-start text-center cursor-pointer select-none group"
-              >
-                {/* User Avatar Circle */}
-                <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-300 ${avatarBg} ${isTarget ? "ring-4 ring-yellow-400 animate-pulse" : "group-hover:scale-110"
-                    }`}
+              return (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: 1,
+                  }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{
+                    layout: { type: "spring", stiffness: 100, damping: 18 },
+                  }}
+                  onClick={(e) => handleNodeCardClick(e, nodeData)}
+                  style={{
+                    position: "absolute",
+                    left: item.x,
+                    top: item.y,
+                    width: CARD_WIDTH,
+                    height: CARD_HEIGHT,
+                  }}
+                  className="absolute flex flex-col items-center justify-start text-center cursor-pointer select-none group"
                 >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
-                </div>
-
-                {/* Member ID + Placement (L/R) label */}
-                <span className="text-[9px] font-bold text-white mt-1 leading-none drop-shadow">
-                  {nodeData.memberId} {nodeData.position ? `(${nodeData.position[0].toUpperCase()})` : ""}
-                </span>
-
-                {/* Full Name */}
-                <span className="text-[9px] text-[#e0e0e0] mt-0.5 leading-none truncate max-w-[90px] drop-shadow">
-                  {nodeData.fullName}
-                </span>
-
-                {/* Expand / Collapse trigger arrow */}
-                {nodeData.hasChildren && (
-                  <button
-                    onClick={(e) => handleExpandToggle(e, nodeData)}
-                    className="mt-1 w-3.5 h-3.5 rounded-full bg-black/40 text-white hover:bg-black/60 flex items-center justify-center transition-colors shadow-sm"
+                  {/* User Avatar Circle */}
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-300 ${avatarBg} ${isTarget ? "ring-4 ring-yellow-400 animate-pulse" : "group-hover:scale-110"
+                      }`}
                   >
-                    {isExpanded ? <ChevronUp size={8} /> : <ChevronDown size={8} />}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                  </div>
+
+                  {/* Member ID + Placement (L/R) label */}
+                  <span className="text-[9px] font-bold text-white mt-1 leading-none drop-shadow">
+                    {nodeData.memberId} {nodeData.position ? `(${nodeData.position[0].toUpperCase()})` : ""}
+                  </span>
+
+                  {/* Full Name */}
+                  <span className="text-[9px] text-[#e0e0e0] mt-0.5 leading-none truncate max-w-[90px] drop-shadow">
+                    {nodeData.fullName}
+                  </span>
+
+                  {/* Expand / Collapse trigger arrow */}
+                  {nodeData.hasChildren && (
+                    <button
+                      onClick={(e) => handleExpandToggle(e, nodeData)}
+                      className="mt-1 w-3.5 h-3.5 rounded-full bg-black/40 text-white hover:bg-black/60 flex items-center justify-center transition-colors shadow-sm"
+                    >
+                      {isExpanded ? <ChevronUp size={8} /> : <ChevronDown size={8} />}
+                    </button>
+                  )}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
 
         {/* Floating controls panel commented out
         <div className="absolute bottom-4 right-4 flex flex-col sm:flex-row gap-2 bg-slate-900/90 border border-white/10 p-1.5 rounded-xl shadow-2xl backdrop-blur-md">
