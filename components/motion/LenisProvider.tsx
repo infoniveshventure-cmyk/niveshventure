@@ -3,12 +3,16 @@
 import React from "react";
 import { ReactLenis } from "lenis/react";
 import { useMotion } from "./MotionProvider";
+import { usePathname } from "next/navigation";
 
 export function LenisProvider({ children }: { children: React.ReactNode }) {
   const { reducedMotion, isLowEnd } = useMotion();
+  const pathname = usePathname();
 
-  // If user prefers reduced motion, we disable Lenis
-  if (reducedMotion) {
+  // Enable Lenis smooth scrolling only on the landing page (/)
+  const isLandingPage = pathname === "/";
+
+  if (reducedMotion || !isLandingPage) {
     return <>{children}</>;
   }
 

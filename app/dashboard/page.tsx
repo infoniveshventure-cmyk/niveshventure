@@ -74,13 +74,15 @@ export default function DashboardPage() {
   }, []);
 
   const cards = [
-    { label: "Wallet Balance",       value: profile?.walletBalance ?? 0,  icon: Wallet,    prefix: "$", href: "/wallet", color: "text-neon-cyan" },
-    { label: "Total Earnings",       value:
+    { label: "Wallet Balance", value: profile?.walletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    {
+      label: "Total Earnings", value:
         (profile?.totalReferralIncome || 0) + (profile?.totalMatchingIncome || 0) +
-        (profile?.totalReturnsIncome  || 0) + (profile?.totalLevelIncome  || 0) + (profile?.totalRewardIncome || 0),
-      icon: TrendingUp, prefix: "$", href: "/income", color: "text-neon-green" },
+        (profile?.totalReturnsIncome || 0) + (profile?.totalLevelIncome || 0) + (profile?.totalRewardIncome || 0),
+      icon: TrendingUp, prefix: "$", href: "/income", color: "text-neon-green"
+    },
     { label: "Daily Return (Pending)", value: dailyReturnPending, icon: Clock, prefix: "$", href: "/income", color: "text-yellow-400", isPending: true },
-    { label: "Total Team",           value: stats?.totalTeam ?? 0,        icon: Users,     prefix: "",  href: "/team",   color: "" },
+    { label: "Total Team", value: stats?.totalTeam ?? 0, icon: Users, prefix: "", href: "/team", color: "" },
   ];
 
   async function handlePredict(answer: "yes" | "no") {
@@ -97,7 +99,7 @@ export default function DashboardPage() {
 
       setPredSubmission(data.submission);
       toast.success("Prediction Submitted Successfully!");
-      
+
       // Reload me stats
       const meRes = await fetch("/api/user/predictions", { cache: "no-store" });
       if (meRes.ok) {
@@ -151,11 +153,10 @@ export default function DashboardPage() {
               </h1>
 
               <div className="mt-2">
-                <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${
-                  profile?.isActive
-                    ? "bg-neon-green/20 text-neon-green border border-neon-green/40"
-                    : "bg-white/8 text-ink-muted border border-white/15"
-                }`}>
+                <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${profile?.isActive
+                  ? "bg-neon-green/20 text-neon-green border border-neon-green/40"
+                  : "bg-white/8 text-ink-muted border border-white/15"
+                  }`}>
                   {profile?.isActive && <span className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />}
                   {profile?.isActive ? "Active" : "Inactive"}
                 </span>
@@ -193,18 +194,16 @@ export default function DashboardPage() {
       <div className="mb-6 glass-card p-5 border border-neon-cyan/20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex-1">
-            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              productionStatus === "closed"
-                ? "bg-neon-magenta/25 text-neon-magenta"
-                : "bg-neon-cyan/25 text-neon-cyan"
-            }`}>
+            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${productionStatus === "closed"
+              ? "bg-neon-magenta/25 text-neon-magenta"
+              : "bg-neon-cyan/25 text-neon-cyan"
+              }`}>
               {productionStatus === "closed"
                 ? `${currentReturnPlan}% Plan Active – Production Closed`
                 : `${currentReturnPlan}% Monthly Plan Active - Daily Production Active`}
             </span>
-            <p className={`text-md font-display font-medium mt-3 mb-1 ${
-              productionStatus === "closed" ? "text-ink-muted line-through" : "text-white"
-            }`}>
+            <p className={`text-md font-display font-medium mt-3 mb-1 ${productionStatus === "closed" ? "text-ink-muted line-through" : "text-white"
+              }`}>
               {predQuestion ? `"${predQuestion.questionText}"` : "Today's prediction question is being generated..."}
             </p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-ink-muted">
@@ -280,11 +279,10 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {cards.map((c) => (
           <Link key={c.label} href={c.href} className="stat-card group">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
-              c.isPending
-                ? "bg-yellow-400/20"
-                : "bg-gradient-to-br from-neon-violet to-neon-cyan"
-            }`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${c.isPending
+              ? "bg-yellow-400/20"
+              : "bg-gradient-to-br from-neon-violet to-neon-cyan"
+              }`}>
               <c.icon size={18} className={c.isPending ? "text-yellow-400" : "text-base"} />
             </div>
             <p className="text-xs text-ink-muted">{c.label}</p>
@@ -317,9 +315,8 @@ export default function DashboardPage() {
             {transactions.slice(0, 3).map((t) => (
               <div key={t._id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${
-                    t.direction === "credit" ? "bg-neon-green/15 text-neon-green" : "bg-neon-magenta/15 text-neon-magenta"
-                  }`}>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${t.direction === "credit" ? "bg-neon-green/15 text-neon-green" : "bg-neon-magenta/15 text-neon-magenta"
+                    }`}>
                     {t.direction === "credit" ? <ArrowDownRight size={16} /> : <ArrowUpRight size={16} />}
                   </div>
                   <div>
@@ -346,8 +343,9 @@ export default function DashboardPage() {
           <div><p className="text-xs text-ink-muted">Right Team</p><p className="font-semibold mt-0.5">{stats?.rightTeam ?? 0}</p></div>
           <div><p className="text-xs text-ink-muted">Left Active Team</p><p className="font-semibold mt-0.5 text-neon-green">{stats?.leftActiveTeam ?? 0}</p></div>
           <div><p className="text-xs text-ink-muted">Right Active Team</p><p className="font-semibold mt-0.5 text-neon-green">{stats?.rightActiveTeam ?? 0}</p></div>
-          <div><p className="text-xs text-ink-muted">Strong Leg</p><p className="font-semibold mt-0.5 text-neon-green">{(stats?.leftActiveTeam ?? 0) >= (stats?.rightActiveTeam ?? 0) ? "Left" : "Right"}</p></div>
           <div><p className="text-xs text-ink-muted">Weaker Leg</p><p className="font-semibold mt-0.5 text-neon-magenta">{(stats?.leftActiveTeam ?? 0) >= (stats?.rightActiveTeam ?? 0) ? "Right" : "Left"}</p></div>
+          <div><p className="text-xs text-ink-muted">Strong Leg</p><p className="font-semibold mt-0.5 text-neon-green">{(stats?.leftActiveTeam ?? 0) >= (stats?.rightActiveTeam ?? 0) ? "Left" : "Right"}</p></div>
+
           <div><p className="text-xs text-ink-muted">Left Carry Forward</p><p className="font-semibold mt-0.5">${(stats?.leftCarryForward ?? profile?.leftCarryForward ?? 0).toLocaleString()}</p></div>
           <div><p className="text-xs text-ink-muted">Right Carry Forward</p><p className="font-semibold mt-0.5">${(stats?.rightCarryForward ?? profile?.rightCarryForward ?? 0).toLocaleString()}</p></div>
           <div><p className="text-xs text-ink-muted">Left Current Business</p><p className="font-semibold mt-0.5">${(stats?.leftCurrentBusiness ?? profile?.leftCurrentBusiness ?? 0).toLocaleString()}</p></div>

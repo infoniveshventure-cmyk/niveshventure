@@ -76,7 +76,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-scroll-wrapper relative min-h-screen">
+    <div className="auth-scroll-wrapper" data-lenis-prevent>
       <div className="auth-bg">
         {/* Fixed animated blobs */}
         <div className="auth-blob auth-blob-purple" style={{ position: "fixed" }} />

@@ -46,7 +46,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
          * overflow-y-auto gives it an independent scroll context.
          * pb-24 accounts for MobileBottomNav on small screens.
          */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden" data-lenis-prevent>
           <div className="p-4 lg:p-8 max-w-7xl mx-auto pb-24 lg:pb-8">
             {children}
           </div>

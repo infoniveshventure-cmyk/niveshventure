@@ -11,17 +11,38 @@
   scroll-behavior: smooth;
 }
 
-html,
-body {
-  height: 100%;
-  overflow-x: hidden;
-  max-width: 100%;
+html {
+  height: auto;
 }
 
 body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  max-width: 100%;
   background-color: #0A0E1A;
   color: #E8E8F0;
   font-family: var(--font-body);
+}
+
+/* Lenis recommended smooth scrolling styles */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }
 
 @layer components {
