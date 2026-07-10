@@ -20,7 +20,7 @@ import FooterSection from "@/components/landing/FooterSection";
 
 export default function Home() {
   return (
-    <div className="bg-[#0A0E1A] text-white w-full">
+    <div className="landing-page bg-[#0A0E1A] text-white w-full">
       {/* ─────────────────────────────────────────────────────
           RESPONSIVE LANDING PAGE
           Shows same design on all devices - fully responsive

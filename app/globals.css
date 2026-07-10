@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  @media (min-width: 768px) {
+    .landing-page :where(h1, h2, h3, h4, h5, h6, p, span, li, a) {
+      color: #E8E8F0;
+    }
+  }
+}
+
 :root {
   --font-display: "Space Grotesk", sans-serif;
   --font-body: "Inter", sans-serif;

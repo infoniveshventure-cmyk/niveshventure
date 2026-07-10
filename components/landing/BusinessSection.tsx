@@ -70,7 +70,7 @@ export default function BusinessSection() {
           <h2 className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white">
             Where Your Money <span className="gradient-text">Works Harder</span>
           </h2>
-          <p className="text-white mt-2 md:mt-3 max-w-xl mx-auto text-xs md:text-base">
+          <p className="!text-white mt-2 md:mt-3 max-w-xl mx-auto text-xs md:text-base">
             Five carefully curated investment categories managed by experienced professionals
           </p>
         </RevealOnScroll>

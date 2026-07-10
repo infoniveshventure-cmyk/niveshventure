@@ -26,7 +26,7 @@ export default function StatsSection() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
         <RevealOnScroll className="text-center mb-6 md:mb-12">
           <p className="text-xs md:text-xs font-medium text-neon-cyan tracking-widest uppercase mb-2 md:mb-2">By the Numbers</p>
-          <h2 className="text-lg md:text-3xl font-display font-bold text-white">Trusted by Thousands Globally</h2>
+          <h2 className="text-lg md:text-3xl font-display font-bold !text-white">Trusted by Thousands Globally</h2>
         </RevealOnScroll>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
@@ -44,17 +44,17 @@ export default function StatsSection() {
                     <div className={`w-8 md:w-12 h-8 md:h-12 rounded-lg md:rounded-xl ${stat.bg} flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300`}>
                       <Icon size={16} className={`${stat.color} md:w-[22px] md:h-[22px]`} />
                     </div>
-                    
-                    <div className="font-display font-bold text-2xl md:text-4xl text-white tabular-nums">
-                      <CountUpNumber 
-                        value={stat.value} 
-                        prefix={stat.prefix || ""} 
-                        suffix={stat.suffix || ""} 
+
+                    <div className="font-display font-bold text-2xl md:text-4xl !text-white tabular-nums">
+                      <CountUpNumber
+                        value={stat.value}
+                        prefix={stat.prefix || ""}
+                        suffix={stat.suffix || ""}
                         duration={1500}
                       />
                     </div>
 
-                    <div className="text-sm md:text-base text-white mt-1 md:mt-2">{stat.label}</div>
+                    <div className="text-sm md:text-base !text-white mt-1 md:mt-2">{stat.label}</div>
                   </div>
                 </ScrollMouseInteractive>
               </RevealOnScroll>
