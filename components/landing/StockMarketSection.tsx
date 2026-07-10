@@ -29,12 +29,14 @@ const INITIAL_STOCKS: StockItem[] = [
 
 export default function StockMarketSection() {
   const [stocks, setStocks] = useState<StockItem[]>(INITIAL_STOCKS);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [lastUpdated, setLastUpdated] = useState<string>("");
   
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
 
   useEffect(() => {
+    setLastUpdated(new Date().toLocaleTimeString());
+
     const interval = setInterval(() => {
       setStocks((prevStocks) =>
         prevStocks.map((stock) => {
@@ -57,7 +59,7 @@ export default function StockMarketSection() {
           };
         })
       );
-      setLastUpdated(new Date());
+      setLastUpdated(new Date().toLocaleTimeString());
 
       setTimeout(() => {
         setStocks((current) => current.map((s) => ({ ...s, flash: null })));
@@ -69,7 +71,7 @@ export default function StockMarketSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative py-12 md:py-24 bg-[#050914] overflow-hidden">
+    <section ref={sectionRef} className="relative py-12 md:py-24 bg-transparent overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/40 to-transparent" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-neon-cyan/5 blur-[120px] pointer-events-none" />
 
@@ -91,7 +93,7 @@ export default function StockMarketSection() {
           </div>
           <div className="flex items-center gap-2 text-xs text-white bg-white/5 border border-white/5 px-3 py-1.5 rounded-xl self-start md:self-auto">
             <RefreshCw size={12} className="animate-spin text-neon-cyan" />
-            Last updated: {lastUpdated.toLocaleTimeString()}
+            Last updated: {lastUpdated || "Loading..."}
           </div>
         </div>
 

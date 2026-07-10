@@ -13,7 +13,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await runDailyReturn();
-    return NextResponse.json({ success: true, ...result });
+    
+    // Trigger daily Returns Level Income calculation
+    let levelIncomeResult = {};
+    try {
+      const { calculateDailyReturnsLevelIncome } = await import("@/lib/returnsLevelIncome");
+      levelIncomeResult = await calculateDailyReturnsLevelIncome();
+    } catch (lvlErr: any) {
+      console.error("[daily-return cron] Returns Level Income calculation failed:", lvlErr);
+    }
+
+    return NextResponse.json({ success: true, ...result, levelIncomeResult });
   } catch (err: any) {
     console.error("[daily-return cron]", err);
     return NextResponse.json(

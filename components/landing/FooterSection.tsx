@@ -58,7 +58,7 @@ export default function FooterSection() {
   }
 
   return (
-    <footer id="contact" className="relative bg-[#030508] pt-12 md:pt-20 pb-6 md:pb-8 overflow-hidden">
+    <footer id="contact" className="relative bg-transparent pt-12 md:pt-20 pb-6 md:pb-8 overflow-hidden">
       {/* Top gradient border */}
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-violet/50 to-transparent" />
 
@@ -84,6 +84,11 @@ export default function FooterSection() {
               Building the future of financial freedom through transparent investments, 
               community growth, and multiple income streams for everyone.
             </p>
+
+            <div className="text-white/60 text-xs leading-relaxed space-y-1 bg-white/5 p-3.5 rounded-xl border border-white/5">
+              <p className="font-semibold text-white">Office Address:</p>
+              <p>209 Victoria Street, Te Aro, Wellington 6011, New Zealand</p>
+            </div>
 
             {/* Social icons */}
             <div className="flex items-center gap-2 md:gap-3">

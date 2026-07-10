@@ -1,12 +1,23 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  keyframes: {
+    shimmer: {
+      "0%": { backgroundPosition: "0% 50%" },
+      "50%": { backgroundPosition: "100% 50%" },
+      "100%": { backgroundPosition: "0% 50%" },
+    },
+  },
+
+  animation: {
+    shimmer: "shimmer 3s linear infinite",
+  },
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
         base: {
-          DEFAULT: "#0A0E1A",
+          DEFAULT: "#0D0D1A",
           soft: "#10152A",
           card: "#131A33",
         },
@@ -52,4 +63,5 @@ const config: Config = {
   },
   plugins: [],
 };
+
 export default config;

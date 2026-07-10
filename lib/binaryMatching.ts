@@ -1,10 +1,10 @@
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Transaction from "@/models/Transaction";
-import WebsiteSettings from "@/models/WebsiteSettings";
-import BusinessRule from "@/models/BusinessRule";
 import { notifyMember } from "@/lib/notification";
 import { checkAndAwardBooster } from "@/lib/booster";
+import { getCachedSettings } from "@/lib/settingsCache";
+import { getCachedBusinessRule } from "@/lib/businessRulesCache";
 
 export async function processActivationIncomes(targetMemberId: string, customPrice?: number) {
   await connectDB();
@@ -27,13 +27,13 @@ export async function processActivationIncomes(targetMemberId: string, customPri
   await user.save();
 
   // Load WebsiteSettings to get pricing and settings
-  const settings = await WebsiteSettings.findOne({ key: "singleton" });
+  const settings = await getCachedSettings();
   const activationPrice = user.activatedByFreePin ? 0 : (customPrice || settings?.pricing?.unlockAccessPrice || 30);
 
   // 2. Release Referral Income
   if (user.sponsorId) {
     try {
-      const rule = await BusinessRule.findOne({ key: "referral_level1_pct" });
+      const rule = await getCachedBusinessRule("referral_level1_pct");
       const level1Pct = rule ? Number(rule.value) : 5;
       
       const referralIncomeAmount = activationPrice * (level1Pct / 100);
@@ -74,9 +74,19 @@ export async function processActivationIncomes(targetMemberId: string, customPri
   if (isFirstTimeActivation) {
     try {
       // Fetch binary matching rules
-      const rule = await BusinessRule.findOne({ key: "matching_income_pct" });
-      const matchingPct = rule ? Number(rule.value) : 10; // Default to 10%
-      const perPairIncome = activationPrice * (matchingPct / 100);
+      const rule = await getCachedBusinessRule("matching_income_pct");
+      let perPairIncome = 0;
+      if (rule) {
+        const isPercentageMode = rule.type === "percentage" || rule.unit === "%";
+        if (isPercentageMode) {
+          perPairIncome = activationPrice * (Number(rule.value) / 100);
+        } else {
+          // Dollar ($) mode
+          perPairIncome = Number(rule.value);
+        }
+      } else {
+        perPairIncome = activationPrice * 0.10; // Default to 10%
+      }
 
       // Walk up the placement parent upline chain
       let current = user;

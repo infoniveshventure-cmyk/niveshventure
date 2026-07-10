@@ -78,11 +78,6 @@ export default function LoginPage() {
   return (
     <div className="auth-scroll-wrapper" data-lenis-prevent>
       <div className="auth-bg">
-        {/* Fixed animated blobs */}
-        <div className="auth-blob auth-blob-purple" style={{ position: "fixed" }} />
-        <div className="auth-blob auth-blob-orange" style={{ position: "fixed" }} />
-        <div className="auth-blob auth-blob-purple2" style={{ position: "fixed" }} />
-
         <motion.div
           initial={{ opacity: 0, y: 24, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}

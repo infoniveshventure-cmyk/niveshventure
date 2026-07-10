@@ -276,6 +276,7 @@ export default function AdminMemberDetailsPage() {
     { label: "Referral Wallet", key: "referral", balance: m.totalReferralIncome || 0 },
     { label: "Matching Wallet", key: "matching", balance: m.totalMatchingIncome || 0 },
     { label: "Booster Wallet", key: "booster", balance: m.boosterWalletBalance || 0 },
+    { label: "Nivesh Wallet", key: "nivesh", balance: m.nivshWalletBalance || 0 },
     { label: "Returns Wallet", key: "returns", balance: m.totalReturnsIncome || 0 },
     { label: "Rewards Wallet", key: "rewards", balance: m.totalRewardIncome || 0 },
     { label: "Main Wallet Balance", key: "main", balance: m.walletBalance || 0 },

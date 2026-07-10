@@ -43,7 +43,7 @@ export default function TrustSection() {
   const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
 
   return (
-    <section ref={sectionRef} id="about" className="relative py-8 md:py-20 bg-[#0A0E1A] overflow-hidden">
+    <section ref={sectionRef} id="about" className="relative py-8 md:py-20 bg-transparent overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-magenta/30 to-transparent" />
 
       {/* Background accent */}

@@ -4,12 +4,13 @@ import { getSessionFromCookies } from "@/lib/auth-server";
 import DailyQuestion from "@/models/DailyQuestion";
 import PredictionSubmission from "@/models/PredictionSubmission";
 import User from "@/models/User";
-import BusinessRule from "@/models/BusinessRule";
+import WebsiteSettings from "@/models/WebsiteSettings";
+import Investment from "@/models/Investment";
 import { getISTDateString } from "@/lib/dailyReturn";
 
 export const dynamic = "force-dynamic";
 
-// GET: Fetch today's question and the user's submission state
+// GET: Fetch today's question and the user's state
 export async function GET() {
   const session = await getSessionFromCookies();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -20,26 +21,74 @@ export async function GET() {
 
   // Get user details
   const user = await User.findOne({ memberId: session.memberId }).select(
-    "monthlyMissCount lastMissResetMonth currentReturnPlan productionStatus"
+    "isActive totalInvestment monthlyMissCount lastMissResetMonth currentReturnPlan predictionLocked predictionSubmitted lastPredictionDate"
   );
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+  // Get settings
+  let settings = await WebsiteSettings.findOne({ key: "singleton" });
+  if (!settings) {
+    settings = await WebsiteSettings.create({ key: "singleton" });
+  }
+
   // Reset check (safeguard / month change logic)
   if (user.lastMissResetMonth !== month) {
-    // Fetch completed rate rule (for reset)
-    const completedRule = await BusinessRule.findOne({ key: "production_completed_monthly_rate" });
-    const completedRate = completedRule ? Number(completedRule.value) : 7;
-
     user.monthlyMissCount = 0;
-    user.currentReturnPlan = completedRate;
-    user.productionStatus = "active";
+    user.predictionLocked = false;
+    user.predictionSubmitted = false;
+    user.lastPredictionDate = "";
+    user.currentReturnPlan = 7;
     user.lastMissResetMonth = month;
     await user.save();
   }
 
-  // Get prediction_free_misses rule
-  const freeMissesRule = await BusinessRule.findOne({ key: "prediction_free_misses" });
-  const freeMisses = freeMissesRule ? Number(freeMissesRule.value) : 3;
+  // Auto lock prediction window if user has 3 or more misses
+  if (user.monthlyMissCount >= 3 && !user.predictionLocked) {
+    user.predictionLocked = true;
+    await user.save();
+  }
+
+  // Update investmentCompleted dynamically in DB
+  const minInvestment = settings.minimumInvestment ?? settings.pricing?.minInvestment ?? 100;
+  const isInvestmentCompleted = (user.totalInvestment || 0) >= minInvestment;
+  
+  // Calculate accountState in exact priority order
+  let accountState = "prediction_available";
+  if (!user.isActive) {
+    accountState = "inactive";
+  } else if (!isInvestmentCompleted) {
+    accountState = "investment_pending";
+  } else if (user.predictionLocked || user.monthlyMissCount >= 3) {
+    accountState = "prediction_locked";
+  } else {
+    // Check if submitted today
+    const submission = await PredictionSubmission.findOne({
+      memberId: session.memberId,
+      date: today,
+    }).lean();
+
+    if (submission) {
+      accountState = "already_submitted";
+      if (!user.predictionSubmitted || user.lastPredictionDate !== today) {
+        user.predictionSubmitted = true;
+        user.lastPredictionDate = today;
+        await user.save();
+      }
+    } else {
+      if (user.predictionSubmitted || user.lastPredictionDate === today) {
+        user.predictionSubmitted = false;
+        await user.save();
+      }
+    }
+  }
+
+  // Calculate countdownEndTime: First day of next month 00:00:00 Asia/Kolkata (Server Time)
+  const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const nextMonthYear = nowIST.getMonth() === 11 ? nowIST.getFullYear() + 1 : nowIST.getFullYear();
+  const nextMonth = nowIST.getMonth() === 11 ? 0 : nowIST.getMonth() + 1;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const targetStr = `${nextMonthYear}-${pad(nextMonth + 1)}-01T00:00:00`;
+  const countdownEndTime = new Date(`${targetStr}+05:30`).getTime();
 
   // Get today's question
   const dailyQuestion = await DailyQuestion.findOne({ date: today }).lean();
@@ -50,15 +99,52 @@ export async function GET() {
     date: today,
   }).lean();
 
+  const maxMissAllowed = settings.maximumMissAllowed ?? 3;
+  const remainingFreeMisses = Math.max(0, maxMissAllowed - (user.monthlyMissCount || 0));
+
+  // Count prediction submissions this month
+  const predictionDaysCount = await PredictionSubmission.countDocuments({
+    memberId: session.memberId,
+    month: month,
+  });
+
+  // Get active investments
+  const investments = await Investment.find({
+    memberId: session.memberId,
+    status: "active",
+  }).select("amount");
+
+  const totalActiveInvestment = investments.reduce(
+    (sum, inv) => sum + inv.amount,
+    0
+  );
+
+  let effectiveRate = 0;
+  if (user.predictionLocked || user.monthlyMissCount >= 3) {
+    effectiveRate = 0;
+  } else if (user.monthlyMissCount === 2) {
+    effectiveRate = 5;
+  } else {
+    effectiveRate = 7;
+  }
+
+  const dailyReturn = (totalActiveInvestment * effectiveRate) / 100;
+
   return NextResponse.json({
+    accountState,
     today,
     dailyQuestion,
     submission,
+    currentReturnPlan: effectiveRate,
     monthlyMissCount: user.monthlyMissCount || 0,
-    freeMisses,
-    remainingFreeMisses: Math.max(0, freeMisses - (user.monthlyMissCount || 0)),
-    productionStatus: user.productionStatus || "active",
-    currentReturnPlan: user.currentReturnPlan || 7,
+    remainingFreeMisses,
+    predictionLocked: user.predictionLocked || false,
+    countdownEndTime,
+    investmentCompleted: isInvestmentCompleted,
+    isActive: user.isActive || false,
+    totalActiveInvestment,
+    dailyReturn,
+    predictionDaysCount,
   });
 }
 
@@ -75,47 +161,66 @@ export async function POST(req: NextRequest) {
   }
 
   await connectDB();
-
-  // Get user details to verify productionStatus
-  const user = await User.findOne({ memberId: session.memberId }).select("productionStatus");
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
-
-  // 6. Prediction Submission Restriction
-  if (user.productionStatus === "closed") {
-    return NextResponse.json(
-      { error: "Production Closed - User is on 5% Plan" },
-      { status: 400 }
-    );
-  }
-
   const today = getISTDateString();
   const month = today.slice(0, 7);
 
-  // Get today's question
+  // Get user details to verify state
+  const user = await User.findOne({ memberId: session.memberId });
+  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  // 1. Account Active Check
+  if (!user.isActive) {
+    return NextResponse.json({ error: "Your Prediction Window is Locked. Activate your account." }, { status: 400 });
+  }
+
+  // 2. Investment Completed Check
+  const settings = await WebsiteSettings.findOne({ key: "singleton" }) || await WebsiteSettings.create({ key: "singleton" });
+  const minInvestment = settings.minimumInvestment ?? settings.pricing?.minInvestment ?? 100;
+  const isInvestmentCompleted = (user.totalInvestment || 0) >= minInvestment;
+  if (!isInvestmentCompleted) {
+    return NextResponse.json({ error: "Daily Predictions become available only after completing the minimum investment." }, { status: 400 });
+  }
+
+  // 3. Prediction Not Locked Check
+  if (user.predictionLocked) {
+    return NextResponse.json({ error: "Your prediction window has been locked for the rest of this month." }, { status: 400 });
+  }
+
+  // 4. Daily Question Exists Check
   const dailyQuestion = await DailyQuestion.findOne({ date: today });
   if (!dailyQuestion) {
     return NextResponse.json({ error: "No prediction question has been generated for today yet." }, { status: 404 });
   }
 
-  // Check if already submitted today
+  // 5. User Has Not Already Submitted Check
   const existing = await PredictionSubmission.findOne({
     memberId: session.memberId,
     date: today,
   });
-
   if (existing) {
     return NextResponse.json({ error: "You have already submitted your prediction for today." }, { status: 400 });
   }
 
   // Create submission
-  const submission = await PredictionSubmission.create({
-    memberId: session.memberId,
-    date: today,
-    month,
-    answer,
-    questionId: dailyQuestion.questionId,
-    questionText: dailyQuestion.questionText,
-  });
+  try {
+    const submission = await PredictionSubmission.create({
+      memberId: session.memberId,
+      date: today,
+      month,
+      answer,
+      questionId: dailyQuestion.questionId,
+      questionText: dailyQuestion.questionText,
+    });
 
-  return NextResponse.json({ success: true, submission });
+    user.predictionSubmitted = true;
+    user.lastPredictionDate = today;
+    await user.save();
+
+    return NextResponse.json({ success: true, submission });
+  } catch (err: any) {
+    if (err.code === 11000) {
+      return NextResponse.json({ error: "You have already submitted your prediction for today." }, { status: 400 });
+    }
+    return NextResponse.json({ error: err.message || "Failed to submit prediction" }, { status: 500 });
+  }
 }

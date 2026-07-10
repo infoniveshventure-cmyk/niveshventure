@@ -5,6 +5,7 @@ import PredictionQuestion from "@/models/PredictionQuestion";
 import DailyQuestion from "@/models/DailyQuestion";
 import PredictionSubmission from "@/models/PredictionSubmission";
 import User from "@/models/User";
+import WebsiteSettings from "@/models/WebsiteSettings";
 import { getISTDateString, runGenerateDailyQuestion } from "@/lib/dailyReturn";
 
 export const dynamic = "force-dynamic";
@@ -32,9 +33,12 @@ export async function GET(req: NextRequest) {
     const activeMembersCount = await User.countDocuments({ role: "member", isActive: true });
     const pendingCount = Math.max(0, activeMembersCount - totalSubmissions);
 
+    const settings = await WebsiteSettings.findOne({ key: "singleton" }) || await WebsiteSettings.create({ key: "singleton" });
+
     return NextResponse.json({
       today,
       dailyQuestion,
+      settings,
       stats: {
         yesCount,
         noCount,
@@ -136,6 +140,29 @@ export async function POST(req: NextRequest) {
     await user.save();
 
     return NextResponse.json({ success: true, user });
+  }
+
+  // G. Reset Today's Question
+  if (action === "reset_today_question") {
+    await DailyQuestion.deleteOne({ date: today });
+    return NextResponse.json({ success: true });
+  }
+
+  // H. Save Auto Schedule (Pending Question)
+  if (action === "save_auto_schedule") {
+    if (!questionText) return NextResponse.json({ error: "questionText is required" }, { status: 400 });
+    const settings = await WebsiteSettings.findOne({ key: "singleton" }) || await WebsiteSettings.create({ key: "singleton" });
+    settings.nextScheduledQuestion = questionText;
+    await settings.save();
+    return NextResponse.json({ success: true, settings });
+  }
+
+  // I. Toggle Auto Prediction
+  if (action === "toggle_auto_prediction") {
+    const settings = await WebsiteSettings.findOne({ key: "singleton" }) || await WebsiteSettings.create({ key: "singleton" });
+    settings.autoPredictionEnabled = body.enabled === true;
+    await settings.save();
+    return NextResponse.json({ success: true, settings });
   }
 
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });

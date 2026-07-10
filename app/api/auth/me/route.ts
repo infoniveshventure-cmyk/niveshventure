@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import { getSessionFromCookies } from "@/lib/auth-server";
+import { getCachedSettings } from "@/lib/settingsCache";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +14,7 @@ export async function GET() {
     }
 
     await connectDB();
-    const WebsiteSettings = (await import("@/models/WebsiteSettings")).default;
-    const settings = await WebsiteSettings.findOne({ key: "singleton" }).select("maintenanceMode secretMaintenanceMessage").lean();
+    const settings = await getCachedSettings();
     if (settings && settings.maintenanceMode === false) {
       return NextResponse.json({ error: settings.secretMaintenanceMessage || "System is under maintenance." }, { status: 503 });
     }

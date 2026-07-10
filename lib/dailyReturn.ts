@@ -10,10 +10,12 @@ import User from "@/models/User";
 import Investment from "@/models/Investment";
 import DailyReturn from "@/models/DailyReturn";
 import Transaction from "@/models/Transaction";
-import BusinessRule from "@/models/BusinessRule";
 import PredictionSubmission from "@/models/PredictionSubmission";
 import PredictionQuestion from "@/models/PredictionQuestion";
+import { getCachedBusinessRule } from "@/lib/businessRulesCache";
+import { getCachedSettings } from "@/lib/settingsCache";
 import DailyQuestion from "@/models/DailyQuestion";
+import WebsiteSettings from "@/models/WebsiteSettings";
 import { notifyMember } from "@/lib/notification";
 
 // Helper to get today's date in IST
@@ -40,6 +42,30 @@ export async function runGenerateDailyQuestion(forceDate?: string) {
   await connectDB();
 
   const today = forceDate || getISTDateString();
+
+  // Load WebsiteSettings to check auto-scheduler settings
+  const settings = await WebsiteSettings.findOne({ key: "singleton" }) || await WebsiteSettings.create({ key: "singleton" });
+
+  if (settings.autoPredictionEnabled && settings.nextScheduledQuestion) {
+    // Remove any existing daily question for today first (reset previous active question)
+    await DailyQuestion.deleteOne({ date: today });
+
+    const dailyQuestion = await DailyQuestion.create({
+      date: today,
+      questionId: null,
+      questionText: settings.nextScheduledQuestion,
+      isManual: false,
+      autoScheduled: true,
+      scheduledFor: today,
+      sentAt: new Date()
+    });
+
+    // Clear pending schedule
+    settings.nextScheduledQuestion = "";
+    await settings.save();
+
+    return { success: true, created: true, autoScheduled: true, question: dailyQuestion };
+  }
 
   // Check if today's DailyQuestion already exists
   const existing = await DailyQuestion.findOne({ date: today });
@@ -96,13 +122,13 @@ export async function runGenerateDailyQuestion(forceDate?: string) {
 export async function runDailyReturn(forceDate?: string) {
   await connectDB();
 
-  // 1. Fetch config rules
+  // 1. Fetch config rules using cache
   const [completedRule, missedRule, maxMissLimitRule, modeRule, manualPctRule] = await Promise.all([
-    BusinessRule.findOne({ key: "production_completed_monthly_rate" }),
-    BusinessRule.findOne({ key: "production_missed_monthly_rate" }),
-    BusinessRule.findOne({ key: "production_max_miss_limit" }),
-    BusinessRule.findOne({ key: "daily_return_mode" }),
-    BusinessRule.findOne({ key: "daily_return_manual_pct" }),
+    getCachedBusinessRule("production_completed_monthly_rate"),
+    getCachedBusinessRule("production_missed_monthly_rate"),
+    getCachedBusinessRule("production_max_miss_limit"),
+    getCachedBusinessRule("daily_return_mode"),
+    getCachedBusinessRule("daily_return_manual_pct"),
   ]);
 
   const completedRate = completedRule ? Number(completedRule.value) : 7;
@@ -119,6 +145,27 @@ export async function runDailyReturn(forceDate?: string) {
   // 3. Process each member
   const members = await User.find({ role: "member" });
 
+  // Pre-load dynamic settings
+  const settings = await getCachedSettings() || await WebsiteSettings.create({ key: "singleton" });
+  const minInvestment = settings.minimumInvestment ?? settings.pricing?.minInvestment ?? 100;
+  const returnAfterOneMiss = settings.returnPlanAfterOneMiss ?? 5;
+  const maxMissAllowed = settings.maximumMissAllowed ?? 2;
+
+  // Bulk query to avoid N+1 database queries in loop
+  const [allActiveInvestments, allSubmissions, allDailyReturns] = await Promise.all([
+    Investment.find({ status: "active" }).select("memberId amount").lean(),
+    PredictionSubmission.find({ date: today }).select("memberId").lean(),
+    DailyReturn.find({ date: today }).select("memberId").lean(),
+  ]);
+
+  const investmentMap = new Map<string, number>();
+  for (const inv of allActiveInvestments) {
+    investmentMap.set(inv.memberId, (investmentMap.get(inv.memberId) || 0) + inv.amount);
+  }
+
+  const submissionSet = new Set(allSubmissions.map((s) => s.memberId));
+  const dailyReturnSet = new Set(allDailyReturns.map((r) => r.memberId));
+
   let processed = 0;
   let skippedNoInvestment = 0;
   let skippedDuplicates = 0;
@@ -128,6 +175,9 @@ export async function runDailyReturn(forceDate?: string) {
     // Month Miss Reset Check (Safeguard / Primary reset mechanism)
     if (member.lastMissResetMonth !== month) {
       member.monthlyMissCount = 0;
+      member.predictionLocked = false;
+      member.predictionSubmitted = false;
+      member.lastPredictionDate = "";
       member.currentReturnPlan = completedRate;
       member.productionStatus = "active";
       member.lastMissResetMonth = month;
@@ -135,61 +185,64 @@ export async function runDailyReturn(forceDate?: string) {
     }
 
     // Step 1: Duplicate Protection
-    const existingReturn = await DailyReturn.findOne({
-      memberId: member.memberId,
-      date: today,
-    });
-    if (existingReturn) {
+    if (dailyReturnSet.has(member.memberId)) {
       skippedDuplicates++;
       continue;
     }
 
     // A. Sum active investments
-    const investments = await Investment.find({
-      memberId: member.memberId,
-      status: "active",
-    }).select("amount");
-
-    const totalActiveInvestment = investments.reduce(
-      (sum, inv) => sum + inv.amount,
-      0
-    );
+    const totalActiveInvestment = investmentMap.get(member.memberId) || 0;
 
     if (totalActiveInvestment <= 0) {
       skippedNoInvestment++;
       continue;
     }
 
+    const isInvestmentCompleted = (member.totalInvestment || 0) >= minInvestment;
+    if (member.investmentCompleted !== isInvestmentCompleted) {
+      member.investmentCompleted = isInvestmentCompleted;
+      await member.save();
+    }
+
     let dailyPlanRate = completedRate;
 
-    // Step 2: Check Production Status
-    if (member.productionStatus === "closed") {
-      // Production closed: lock to missed plan rate
-      dailyPlanRate = missedRate;
+    // Step 2: Check Production Status / Prediction Lock
+    if (member.predictionLocked || member.monthlyMissCount >= maxMissAllowed) {
+      dailyPlanRate = 0;
     } else {
-      // Step 3: Active Production User - check prediction submission
-      const submission = await PredictionSubmission.findOne({
-        memberId: member.memberId,
-        date: today,
-      });
+      // Step 3: Check prediction submission
+      const hasSubmission = submissionSet.has(member.memberId);
 
-      if (submission) {
-        // Case A: Prediction Completed
-        dailyPlanRate = completedRate;
-        member.currentReturnPlan = completedRate;
+      if (hasSubmission) {
+        // Prediction Completed
+        // Plan remains what it is based on past misses
+        if (member.monthlyMissCount === 2) {
+          dailyPlanRate = returnAfterOneMiss;
+          member.currentReturnPlan = returnAfterOneMiss;
+        } else {
+          dailyPlanRate = completedRate;
+          member.currentReturnPlan = completedRate;
+        }
+        member.predictionSubmitted = true;
+        member.lastPredictionDate = today;
         await member.save();
       } else {
-        // Case B: Prediction Missed
+        // Prediction Missed
         member.monthlyMissCount = (member.monthlyMissCount || 0) + 1;
         predictionMisses++;
 
-        if (member.monthlyMissCount >= maxMissLimit) {
-          // 2nd Miss (or greater): downgrade to 5% and close production status
-          dailyPlanRate = missedRate;
-          member.currentReturnPlan = missedRate;
+        if (member.monthlyMissCount >= maxMissAllowed) {
+          // 3 Misses -> Locked, 0% Plan
+          dailyPlanRate = 0;
+          member.currentReturnPlan = 0;
+          member.predictionLocked = true;
           member.productionStatus = "closed";
+        } else if (member.monthlyMissCount === 2) {
+          // 2nd Miss -> 5% Plan, remains active
+          dailyPlanRate = returnAfterOneMiss;
+          member.currentReturnPlan = returnAfterOneMiss;
         } else {
-          // 1st Miss: remains on 7% plan
+          // 1st Miss -> remains on 7% Plan, remains active
           dailyPlanRate = completedRate;
           member.currentReturnPlan = completedRate;
         }
@@ -222,6 +275,7 @@ export async function runDailyReturn(forceDate?: string) {
       });
 
       member.dailyReturnPending = runningTotal;
+      member.returnsDailyEarnings = runningTotal;
       await member.save();
       processed++;
     } catch (err: any) {
@@ -250,7 +304,7 @@ export async function runMonthlySettlement(force = false) {
   await connectDB();
 
   // Fetch completed rate rule (for reset)
-  const completedRule = await BusinessRule.findOne({ key: "production_completed_monthly_rate" });
+  const completedRule = await getCachedBusinessRule("production_completed_monthly_rate");
   const completedRate = completedRule ? Number(completedRule.value) : 7;
 
   const now = new Date();
@@ -283,47 +337,147 @@ export async function runMonthlySettlement(force = false) {
   for (const member of members) {
     // Reset miss count, currentReturnPlan and productionStatus on monthly closeout
     member.monthlyMissCount = 0;
+    member.predictionLocked = false;
+    member.predictionSubmitted = false;
+    member.lastPredictionDate = "";
     member.currentReturnPlan = completedRate;
     member.productionStatus = "active";
     member.lastMissResetMonth = currentMonth;
 
-    const amount = parseFloat((member.dailyReturnPending || 0).toFixed(4));
-    if (amount > 0) {
-      member.walletBalance = (member.walletBalance || 0) + amount;
-      member.totalReturnsIncome = (member.totalReturnsIncome || 0) + amount;
-      member.totalDailyReturnSettled = (member.totalDailyReturnSettled || 0) + amount;
-      member.dailyReturnPending = 0;
+    // Duplicate Monthly Settlement Protection & Snapshot Summation (Daily returns)
+    let amount = 0;
+    let activeDays = 0;
+    const isDailyReturnAlreadySettled = member.lastReturnsClosingPeriod === prevMonth;
 
-      // Create transaction record
-      await Transaction.create({
+    if (!isDailyReturnAlreadySettled) {
+      const dailyRecords = await DailyReturn.find({
         memberId: member.memberId,
-        type: "returns_income",
-        direction: "credit",
-        amount,
-        currency: "USDT",
-        status: "completed",
-        note: `Monthly settlement of daily returns for ${prevMonth}`,
-        description: `Daily return profits accumulated during ${prevMonth} settled to wallet.`,
-        walletType: "main",
-      });
+        month: prevMonth,
+        settled: false,
+      }).lean();
+      activeDays = dailyRecords.length;
+      const dailySum = dailyRecords.reduce((s: number, r: any) => s + (r.profit || 0), 0);
+      amount = parseFloat(dailySum.toFixed(4));
+    }
+    
+    // Duplicate Monthly Settlement Protection & Snapshot Summation (Level returns)
+    let levelIncomeAmt = 0;
+    let pendingRecords: any[] = [];
+    const isLevelIncomeAlreadySettled = member.lastReturnsLevelClosing === prevMonth;
 
-      // Mark all daily records for this member in the previous month as settled
-      await DailyReturn.updateMany(
-        { memberId: member.memberId, month: prevMonth, settled: false },
-        { $set: { settled: true, settledAt: now } }
-      );
+    if (!isLevelIncomeAlreadySettled) {
+      const ReturnsLevelIncome = (await import("@/models/ReturnsLevelIncome")).default;
+      pendingRecords = await ReturnsLevelIncome.find({
+        recipientMemberId: member.memberId,
+        status: "Pending"
+      }).lean();
+      
+      const sum = pendingRecords.reduce((s: number, r: any) => s + (r.calculatedAmount || 0), 0);
+      levelIncomeAmt = parseFloat(sum.toFixed(4));
+    }
 
-      // Notify member
-      notifyMember(
-        member.memberId,
-        "Monthly Return Settled 💰",
-        `Your accumulated daily returns of $${amount.toLocaleString()} for ${prevMonth} have been transferred to your wallet.`,
-        "returns_income",
-        undefined
-      ).catch(() => {});
+    if (amount > 0 || levelIncomeAmt > 0) {
+      const combinedAmount = amount + levelIncomeAmt;
+      member.walletBalance = (member.walletBalance || 0) + combinedAmount;
+
+      if (amount > 0) {
+        member.totalReturnsIncome = (member.totalReturnsIncome || 0) + amount;
+        member.totalDailyReturnSettled = (member.totalDailyReturnSettled || 0) + amount;
+        member.dailyReturnPending = 0;
+        member.returnsDailyEarnings = 0;
+        member.lastReturnsClosingPeriod = prevMonth;
+        member.lastReturnsClosingAt = now;
+
+        // Create transaction record for Daily ROI using new type
+        const dailyTx = await Transaction.create({
+          memberId: member.memberId,
+          type: "RETURNS_MONTHLY_CLOSING",
+          direction: "credit",
+          amount,
+          currency: "USDT",
+          status: "completed",
+          note: `Monthly settlement of daily returns for ${prevMonth}`,
+          description: `Returns Income Closing - ${prevMonth}`,
+          walletType: "main",
+        });
+
+        // Mark all daily records for this member in the previous month as settled
+        await DailyReturn.updateMany(
+          { memberId: member.memberId, month: prevMonth, settled: false },
+          { $set: { settled: true, settledAt: now } }
+        );
+
+        // Create ReturnsClosingHistory entry
+        try {
+          const ReturnsClosingHistory = (await import("@/models/ReturnsClosingHistory")).default;
+          const [yyyy, mm] = prevMonth.split("-").map(Number);
+          const startDate = new Date(yyyy, mm - 1, 1);
+          const endDate = new Date(yyyy, mm, 0, 23, 59, 59, 999);
+
+          await ReturnsClosingHistory.create({
+            userId: member._id,
+            memberId: member.memberId,
+            closingPeriod: prevMonth,
+            startDate,
+            endDate,
+            activeDays,
+            totalReturn: amount,
+            closingDate: now,
+            walletCredited: true,
+            transactionId: dailyTx._id.toString(),
+            status: "Success",
+          });
+        } catch (histErr) {
+          console.error(`Failed to create ReturnsClosingHistory for ${member.memberId}:`, histErr);
+        }
+
+        // Notify member
+        notifyMember(
+          member.memberId,
+          "Monthly Return Settled 💰",
+          `Your accumulated daily returns of $${amount.toLocaleString()} for ${prevMonth} have been transferred to your wallet.`,
+          "returns_income",
+          undefined
+        ).catch(() => {});
+      }
+
+      if (levelIncomeAmt > 0) {
+        member.totalReturnsLevelIncomeEarned = (member.totalReturnsLevelIncomeEarned || 0) + levelIncomeAmt;
+        member.pendingReturnsLevelIncome = 0;
+        member.lastReturnsLevelClosing = prevMonth;
+
+        // Create transaction record for Returns Level Income
+        const levelTx = await Transaction.create({
+          memberId: member.memberId,
+          type: "returns_level_income",
+          direction: "credit",
+          amount: levelIncomeAmt,
+          currency: "USDT",
+          status: "completed",
+          note: `Monthly Returns Level Income Settlement - ${prevMonth}`,
+          description: `Monthly Returns Level Income Settlement accumulated during ${prevMonth} credited to wallet.`,
+          walletType: "main",
+        });
+
+        // Mark specific ReturnsLevelIncome records as Credited
+        const ReturnsLevelIncome = (await import("@/models/ReturnsLevelIncome")).default;
+        await ReturnsLevelIncome.updateMany(
+          { _id: { $in: pendingRecords.map(r => r._id) } },
+          { $set: { status: "Credited", creditedAt: now, transactionId: levelTx._id.toString() } }
+        );
+
+        // Notify member
+        notifyMember(
+          member.memberId,
+          "Monthly Returns Level Income Settled 💰",
+          `Your accumulated Returns Level Income of $${levelIncomeAmt.toLocaleString()} for ${prevMonth} has been credited to your wallet.`,
+          "returns_level_income",
+          undefined
+        ).catch(() => {});
+      }
 
       settled++;
-      totalAmount += amount;
+      totalAmount += combinedAmount;
     }
 
     await member.save();

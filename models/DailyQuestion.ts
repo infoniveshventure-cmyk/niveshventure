@@ -6,6 +6,9 @@ const DailyQuestionSchema = new Schema(
     questionId: { type: Schema.Types.ObjectId, ref: "PredictionQuestion", default: null },
     questionText: { type: String, required: true }, // Snapshot of the question text
     isManual: { type: Boolean, default: false },
+    autoScheduled: { type: Boolean, default: false },
+    scheduledFor: { type: String, default: "" },
+    sentAt: { type: Date, default: null },
     selectedAt: { type: Date, default: Date.now }
   },
   { timestamps: true }

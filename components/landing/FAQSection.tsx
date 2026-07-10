@@ -47,7 +47,7 @@ export default function FAQSection() {
   const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
 
   return (
-    <section ref={sectionRef} id="faq" className="relative py-8 md:py-20 bg-[#050914]">
+    <section ref={sectionRef} id="faq" className="relative py-8 md:py-20 bg-transparent">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
 
       <div className="max-w-4xl mx-auto px-4 md:px-8 lg:px-12">

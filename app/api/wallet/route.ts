@@ -57,5 +57,22 @@ export async function GET() {
     (user.totalLevelIncome || 0) +
     (user.totalRewardIncome || 0);
 
-  return NextResponse.json({ wallet: user, transactions: allTransactions, totalEarnings });
+  return NextResponse.json({
+    wallet: {
+      walletBalance: user.walletBalance || 0,
+      boosterWalletBalance: user.boosterWalletBalance || 0,
+      nivshWalletBalance: user.nivshWalletBalance || 0,
+      usdtWalletBalance: user.usdtWalletBalance || 0,
+      usdtWalletAddress: user.usdtWalletAddress || "",
+      totalReferralIncome: user.totalReferralIncome || 0,
+      totalMatchingIncome: user.totalMatchingIncome || 0,
+      totalReturnsIncome: user.totalReturnsIncome || 0,
+      totalLevelIncome: user.totalLevelIncome || 0,
+      totalRewardIncome: user.totalRewardIncome || 0,
+      totalInvestment: user.totalInvestment || 0,
+      totalWithdrawn: user.totalWithdrawn || 0,
+    },
+    transactions: allTransactions,
+    totalEarnings
+  });
 }

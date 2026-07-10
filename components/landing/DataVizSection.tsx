@@ -63,7 +63,7 @@ export default function DataVizSection() {
   const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
 
   return (
-    <section ref={sectionRef} className="relative py-8 md:py-20 bg-[#0A0E1A]">
+    <section ref={sectionRef} className="relative py-8 md:py-20 bg-transparent">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-violet/30 to-transparent" />
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12">

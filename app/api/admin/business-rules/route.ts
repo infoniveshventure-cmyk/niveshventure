@@ -29,6 +29,17 @@ const DEFAULT_RULES = [
   { key: "returns_level8_pct", category: "returns", label: "Returns Level 8 %", value: 0.5, type: "percentage", min: 0, max: 5, unit: "%" },
   { key: "returns_level9_pct", category: "returns", label: "Returns Level 9 %", value: 0.5, type: "percentage", min: 0, max: 5, unit: "%" },
   { key: "returns_level10_pct", category: "returns", label: "Returns Level 10 %", value: 0.5, type: "percentage", min: 0, max: 5, unit: "%" },
+  // Returns Level Income (Percentage-Based) Configs
+  { key: "returns_level_income_l1_pct", category: "returns", label: "Returns Level 1 Income %", value: 1.00, type: "percentage", min: 0, max: 10, unit: "%" },
+  { key: "returns_level_income_l2_pct", category: "returns", label: "Returns Level 2 Income %", value: 0.50, type: "percentage", min: 0, max: 10, unit: "%" },
+  { key: "returns_level_income_l3_pct", category: "returns", label: "Returns Level 3 Income %", value: 0.30, type: "percentage", min: 0, max: 10, unit: "%" },
+  { key: "returns_level_income_l4_pct", category: "returns", label: "Returns Level 4 Income %", value: 0.25, type: "percentage", min: 0, max: 5, unit: "%" },
+  { key: "returns_level_income_l5_pct", category: "returns", label: "Returns Level 5 Income %", value: 0.20, type: "percentage", min: 0, max: 5, unit: "%" },
+  { key: "returns_level_income_l6_pct", category: "returns", label: "Returns Level 6 Income %", value: 0.15, type: "percentage", min: 0, max: 5, unit: "%" },
+  { key: "returns_level_income_l7_pct", category: "returns", label: "Returns Level 7 Income %", value: 0.15, type: "percentage", min: 0, max: 5, unit: "%" },
+  { key: "returns_level_income_l8_pct", category: "returns", label: "Returns Level 8 Income %", value: 0.15, type: "percentage", min: 0, max: 5, unit: "%" },
+  { key: "returns_level_income_l9_pct", category: "returns", label: "Returns Level 9 Income %", value: 0.15, type: "percentage", min: 0, max: 5, unit: "%" },
+  { key: "returns_level_income_l10_pct", category: "returns", label: "Returns Level 10 Income %", value: 0.15, type: "percentage", min: 0, max: 5, unit: "%" },
   { key: "reward_rank_x1", category: "rewards", label: "Rank X1 Reward ($)", value: 100, type: "number", min: 0, unit: "$" },
   { key: "reward_rank_x2", category: "rewards", label: "Rank X2 Reward ($)", value: 300, type: "number", min: 0, unit: "$" },
   { key: "reward_rank_x3", category: "rewards", label: "Rank X3 Reward ($)", value: 700, type: "number", min: 0, unit: "$" },
@@ -45,6 +56,10 @@ const DEFAULT_RULES = [
   { key: "production_completed_monthly_rate", category: "returns", label: "Production Completed Monthly Rate %", value: 7, type: "number", min: 0, max: 30, unit: "%" },
   { key: "production_missed_monthly_rate", category: "returns", label: "Production Missed Monthly Rate %", value: 5, type: "number", min: 0, max: 30, unit: "%" },
   { key: "production_max_miss_limit", category: "returns", label: "Production Max Miss Limit", value: 2, type: "number", min: 0, max: 31, unit: "days" },
+  // Booster Income System Settings
+  { key: "booster_qualification_days", category: "booster", label: "Booster Qualification Period (Days)", value: 7, type: "number", min: 1, max: 30, unit: "days" },
+  { key: "booster_reward_3_referrals", category: "booster", label: "Reward for 3 Direct Referrals ($)", value: 15, type: "number", min: 0, max: 1000, unit: "$" },
+  { key: "booster_reward_5_referrals", category: "booster", label: "Reward for 5 Direct Referrals ($)", value: 30, type: "number", min: 0, max: 1000, unit: "$" },
 ];
 
 export async function GET(req: NextRequest) {
@@ -62,29 +77,41 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ logs });
   }
 
-  // Cleanup obsolete rules if they exist
-  await BusinessRule.deleteMany({ key: { $in: ["reward_rank_star", "reward_rank_gold", "reward_rank_diamond"] } });
+  // Check count to see if we need to seed or cleanup (avoids 62 write queries on every GET)
+  const currentCount = await BusinessRule.countDocuments();
+  if (currentCount !== DEFAULT_RULES.length) {
+    // Cleanup obsolete rules if they exist
+    await BusinessRule.deleteMany({ key: { $in: ["reward_rank_star", "reward_rank_gold", "reward_rank_diamond"] } });
 
-  // ── Deduplicate: remove extras if any key has more than one document ──
-  const dupKeys = await BusinessRule.aggregate([
-    { $group: { _id: "$key", count: { $sum: 1 }, ids: { $push: "$_id" } } },
-    { $match: { count: { $gt: 1 } } },
-  ]);
-  for (const dup of dupKeys) {
-    // Keep the last id (most recently inserted), delete the rest
-    const [keep, ...remove] = [...dup.ids].reverse();
-    if (remove.length) {
-      await BusinessRule.deleteMany({ _id: { $in: remove } });
+    // ── Deduplicate: remove extras if any key has more than one document ──
+    const dupKeys = await BusinessRule.aggregate([
+      { $group: { _id: "$key", count: { $sum: 1 }, ids: { $push: "$_id" } } },
+      { $match: { count: { $gt: 1 } } },
+    ]);
+    for (const dup of dupKeys) {
+      // Keep the last id (most recently inserted), delete the rest
+      const [keep, ...remove] = [...dup.ids].reverse();
+      if (remove.length) {
+        await BusinessRule.deleteMany({ _id: { $in: remove } });
+      }
     }
-  }
 
-  // ── Seed any missing default rules (upsert — never errors on duplicates) ──
-  for (const r of DEFAULT_RULES) {
-    await BusinessRule.updateOne(
-      { key: r.key },
-      { $setOnInsert: { ...r, updatedBy: "system", history: [] } },
-      { upsert: true }
-    );
+    // ── Seed any missing default rules (upsert — never errors on duplicates) ──
+    let hasInserted = false;
+    for (const r of DEFAULT_RULES) {
+      const res = await BusinessRule.updateOne(
+        { key: r.key },
+        { $setOnInsert: { ...r, updatedBy: "system", history: [] } },
+        { upsert: true }
+      );
+      if (res.upsertedCount > 0) {
+        hasInserted = true;
+      }
+    }
+
+    if (hasInserted) {
+      appCache.flush("business_rules");
+    }
   }
 
   const cacheKey = "business_rules_all";

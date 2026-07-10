@@ -16,7 +16,7 @@ export async function requireAdmin() {
 
   // Fallback: check DB for admin role
   await connectDB();
-  const dbUser = await User.findOne({ memberId: session.memberId }).select("role");
+  const dbUser = await User.findOne({ memberId: session.memberId }).select("role").lean();
   if (dbUser?.role === "admin") {
     // Promote session to admin for this request
     (session as any).role = "admin";

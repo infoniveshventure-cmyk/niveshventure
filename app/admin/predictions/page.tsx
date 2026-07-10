@@ -23,6 +23,10 @@ export default function AdminPredictionsPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Auto prediction scheduler settings
+  const [autoPredictionEnabled, setAutoPredictionEnabled] = useState(false);
+  const [nextScheduledQuestion, setNextScheduledQuestion] = useState("");
+
   // Forms
   const [newQuestionText, setNewQuestionText] = useState("");
   const [editingQuestion, setEditingQuestion] = useState<any | null>(null);
@@ -49,6 +53,8 @@ export default function AdminPredictionsPage() {
         const d = await statsRes.json();
         setStats(d);
         setOverrideText(d.dailyQuestion?.questionText || "");
+        setAutoPredictionEnabled(d.settings?.autoPredictionEnabled || false);
+        setNextScheduledQuestion(d.settings?.nextScheduledQuestion || "");
       }
       if (subRes.ok) {
         const d = await subRes.json();
@@ -153,6 +159,60 @@ export default function AdminPredictionsPage() {
       loadData();
     } catch {
       toast.error("Failed to delete question");
+    }
+  }
+
+  async function handleToggleAutoPrediction(enabled: boolean) {
+    try {
+      const res = await fetch("/api/admin/predictions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "toggle_auto_prediction",
+          enabled,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setAutoPredictionEnabled(enabled);
+      toast.success(`Auto prediction scheduler turned ${enabled ? "ON" : "OFF"}`);
+      loadData();
+    } catch {
+      toast.error("Failed to update auto prediction setting");
+    }
+  }
+
+  async function handleSaveAutoSchedule() {
+    if (!overrideText.trim()) return;
+    try {
+      const res = await fetch("/api/admin/predictions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_auto_schedule",
+          questionText: overrideText,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Auto scheduled question saved successfully!");
+      loadData();
+    } catch {
+      toast.error("Failed to save auto scheduled question");
+    }
+  }
+
+  async function handleResetToday() {
+    if (!confirm("Are you sure you want to remove today's active prediction question?")) return;
+    try {
+      const res = await fetch("/api/admin/predictions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset_today_question" }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Today's prediction question reset successfully");
+      loadData();
+    } catch {
+      toast.error("Failed to reset today's question");
     }
   }
 
@@ -305,35 +365,82 @@ export default function AdminPredictionsPage() {
               disabled={loading}
               className="flex-1 btn-primary py-2 text-xs font-semibold flex items-center justify-center gap-1.5"
             >
-              <Play size={14} /> Generate / Reset Today's Question
+              <Play size={14} /> Generate Today's Question
+            </button>
+            <button
+              onClick={handleResetToday}
+              disabled={loading || !stats?.dailyQuestion}
+              className="flex-1 py-2 text-xs font-semibold rounded-xl bg-neon-magenta text-white hover:bg-neon-magenta/80 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-1.5"
+            >
+              <RotateCcw size={14} /> Reset Today's Question
             </button>
           </div>
         </div>
 
-        {/* Right Side: Manual Question Editor */}
-        <div className="glass-card p-5">
-          <h3 className="font-display font-semibold mb-2 flex items-center gap-1.5 text-sm text-white">
-            <Edit size={16} className="text-neon-cyan" /> Edit Today's Text
-          </h3>
-          <p className="text-xs text-ink-muted mb-4">
-            Directly update today's prediction text. This sets isManual=true.
-          </p>
+        {/* Right Side: Manual & Scheduled Question Editor */}
+        <div className="glass-card p-5 flex flex-col justify-between">
+          <div>
+            <h3 className="font-display font-semibold mb-2 flex items-center gap-1.5 text-sm text-white">
+              <Edit size={16} className="text-neon-cyan" /> Daily Question Controls
+            </h3>
+            <p className="text-xs text-ink-muted mb-4">
+              Send an immediate live prediction question or save a pending question to auto-publish at 12:00 AM.
+            </p>
 
-          <textarea
-            rows={3}
-            value={overrideText}
-            onChange={(e) => setOverrideText(e.target.value)}
-            placeholder="Type manually here..."
-            className="input-field w-full text-sm resize-none mb-3"
-          />
+            {/* Toggle Section */}
+            <div className="mb-4 bg-white/5 p-3 rounded-xl border border-white/5 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-white font-medium">Automatic Daily Question</p>
+                <p className="text-[10px] text-ink-muted">Automatically Send Daily Question at 12:00 AM</p>
+              </div>
+              <button
+                onClick={() => handleToggleAutoPrediction(!autoPredictionEnabled)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  autoPredictionEnabled ? "bg-neon-cyan" : "bg-white/10"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    autoPredictionEnabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
 
-          <button
-            onClick={handleReplaceToday}
-            disabled={!overrideText.trim()}
-            className="w-full py-2 text-xs font-semibold rounded-xl bg-neon-cyan text-black hover:bg-neon-cyan/80 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            Apply Live Text Override
-          </button>
+            {nextScheduledQuestion && autoPredictionEnabled && (
+              <div className="mb-4 bg-yellow-400/10 border border-yellow-400/25 p-3 rounded-xl text-xs text-yellow-400">
+                <span className="font-semibold block mb-0.5">Pending Scheduled Question:</span>
+                "{nextScheduledQuestion}"
+              </div>
+            )}
+
+            <textarea
+              rows={3}
+              value={overrideText}
+              onChange={(e) => setOverrideText(e.target.value)}
+              placeholder="Type question text here..."
+              className="input-field w-full text-sm resize-none mb-3"
+            />
+          </div>
+
+          <div className="space-y-2 mt-auto">
+            {autoPredictionEnabled ? (
+              <button
+                onClick={handleSaveAutoSchedule}
+                disabled={!overrideText.trim()}
+                className="w-full py-2 text-xs font-semibold rounded-xl bg-yellow-400 text-black hover:bg-yellow-400/80 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Save Auto Schedule
+              </button>
+            ) : null}
+            <button
+              onClick={handleReplaceToday}
+              disabled={!overrideText.trim()}
+              className="w-full py-2 text-xs font-semibold rounded-xl bg-neon-cyan text-black hover:bg-neon-cyan/80 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              Send (Live Text Override)
+            </button>
+          </div>
         </div>
       </div>
 

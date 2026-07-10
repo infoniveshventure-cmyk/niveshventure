@@ -27,7 +27,7 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   max-width: 100%;
-  background-color: #0A0E1A;
+  background-color: #0D0D1A;
   color: #E8E8F0;
   font-family: var(--font-body);
 }
@@ -202,7 +202,7 @@ html.lenis, html.lenis body {
   background: radial-gradient(ellipse 80% 60% at 20% 0%, rgba(123, 92, 255, 0.25) 0%, transparent 60%),
     radial-gradient(ellipse 60% 50% at 80% 10%, rgba(0, 229, 255, 0.18) 0%, transparent 55%),
     radial-gradient(ellipse 50% 40% at 50% 80%, rgba(0, 255, 163, 0.08) 0%, transparent 50%),
-    #0A0E1A;
+    transparent;
 }
 
 .landing-grid-overlay {
@@ -340,7 +340,7 @@ header a span {
   padding: 2rem 1rem 5rem;
   /* bottom padding clears the fixed footer */
   position: relative;
-  background: #0D0D1A;
+  background: transparent;
 }
 
 /* Floating blobs */
@@ -349,7 +349,7 @@ header a span {
   border-radius: 50%;
   filter: blur(80px);
   pointer-events: none;
-  animation: auth-blob-float 8s ease-in-out infinite;
+  animation: auth-blob-rotate-slow 180s linear infinite;
 }
 
 .auth-blob-purple {
@@ -357,7 +357,7 @@ header a span {
   height: 380px;
   top: -80px;
   left: -100px;
-  background: radial-gradient(circle, rgba(100, 30, 200, 0.75) 0%, rgba(80, 20, 180, 0.4) 60%, transparent 100%);
+  background: radial-gradient(circle at 35% 35%, rgba(100, 30, 200, 0.75) 0%, rgba(80, 20, 180, 0.4) 60%, transparent 100%);
   animation-delay: 0s;
 }
 
@@ -366,8 +366,8 @@ header a span {
   height: 340px;
   bottom: -60px;
   right: -80px;
-  background: radial-gradient(circle, rgba(220, 80, 20, 0.7) 0%, rgba(180, 60, 10, 0.35) 60%, transparent 100%);
-  animation-delay: -3s;
+  background: radial-gradient(circle at 40% 40%, rgba(220, 80, 20, 0.7) 0%, rgba(180, 60, 10, 0.35) 60%, transparent 100%);
+  animation-delay: -30s;
 }
 
 .auth-blob-purple2 {
@@ -375,23 +375,25 @@ header a span {
   height: 180px;
   top: 30%;
   right: -40px;
-  background: radial-gradient(circle, rgba(140, 30, 200, 0.6) 0%, transparent 70%);
-  animation-delay: -5s;
+  background: radial-gradient(circle at 45% 45%, rgba(140, 30, 200, 0.6) 0%, transparent 70%);
+  animation-delay: -60s;
 }
 
-@keyframes auth-blob-float {
-
-  0%,
+@keyframes auth-blob-rotate-slow {
+  0% {
+    transform: rotate(0deg) translate(0px, 0px) scale(1);
+  }
+  25% {
+    transform: rotate(90deg) translate(-20px, 15px) scale(1.03);
+  }
+  50% {
+    transform: rotate(180deg) translate(-10px, -20px) scale(0.97);
+  }
+  75% {
+    transform: rotate(270deg) translate(15px, -10px) scale(1.02);
+  }
   100% {
-    transform: translateY(0) scale(1);
-  }
-
-  33% {
-    transform: translateY(-25px) scale(1.04);
-  }
-
-  66% {
-    transform: translateY(12px) scale(0.97);
+    transform: rotate(360deg) translate(0px, 0px) scale(1);
   }
 }
 
@@ -621,7 +623,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Premium Interactive Glow Background */
 .bg-grid-glow {
-  background-color: #0A0E1A;
+  background-color: #0D0D1A;
   background-image:
     radial-gradient(ellipse 65% 65% at 50% -10%, rgba(123, 92, 255, 0.16), transparent 80%),
     radial-gradient(ellipse 50% 50% at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 229, 255, 0.05), transparent 60%),

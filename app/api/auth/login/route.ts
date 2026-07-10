@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
-import WebsiteSettings from "@/models/WebsiteSettings";
+import { getCachedSettings } from "@/lib/settingsCache";
 import { signSession, SESSION_COOKIE } from "@/lib/auth-server";
 import { verifyFirebaseToken } from "@/lib/firebase-admin";
 import { notifyMember } from "@/lib/notification";
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Maintenance gate — blocks non-admin logins when site is switched off.
-    const settings = await WebsiteSettings.findOne({ key: "singleton" });
+    const settings = await getCachedSettings();
     if (settings) {
       if (settings.maintenanceMode === false) {
         return NextResponse.json({ error: settings.secretMaintenanceMessage || "Website is temporarily offline." }, { status: 503 });

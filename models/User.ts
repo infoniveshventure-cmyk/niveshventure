@@ -56,6 +56,10 @@ const UserSchema = new Schema(
     monthlyMissCount: { type: Number, default: 0 },
     lastMissResetMonth: { type: String, default: "" }, // YYYY-MM format
     currentReturnPlan: { type: Number, default: 7 },
+    investmentCompleted: { type: Boolean, default: false },
+    predictionLocked: { type: Boolean, default: false },
+    predictionSubmitted: { type: Boolean, default: false },
+    lastPredictionDate: { type: String, default: "" },
     productionStatus: { type: String, enum: ["active", "closed"], default: "active" },
 
     leftCarryForward: { type: Number, default: 0 },
@@ -75,6 +79,25 @@ const UserSchema = new Schema(
     premiumExpiresAt: { type: Date, default: null },
     languagePreference: { type: String, enum: ["en", "hi"], default: "en" },
     activatedByFreePin: { type: Boolean, default: false },
+
+    // Returns Level Income Fields
+    pendingReturnsLevelIncome: { type: Number, default: 0 },
+    totalReturnsLevelIncomeEarned: { type: Number, default: 0 },
+    lastReturnsLevelClosing: { type: String, default: "" },
+    lastReturnsLevelCalculationDate: { type: String, default: "" },
+
+    // Monthly Returns Income Closing Fields
+    returnsDailyEarnings: { type: Number, default: 0 },
+    lastReturnsClosingPeriod: { type: String, default: "" },
+    lastReturnsClosingAt: { type: Date, default: null },
+
+    // 7 Days Booster Income Fields
+    boosterQualified: { type: Boolean, default: false },
+    boosterRewardClaimed: { type: Boolean, default: false },
+    boosterRewardAmount: { type: Number, default: 0 },
+    boosterQualificationExpiry: { type: Date, default: null },
+    boosterRewardDate: { type: Date, default: null },
+    totalBoosterIncome: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

@@ -56,8 +56,8 @@ export default function RewardsPage() {
     load();
   }, []);
 
-  const leftTeam  = stats?.leftTeam  ?? 0;
-  const rightTeam = stats?.rightTeam ?? 0;
+  const leftTeam  = stats?.leftActiveTeam  ?? 0;
+  const rightTeam = stats?.rightActiveTeam ?? 0;
 
   // Determine qualification statuses chronologically (based on member counts)
   let foundFirstUnachieved = false;

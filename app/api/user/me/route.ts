@@ -4,6 +4,9 @@ import User from "@/models/User";
 import Transaction from "@/models/Transaction";
 import RewardHistory from "@/models/RewardHistory";
 import { getSessionFromCookies } from "@/lib/auth-server";
+import { getCachedSettings } from "@/lib/settingsCache";
+import { getCachedBusinessRule } from "@/lib/businessRulesCache";
+import { appCache, TTL } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +15,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   await connectDB();
-  const WebsiteSettings = (await import("@/models/WebsiteSettings")).default;
-  const settings = await WebsiteSettings.findOne({ key: "singleton" }).select("maintenanceMode secretMaintenanceMessage").lean();
+  const settings = await getCachedSettings();
   if (settings && settings.maintenanceMode === false) {
     return NextResponse.json({ error: settings.secretMaintenanceMessage || "System is under maintenance." }, { status: 503 });
   }
@@ -24,25 +26,36 @@ export async function GET() {
   );
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  const directsList = await User.find({ sponsorId: user.memberId })
-    .select("memberId fullName isActive")
+  // Single query to fetch all members for in-memory downline computation
+  const allUsers = await User.find({ role: "member" })
+    .select("memberId parentId sponsorId fullName isActive walletBalance totalInvestment boosterWalletBalance nivshWalletBalance usdtWalletBalance position accessExpiresAt")
     .lean();
-  const directCount = directsList.length;
 
-  // Full downline count via parentId chain (BFS)
-  async function countTeamWithBusiness(rootIds: string[]): Promise<{ count: number; activeCount: number; business: number }> {
-    if (rootIds.length === 0) return { count: 0, activeCount: 0, business: 0 };
-    let total = 0;
+  const parentMap = new Map<string, any[]>();
+  for (const u of allUsers) {
+    if (u.parentId) {
+      if (!parentMap.has(u.parentId)) {
+        parentMap.set(u.parentId, []);
+      }
+      parentMap.get(u.parentId)!.push(u);
+    }
+  }
+
+  function getTeamStats(rootMemberIds: string[]) {
+    let count = 0;
     let activeCount = 0;
     let business = 0;
-    let frontier = [...rootIds];
-    while (frontier.length) {
-      const children = await User.find({ parentId: { $in: frontier } }).select(
-        "memberId isActive walletBalance totalInvestment boosterWalletBalance nivshWalletBalance usdtWalletBalance"
-      );
-      total += children.length;
-      // Sum up all wallet balances as "business value"
+    const queue = [...rootMemberIds];
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      const children = parentMap.get(currentId) || [];
       for (const child of children) {
+        count++;
         if (child.isActive) {
           activeCount++;
         }
@@ -52,35 +65,40 @@ export async function GET() {
           (child.boosterWalletBalance || 0) +
           (child.nivshWalletBalance || 0) +
           (child.usdtWalletBalance || 0);
+        queue.push(child.memberId);
       }
-      frontier = children.map((c: any) => c.memberId);
     }
-    return { count: total, activeCount, business };
+    return { count, activeCount, business };
   }
 
-  // Get ALL direct children placed on left and right sides
-  const [leftChildren, rightChildren] = await Promise.all([
-    User.find({ parentId: user.memberId, position: "left" }).select("memberId isActive totalInvestment"),
-    User.find({ parentId: user.memberId, position: "right" }).select("memberId isActive totalInvestment"),
-  ]);
+  const directsList = allUsers
+    .filter((u) => u.sponsorId === user.memberId)
+    .map((u) => ({
+      memberId: u.memberId,
+      fullName: u.fullName,
+      isActive: u.isActive,
+    }));
+  const directCount = directsList.length;
 
-  // Aggregate stats in bulk per side in parallel
-  const [leftStats, rightStats] = await Promise.all([
-    countTeamWithBusiness(leftChildren.map((c: any) => c.memberId)),
-    countTeamWithBusiness(rightChildren.map((c: any) => c.memberId)),
-  ]);
+  // Get ALL direct children placed on left and right sides
+  const leftChildren = allUsers.filter((u) => u.parentId === user.memberId && u.position === "left");
+  const rightChildren = allUsers.filter((u) => u.parentId === user.memberId && u.position === "right");
+
+  // Aggregate stats in bulk per side in parallel using the preloaded data
+  const leftStats = getTeamStats(leftChildren.map((c) => c.memberId));
+  const rightStats = getTeamStats(rightChildren.map((c) => c.memberId));
 
   const totalTeam = leftStats.count + rightStats.count + leftChildren.length + rightChildren.length;
 
   // Left/Right Active Team counts (include each direct child if active, plus their active downlines)
-  const leftDirectActive = leftChildren.filter((c: any) => c.isActive).length;
-  const rightDirectActive = rightChildren.filter((c: any) => c.isActive).length;
+  const leftDirectActive = leftChildren.filter((c) => c.isActive).length;
+  const rightDirectActive = rightChildren.filter((c) => c.isActive).length;
   const leftActiveTeam = leftDirectActive + leftStats.activeCount;
   const rightActiveTeam = rightDirectActive + rightStats.activeCount;
 
   // Computed business values: sum all direct children's totalInvestment + their downline business
-  const leftDirectBusiness = leftChildren.reduce((sum: number, c: any) => sum + (c.totalInvestment || 0), 0);
-  const rightDirectBusiness = rightChildren.reduce((sum: number, c: any) => sum + (c.totalInvestment || 0), 0);
+  const leftDirectBusiness = leftChildren.reduce((sum, c) => sum + (c.totalInvestment || 0), 0);
+  const rightDirectBusiness = rightChildren.reduce((sum, c) => sum + (c.totalInvestment || 0), 0);
   const leftCurrentBusiness = leftStats.business + leftDirectBusiness;
   const rightCurrentBusiness = rightStats.business + rightDirectBusiness;
 
@@ -98,12 +116,13 @@ export async function GET() {
   }
 
   // Real-time rank qualifications — based on Left/Right MEMBER COUNTS, not business volume.
-  const BusinessRule = (await import("@/models/BusinessRule")).default;
-  const ruleX1 = await BusinessRule.findOne({ key: "reward_rank_x1" });
-  const ruleX2 = await BusinessRule.findOne({ key: "reward_rank_x2" });
-  const ruleX3 = await BusinessRule.findOne({ key: "reward_rank_x3" });
-  const ruleX4 = await BusinessRule.findOne({ key: "reward_rank_x4" });
-  const ruleX5 = await BusinessRule.findOne({ key: "reward_rank_x5" });
+  const [ruleX1, ruleX2, ruleX3, ruleX4, ruleX5] = await Promise.all([
+    getCachedBusinessRule("reward_rank_x1"),
+    getCachedBusinessRule("reward_rank_x2"),
+    getCachedBusinessRule("reward_rank_x3"),
+    getCachedBusinessRule("reward_rank_x4"),
+    getCachedBusinessRule("reward_rank_x5"),
+  ]);
 
   const RANK_RULES = [
     { code: "X1", level: "Level 1", left: 20,  right: 20,  reward: ruleX1 ? Number(ruleX1.value) : 100  },
@@ -119,7 +138,7 @@ export async function GET() {
 
   let highestQualifiedRank = user.rank || "Unranked";
   for (const rank of RANK_RULES) {
-    if (leftTeamCount >= rank.left && rightTeamCount >= rank.right) {
+    if (leftActiveTeam >= rank.left && rightActiveTeam >= rank.right) {
       // Check if already rewarded
       const rewardExists = await Transaction.findOne({
         memberId: user.memberId,
@@ -164,6 +183,45 @@ export async function GET() {
     await user.save();
   }
 
+  const ReturnsClosingHistory = (await import("@/models/ReturnsClosingHistory")).default;
+  const closingHistory = await ReturnsClosingHistory.find({ memberId: user.memberId })
+    .sort({ closingDate: -1 })
+    .lean();
+
+  // Calculate 7 Days Booster Income stats
+  const boosterDaysRule = await getCachedBusinessRule("booster_qualification_days");
+  const boosterDays = boosterDaysRule ? Number(boosterDaysRule.value) : 7;
+  const boosterStartDate = user.createdAt || new Date();
+  const boosterDeadline = new Date(new Date(boosterStartDate).getTime() + boosterDays * 24 * 60 * 60 * 1000);
+
+  const boosterDirects = allUsers.filter((u) => {
+    if (u.sponsorId !== user.memberId || !u.isActive || !u.accessExpiresAt) return false;
+    const referralActivationDate = new Date(
+      new Date(u.accessExpiresAt).getTime() - 365 * 24 * 60 * 60 * 1000
+    );
+    return referralActivationDate >= boosterStartDate && referralActivationDate <= boosterDeadline;
+  });
+  const boosterDirectsCount = boosterDirects.length;
+
+  const now = new Date();
+  const diffTime = boosterDeadline.getTime() - now.getTime();
+  const boosterDaysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+  let boosterStatus = "In Progress";
+  if (user.boosterRewardClaimed || user.boosterRewardAmount >= 30) {
+    boosterStatus = "Reward Credited";
+  } else if (user.boosterQualified || user.boosterRewardAmount >= 15) {
+    boosterStatus = "Qualified";
+  } else if (now > boosterDeadline) {
+    boosterStatus = "Expired";
+  }
+
+  const boosterHistory = await Transaction.find({
+    memberId: user.memberId,
+    type: "booster_income",
+    walletType: "booster",
+  }).sort({ createdAt: -1 }).lean();
+
   return NextResponse.json({
     user,
     stats: {
@@ -182,14 +240,24 @@ export async function GET() {
       rightCarryForward: user.rightCarryForward,
       dailyReturnPending: user.dailyReturnPending || 0,
       totalDailyReturnSettled: user.totalDailyReturnSettled || 0,
+      returnsDailyEarnings: user.returnsDailyEarnings || 0,
+      lastReturnsClosingPeriod: user.lastReturnsClosingPeriod || "",
+      lastReturnsClosingAt: user.lastReturnsClosingAt || null,
+      returnsClosingHistory: closingHistory,
+      booster: {
+        qualificationExpiry: boosterDeadline,
+        directsCount: boosterDirectsCount,
+        daysRemaining: boosterDaysRemaining,
+        status: boosterStatus,
+        history: boosterHistory,
+      }
     },
   });
 }
 
 async function checkAndRunAutoRoi() {
   try {
-    const WebsiteSettings = (await import("@/models/WebsiteSettings")).default;
-    const settings = await WebsiteSettings.findOne({ key: "singleton" });
+    const settings = await getCachedSettings();
     if (!settings || !settings.roiAutoMode || !settings.roiStartDate) return;
 
     const scheduledStr = `${settings.roiStartDate}T${settings.roiCreditTime || "00:00"}:00`;
@@ -199,14 +267,20 @@ async function checkAndRunAutoRoi() {
     // Use YYYY-MM as the unique period string
     const period = settings.roiStartDate.slice(0, 7); // e.g. "2026-07"
 
+    const cacheKey = `auto_roi_completed_${period}`;
+    if (appCache.get(cacheKey)) return;
+
     const Investment = (await import("@/models/Investment")).default;
     const AuditLog = (await import("@/models/AuditLog")).default;
 
     const anyRoiExists = await Transaction.findOne({
       type: "returns_income",
       note: `Monthly ROI - ${period}`,
-    });
-    if (anyRoiExists) return; // Already distributed
+    }).lean();
+    if (anyRoiExists) {
+      appCache.set(cacheKey, true, TTL.LONG);
+      return; // Already distributed
+    }
 
     // Load active members and active investments
     const members = await User.find({ role: "member", isActive: true });

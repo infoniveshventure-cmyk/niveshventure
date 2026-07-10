@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Offer from "@/models/Offer";
 import { requireAdmin } from "@/lib/require-admin";
-
 export async function GET() {
   await connectDB();
-  const offers = await Offer.find({ active: true }).sort({ createdAt: -1 });
+  const offers = await Offer.find({ active: true }).sort({ createdAt: -1 }).lean();
   return NextResponse.json({ offers });
 }
 

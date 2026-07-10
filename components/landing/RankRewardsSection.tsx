@@ -2,14 +2,14 @@
 
 import { useRef } from "react";
 import { useInView, motion } from "framer-motion";
-import { ScrollMouseInteractive } from "@/components/motion/ScrollMouseInteractive";
+import Image from "next/image";
 
-const RANKS = [
-  { rank: "Bronze", team: "0–49", reward: "$0", bonus: "Starter", color: "#CD7F32", bg: "rgba(205,127,50,0.15)", progress: 10 },
-  { rank: "Silver", team: "50–199", reward: "$250", bonus: "Travel Voucher", color: "#C0C0C0", bg: "rgba(192,192,192,0.15)", progress: 28 },
-  { rank: "Gold", team: "200–499", reward: "$1,000", bonus: "Gold Trophy", color: "#FFD700", bg: "rgba(255,215,0,0.15)", progress: 52 },
-  { rank: "Diamond", team: "500–999", reward: "$5,000", bonus: "Luxury Trip", color: "#B9F2FF", bg: "rgba(185,242,255,0.15)", progress: 75 },
-  { rank: "Crown", team: "1,000+", reward: "$10,000", bonus: "Brand New Car", color: "#7B5CFF", bg: "rgba(123,92,255,0.15)", progress: 100 },
+const REWARDS_DATA = [
+  { rank: "X1", level: "Level 1", left: 20, right: 20, reward: "$100" },
+  { rank: "X2", level: "Level 2", left: 50, right: 50, reward: "$300" },
+  { rank: "X3", level: "Level 3", left: 100, right: 100, reward: "$700" },
+  { rank: "X4", level: "Level 4", left: 250, right: 250, reward: "$2000" },
+  { rank: "X5", level: "Level 5", left: 500, right: 500, reward: "$5000" },
 ];
 
 export default function RankRewardsSection() {
@@ -17,63 +17,86 @@ export default function RankRewardsSection() {
   const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
 
   return (
-    <section ref={sectionRef} className="relative py-8 md:py-20 bg-[#050914]">
+    <section ref={sectionRef} className="relative py-12 md:py-24 bg-transparent overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#FFD700]/30 to-transparent" />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
-        <div className="text-center mb-6 md:mb-12">
-          <p className="text-xs md:text-xs font-medium tracking-widest uppercase mb-2 md:mb-2 gradient-text-gold">
-            Rank System
-          </p>
-          <h2 className="text-lg md:text-3xl xl:text-4xl font-display font-bold text-white">
-            Climb the Ranks, <span className="gradient-text-gold">Unlock Rewards</span>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 relative z-10">
+        
+        {/* Nivesh Brand Header on Top Left */}
+        <div className="flex items-center gap-2 mb-8 md:mb-12">
+          <div className="w-8 h-8 rounded-lg bg-[#0d1831] border border-white/10 flex items-center justify-center">
+            <Image src="/logo1.png" alt="Nivesh Ventures" width={20} height={20} className="object-contain" />
+          </div>
+          <div className="flex items-baseline gap-0.5">
+            <span className="font-display font-bold text-xs md:text-sm tracking-[0.12em] text-white">Nivesh</span>
+          </div>
+        </div>
+
+        {/* Glow Header Title */}
+        <div className="mb-10 md:mb-16">
+          <h2 
+            className="text-3xl md:text-5xl font-bold tracking-wide text-white uppercase"
+            style={{ 
+              textShadow: "0 0 10px rgba(255, 255, 255, 0.45), 0 0 25px rgba(255, 255, 255, 0.2)"
+            }}
+          >
+            RANK REWARDS
           </h2>
-          <p className="text-white mt-2 md:mt-3 max-w-xl mx-auto text-xs md:text-base">
-            Your team size determines your rank — and your rank unlocks extraordinary rewards
-          </p>
         </div>
 
-        {/* Rank cards */}
-        <div className="space-y-2 md:space-y-4">
-          {RANKS.map((r, i) => (
-            <ScrollMouseInteractive key={r.rank} isInView={isInView} depth={i % 2 === 0 ? "front" : "middle"} maxTranslateY={35} maxTilt={15}>
-              <div className="landing-card p-3 md:p-6 group">
-                <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
-                  {/* Rank badge */}
-                  <div
-                    className="w-10 md:w-14 h-10 md:h-14 rounded-lg md:rounded-2xl flex items-center justify-center flex-shrink-0 font-display font-bold text-xs md:text-sm group-hover:scale-110 transition-transform duration-300"
-                    style={{ background: r.bg, border: `1px solid ${r.color}30`, color: r.color }}
+        {/* 2-Column Grid (Table & Shield Illustration) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
+          
+          {/* Table Container - Left Side */}
+          <div className="lg:col-span-7 w-full overflow-x-auto">
+            <table className="w-full border-collapse border border-white/60 text-center font-display text-sm md:text-base text-white">
+              <thead>
+                <tr className="bg-[#1062AC] text-white font-bold">
+                  <th className="border border-white/60 py-3.5 px-4 tracking-wider uppercase font-semibold">Rank</th>
+                  <th className="border border-white/60 py-3.5 px-4 tracking-wider uppercase font-semibold">Level</th>
+                  <th className="border border-white/60 py-3.5 px-4 tracking-wider uppercase font-semibold">Left</th>
+                  <th className="border border-white/60 py-3.5 px-4 tracking-wider uppercase font-semibold">Right</th>
+                  <th className="border border-white/60 py-3.5 px-4 tracking-wider uppercase font-semibold">Reward</th>
+                </tr>
+              </thead>
+              <tbody>
+                {REWARDS_DATA.map((row, idx) => (
+                  <tr 
+                    key={row.rank} 
+                    className="hover:bg-white/[0.04] transition-colors"
+                    style={{ background: "rgba(18, 14, 38, 0.5)" }}
                   >
-                    {r.rank.slice(0, 2).toUpperCase()}
-                  </div>
+                    <td className="border border-white/60 py-4 px-4 font-bold">{row.rank}</td>
+                    <td className="border border-white/60 py-4 px-4 text-white/90">{row.level}</td>
+                    <td className="border border-white/60 py-4 px-4 text-white/90">{row.left}</td>
+                    <td className="border border-white/60 py-4 px-4 text-white/90">{row.right}</td>
+                    <td className="border border-white/60 py-4 px-4 font-bold text-white">{row.reward}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0 md:mb-2">
-                      <h3 className="font-display font-bold text-white text-base md:text-lg">{r.rank}</h3>
-                      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 text-xs md:text-sm">
-                        <span className="text-white">Team: <span className="text-white font-medium">{r.team}</span></span>
-                        <span className="text-white">Reward: <span className="font-bold" style={{ color: r.color }}>{r.reward}</span></span>
-                        <span className="text-white">Bonus: <span className="text-white font-medium">{r.bonus}</span></span>
-                      </div>
-                    </div>
-                    {/* Progress bar */}
-                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${r.progress}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 1.2, delay: i * 0.15, ease: "easeOut" }}
-                        className="h-full rounded-full"
-                        style={{ background: `linear-gradient(to right, ${r.color}, ${r.color}88)` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ScrollMouseInteractive>
-          ))}
+          {/* Shield pedestal - Right Side */}
+          <div className="lg:col-span-5 flex justify-center items-center relative">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={isInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="relative w-full max-w-[380px] aspect-square flex items-center justify-center"
+            >
+              <Image 
+                src="/rank_rewards_shield.png" 
+                alt="Rank Rewards Shield Pedestal" 
+                width={450} 
+                height={450} 
+                className="object-contain drop-shadow-[0_0_35px_rgba(0,229,255,0.2)]"
+              />
+            </motion.div>
+          </div>
+
         </div>
+
       </div>
     </section>
   );

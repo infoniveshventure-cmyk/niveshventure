@@ -68,7 +68,7 @@ export default function IncomePlanSection() {
     <section
       ref={sectionRef}
       id="income"
-      className="relative py-8 md:py-20 bg-[#050914] overflow-hidden"
+      className="relative py-8 md:py-20 bg-transparent overflow-hidden"
     >
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-green/30 to-transparent" />
 

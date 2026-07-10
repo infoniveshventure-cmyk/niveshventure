@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0A0E1A",
+  themeColor: "#0D0D1A",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -58,7 +58,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="font-body bg-base text-ink bg-grid-glow min-h-screen">
+      <body className="font-body bg-base text-ink bg-grid-glow min-h-screen relative overflow-x-hidden">
+        {/* Fixed animated background blobs from the auth pages */}
+        <div className="auth-blob auth-blob-purple" style={{ position: "fixed", zIndex: -10 }} />
+        <div className="auth-blob auth-blob-orange" style={{ position: "fixed", zIndex: -10 }} />
+        <div className="auth-blob auth-blob-purple2" style={{ position: "fixed", zIndex: -10 }} />
         <AuthProvider>
           <MotionProvider>
             <GlobalCursorTrail />

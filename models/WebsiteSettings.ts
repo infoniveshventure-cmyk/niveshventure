@@ -33,6 +33,11 @@ const WebsiteSettingsSchema = new Schema(
       minInvestment: { type: Number, default: 100 },
       minWithdrawal: { type: Number, default: 10 },
     },
+    autoPredictionEnabled: { type: Boolean, default: false },
+    nextScheduledQuestion: { type: String, default: "" },
+    minimumInvestment: { type: Number, default: 100 },
+    returnPlanAfterOneMiss: { type: Number, default: 5 },
+    maximumMissAllowed: { type: Number, default: 2 },
     dashboardWelcomeBannerUrl: { type: String, default: "" },
   },
   { timestamps: true }

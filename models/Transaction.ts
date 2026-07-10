@@ -24,6 +24,8 @@ const TransactionSchema = new Schema(
         "premium_renewal",
         "wallet_transfer",
         "booster_income",
+        "returns_level_income",
+        "RETURNS_MONTHLY_CLOSING",
       ],
       required: true,
     },

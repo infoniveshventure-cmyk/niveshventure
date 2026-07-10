@@ -1,16 +1,17 @@
 import User from "@/models/User";
 import Transaction from "@/models/Transaction";
+import { getCachedBusinessRule } from "@/lib/businessRulesCache";
 
 /**
  * Checks and awards booster rewards to a sponsor (if eligible).
  * 
- * Booster Level 1:
- * - Requirement: 3 active direct referrals within 7 days of sponsor's own activation.
- * - Reward: $15 extra bonus
+ * Booster Tier 1:
+ * - Requirement: 3 active direct referrals within 7 days (or configured days) of sponsor's registration.
+ * - Reward: $15 extra bonus (credited to Booster Wallet)
  * 
- * Booster Level 2:
- * - Requirement: 5 active direct referrals within 7 days of sponsor's own activation.
- * - Reward: $30 extra bonus
+ * Booster Tier 2:
+ * - Requirement: 5 active direct referrals within 7 days (or configured days) of sponsor's registration.
+ * - Reward: $30 extra bonus (credited to Booster Wallet)
  */
 export async function checkAndAwardBooster(sponsorId: string) {
   if (!sponsorId) return;
@@ -18,113 +19,118 @@ export async function checkAndAwardBooster(sponsorId: string) {
   const sponsor = await User.findOne({ memberId: sponsorId });
   if (!sponsor) return;
 
-  // Sponsor must be active and have an accessExpiresAt / activation details
-  // If not active, they cannot receive booster rewards
+  // Sponsor must be active to receive booster rewards
   if (!sponsor.isActive) return;
 
-  // We can calculate activation date:
-  // If accessExpiresAt exists, it is set to VALIDITY_DAYS (365) days from activation date.
-  // Therefore, activationDate = accessExpiresAt - 365 days
-  if (!sponsor.accessExpiresAt) return;
+  // Fetch admin settings for booster
+  const daysRule = await getCachedBusinessRule("booster_qualification_days");
+  const reward3Rule = await getCachedBusinessRule("booster_reward_3_referrals");
+  const reward5Rule = await getCachedBusinessRule("booster_reward_5_referrals");
 
-  const activationDate = new Date(
-    new Date(sponsor.accessExpiresAt).getTime() - 365 * 24 * 60 * 60 * 1000
+  const boosterQualificationDays = daysRule ? Number(daysRule.value) : 7;
+  const reward3 = reward3Rule ? Number(reward3Rule.value) : 15;
+  const reward5 = reward5Rule ? Number(reward5Rule.value) : 30;
+
+  // Calculate booster window based on sponsor's Registration Date (createdAt)
+  const boosterStartDate = sponsor.createdAt || new Date();
+  const boosterDeadline = new Date(
+    new Date(boosterStartDate).getTime() + boosterQualificationDays * 24 * 60 * 60 * 1000
   );
 
-  const boosterDeadline = new Date(activationDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const now = new Date();
+  // Update sponsor's qualification expiry if not set or different
+  if (!sponsor.boosterQualificationExpiry || sponsor.boosterQualificationExpiry.getTime() !== boosterDeadline.getTime()) {
+    sponsor.boosterQualificationExpiry = boosterDeadline;
+    await sponsor.save();
+  }
 
-  // If booster period (7 days from activation) has already expired, sponsor is no longer eligible for new/further booster qualifications
-  if (now > boosterDeadline) return;
-
-  // Let's count active direct referrals who joined & activated within sponsor's first 7 days
-  // That means:
+  // Count active direct referrals who registered & activated within sponsor's qualification window
   // 1. Referral's sponsorId == sponsor.memberId
   // 2. Referral is currently active (isActive: true)
-  // 3. Referral was activated within the booster window (referral.createdAt or activation must fall inside booster window).
-  // Note: We can check if referral.isActive is true.
-  const activeReferrals = await User.find({
+  // 3. Referral completed activation within the sponsor's booster window.
+  // Note: Activation date is derived as referral.accessExpiresAt - 365 days.
+  const referrals = await User.find({
     sponsorId: sponsor.memberId,
     isActive: true,
-    createdAt: { $gte: activationDate, $lte: boosterDeadline }
   });
 
-  const count = activeReferrals.length;
+  const activeWithinWindow = referrals.filter((referral) => {
+    if (!referral.accessExpiresAt) return false;
+    const referralActivationDate = new Date(
+      new Date(referral.accessExpiresAt).getTime() - 365 * 24 * 60 * 60 * 1000
+    );
+    return referralActivationDate >= boosterStartDate && referralActivationDate <= boosterDeadline;
+  });
+
+  const count = activeWithinWindow.length;
+
+  // If count is less than 3, user does not qualify for any reward
   if (count < 3) return;
 
-  // Determine rewards. Use custom transaction checks to ensure we don't double award.
-  // Check if Level 1 ($15) has already been awarded.
+  // Check existing transactions to prevent double credit
   const hasLvl1 = await Transaction.findOne({
     memberId: sponsor.memberId,
-    type: "reward_income",
+    type: "booster_income",
     note: { $regex: "Booster Level 1", $options: "i" }
   });
 
-  if (count >= 3 && !hasLvl1) {
-    sponsor.totalRewardIncome = (sponsor.totalRewardIncome || 0) + 15;
-    sponsor.walletBalance = (sponsor.walletBalance || 0) + 15;
-    await sponsor.save();
-
-    await Transaction.create({
-      memberId: sponsor.memberId,
-      type: "reward_income",
-      direction: "credit",
-      amount: 15,
-      currency: "USDT",
-      status: "completed",
-      note: "Booster Level 1 Reward - 3 Active Referrals in 7 Days",
-    });
-
-    // Log in RewardHistory
-    try {
-      const RewardHistory = (await import("@/models/RewardHistory")).default;
-      await RewardHistory.create({
-        memberId: sponsor.memberId,
-        rewardType: "booster_reward",
-        amount: 15,
-        status: "released",
-        adminRemarks: "Booster Level 1 Reward - 3 Active Referrals in 7 Days",
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  // Check if Level 2 ($30) has already been awarded.
   const hasLvl2 = await Transaction.findOne({
     memberId: sponsor.memberId,
-    type: "reward_income",
+    type: "booster_income",
     note: { $regex: "Booster Level 2", $options: "i" }
   });
 
-  if (count >= 5 && !hasLvl2) {
+  const now = new Date();
 
-    sponsor.totalRewardIncome = (sponsor.totalRewardIncome || 0) + 30;
-    sponsor.walletBalance = (sponsor.walletBalance || 0) + 30;
-    await sponsor.save();
+  // Tier 1 Qualification Check (3 Direct Active Referrals)
+  if (count >= 3 && !hasLvl1) {
+    // Only reward if we haven't already awarded level 2 (though level 1 usually comes first)
+    if (!hasLvl2) {
+      sponsor.boosterWalletBalance = (sponsor.boosterWalletBalance || 0) + reward3;
+      sponsor.totalBoosterIncome = (sponsor.totalBoosterIncome || 0) + reward3;
+      sponsor.boosterQualified = true;
+      sponsor.boosterRewardAmount = reward3;
+      sponsor.boosterRewardDate = now;
+      await sponsor.save();
 
-    await Transaction.create({
-      memberId: sponsor.memberId,
-      type: "reward_income",
-      direction: "credit",
-      amount: 30,
-      currency: "USDT",
-      status: "completed",
-      note: "Booster Level 2 Reward - 5 Active Referrals in 7 Days",
-    });
-
-    // Log in RewardHistory
-    try {
-      const RewardHistory = (await import("@/models/RewardHistory")).default;
-      await RewardHistory.create({
+      await Transaction.create({
         memberId: sponsor.memberId,
-        rewardType: "booster_reward",
-        amount: 30,
-        status: "released",
-        adminRemarks: "Booster Level 2 Reward - 5 Active Referrals in 7 Days",
+        type: "booster_income",
+        direction: "credit",
+        amount: reward3,
+        currency: "USDT",
+        status: "completed",
+        note: `Booster Level 1 Reward - 3 Active Referrals in ${boosterQualificationDays} Days`,
+        description: `Qualified for Booster Level 1 by completing 3 active direct referrals in ${boosterQualificationDays} days.`,
+        walletType: "booster",
       });
-    } catch (e) {
-      console.error(e);
+    }
+  }
+
+  // Tier 2 Qualification Check (5 Direct Active Referrals)
+  if (count >= 5 && !hasLvl2) {
+    const alreadyReceivedLvl1 = !!hasLvl1 || (sponsor.boosterRewardAmount === reward3);
+    const rewardDiff = alreadyReceivedLvl1 ? (reward5 - reward3) : reward5;
+
+    if (rewardDiff > 0) {
+      sponsor.boosterWalletBalance = (sponsor.boosterWalletBalance || 0) + rewardDiff;
+      sponsor.totalBoosterIncome = (sponsor.totalBoosterIncome || 0) + rewardDiff;
+      sponsor.boosterQualified = true;
+      sponsor.boosterRewardClaimed = true;
+      sponsor.boosterRewardAmount = reward5;
+      sponsor.boosterRewardDate = now;
+      await sponsor.save();
+
+      await Transaction.create({
+        memberId: sponsor.memberId,
+        type: "booster_income",
+        direction: "credit",
+        amount: rewardDiff,
+        currency: "USDT",
+        status: "completed",
+        note: `Booster Level 2 Reward - 5 Active Referrals in ${boosterQualificationDays} Days`,
+        description: `Qualified for Booster Level 2 by completing 5 active direct referrals in ${boosterQualificationDays} days.`,
+        walletType: "booster",
+      });
     }
   }
 }

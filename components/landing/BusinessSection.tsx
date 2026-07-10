@@ -55,11 +55,11 @@ export default function BusinessSection() {
   const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
 
   return (
-    <section ref={sectionRef} id="business" className="relative py-8 md:py-20 bg-[#050914]">
+    <section ref={sectionRef} id="business" className="relative py-8 md:py-20 bg-transparent">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
 
       {/* Background glow */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0A0E1A] via-[#050914] to-[#0A0E1A] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050914]/20 to-transparent pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
         {/* Section header */}

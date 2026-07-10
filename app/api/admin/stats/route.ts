@@ -110,6 +110,44 @@ export async function GET() {
   // System Health Indicators
   const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
 
+  // Returns Level Income Stats
+  const { getISTDateString } = await import("@/lib/dailyReturn");
+  const ReturnsLevelIncome = (await import("@/models/ReturnsLevelIncome")).default;
+  const todayStr = getISTDateString();
+
+  const [
+    todayCalcLevelAgg,
+    pendingLevelAgg,
+    creditedLevelAgg,
+    eligibleLevelMembersCount,
+  ] = await Promise.all([
+    ReturnsLevelIncome.aggregate([
+      { $match: { calculationDate: todayStr } },
+      { $group: { _id: null, total: { $sum: "$calculatedAmount" } } }
+    ]),
+    ReturnsLevelIncome.aggregate([
+      { $match: { status: "Pending" } },
+      { $group: { _id: null, total: { $sum: "$calculatedAmount" } } }
+    ]),
+    ReturnsLevelIncome.aggregate([
+      { $match: { status: "Credited" } },
+      { $group: { _id: null, total: { $sum: "$calculatedAmount" } } }
+    ]),
+    User.countDocuments({
+      role: "member",
+      isActive: true,
+      isBlocked: { $ne: true },
+      activatedByFreePin: { $ne: true }
+    })
+  ]);
+
+  const returnsLevelIncomeStats = {
+    todayCalculated: todayCalcLevelAgg[0]?.total || 0,
+    monthlyPending: pendingLevelAgg[0]?.total || 0,
+    totalCredited: creditedLevelAgg[0]?.total || 0,
+    eligibleMembers: eligibleLevelMembersCount,
+  };
+
   return NextResponse.json({
     totalMembers,
     activeMembers,
@@ -126,6 +164,7 @@ export async function GET() {
     monthlyClosingStatus: monthlyClosingDoc?.status || "open",
     recentRegistrations,
     recentTransactions,
+    returnsLevelIncomeStats,
     analytics: {
       businessGrowth,
       depositsVsWithdrawals,

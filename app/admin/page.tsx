@@ -173,6 +173,40 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* --- Returns Level Income Statistics --- */}
+      <div className="glass-card p-5 mb-6">
+        <h2 className="font-display font-semibold mb-4 text-white flex items-center gap-2">
+          <TrendingUp size={18} className="text-neon-magenta" />
+          Returns Level Income Statistics
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-xs text-ink-muted block">Today's Calculated Income</span>
+            <span className="text-lg font-bold text-white mt-1 block">
+              ${(data.returnsLevelIncomeStats?.todayCalculated ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-4 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-xs text-ink-muted block">Monthly Pending Income</span>
+            <span className="text-lg font-bold text-yellow-400 mt-1 block">
+              ${(data.returnsLevelIncomeStats?.monthlyPending ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-4 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-xs text-ink-muted block">Total Credited Income</span>
+            <span className="text-lg font-bold text-neon-green mt-1 block">
+              ${(data.returnsLevelIncomeStats?.totalCredited ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-4 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-xs text-ink-muted block">Eligible Members Count</span>
+            <span className="text-lg font-bold text-neon-cyan mt-1 block">
+              {data.returnsLevelIncomeStats?.eligibleMembers ?? 0} Members
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* --- Action Center panels --- */}
       <div className="glass-card p-5 mb-6">
         <h2 className="font-display font-semibold mb-4 text-white">Live Action Control Center</h2>

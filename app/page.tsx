@@ -11,7 +11,6 @@ import StockMarketSection from "@/components/landing/StockMarketSection";
 import StatsSection from "@/components/landing/StatsSection";
 import BusinessSection from "@/components/landing/BusinessSection";
 import DataVizSection from "@/components/landing/DataVizSection";
-import IncomePlanSection from "@/components/landing/IncomePlanSection";
 import TrustSection from "@/components/landing/TrustSection";
 import RankRewardsSection from "@/components/landing/RankRewardsSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
@@ -20,7 +19,7 @@ import FooterSection from "@/components/landing/FooterSection";
 
 export default function Home() {
   return (
-    <div className="landing-page bg-[#0A0E1A] text-white w-full">
+    <div className="landing-page bg-transparent text-white w-full">
       {/* ─────────────────────────────────────────────────────
           RESPONSIVE LANDING PAGE
           Shows same design on all devices - fully responsive
@@ -33,7 +32,6 @@ export default function Home() {
       <StatsSection />
       <BusinessSection />
       <DataVizSection />
-      <IncomePlanSection />
       <TrustSection />
       <RankRewardsSection />
       <TestimonialsSection />

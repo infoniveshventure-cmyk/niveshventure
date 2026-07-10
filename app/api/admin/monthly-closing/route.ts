@@ -7,6 +7,7 @@ import BusinessHistory from "@/models/BusinessHistory";
 import RewardHistory from "@/models/RewardHistory";
 import MonthlyClosing from "@/models/MonthlyClosing";
 import BusinessRule from "@/models/BusinessRule";
+import WebsiteSettings from "@/models/WebsiteSettings";
 import ManualOverrideLog from "@/models/ManualOverrideLog";
 import { requireAdmin } from "@/lib/require-admin";
 import { notifyMember } from "@/lib/notification";
@@ -155,6 +156,9 @@ export async function POST(req: NextRequest) {
 
     const { startDate, endDate } = getMonthRange(month);
 
+    // Fetch website settings
+    const settings = await WebsiteSettings.findOne({ key: "singleton" });
+
     // Fetch all members
     const members = await User.find({ role: "member" });
 
@@ -240,8 +244,20 @@ export async function POST(req: NextRequest) {
       const rightTotal = (member.rightCurrentBusiness || 0) + (member.rightCarryForward || 0);
       const matchedVolume = Math.min(leftTotal, rightTotal);
       const matchingRule = await BusinessRule.findOne({ key: "matching_income_pct" });
-      const matchingRate = matchingRule ? Number(matchingRule.value) : 10;
-      const stagedMatchingIncome = matchedVolume * (matchingRate / 100) * (distPct / 100);
+      let stagedMatchingIncome = 0;
+      if (matchingRule) {
+        const matchingRate = Number(matchingRule.value) || 0;
+        const isPercentageMode = matchingRule.type === "percentage" || matchingRule.unit === "%";
+        if (isPercentageMode) {
+          stagedMatchingIncome = matchedVolume * (matchingRate / 100) * (distPct / 100);
+        } else {
+          // Dollar ($) mode
+          const activationPrice = member.activatedByFreePin ? 0 : (settings?.pricing?.unlockAccessPrice || 30);
+          stagedMatchingIncome = activationPrice > 0 ? (matchedVolume / activationPrice) * matchingRate * (distPct / 100) : 0;
+        }
+      } else {
+        stagedMatchingIncome = matchedVolume * 0.10 * (distPct / 100);
+      }
 
       // D. Booster Income
       // Check if they got any booster reward in this month
