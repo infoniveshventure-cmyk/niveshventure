@@ -12,7 +12,7 @@ cp .env.example .env
 ## github repo repush  :
 ```
 git add .
-git commit -m "access key and login key fixed" 
+git commit -m "prediction ui fix" 
 git push -u origin main
 ```
 

@@ -343,20 +343,29 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Daily Market Prediction Card ── */}
-      <div className="mb-6 glass-card p-5 border border-neon-cyan/20">
+      <div className="mb-6 rounded-2xl py-4 px-5 md:py-5 md:px-6 border border-neon-violet/30 bg-gradient-to-br from-[#0c0827] via-[#09051b] to-[#04020c] shadow-[0_0_40px_rgba(123,92,255,0.12)] relative overflow-hidden text-center flex flex-col items-center">
+        
+        {/* Top Header Badge */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#00E5FF]/40 bg-gradient-to-r from-[#00E5FF]/10 to-[#7B5CFF]/5 shadow-[0_0_10px_rgba(0,229,255,0.08)] mb-3 shrink-0">
+          <div className="w-4 h-4 rounded-full bg-[#00E5FF]/20 flex items-center justify-center border border-[#00E5FF]/40 text-[#00E5FF]">
+            <TrendingUp size={10} />
+          </div>
+          <span className="text-[9px] md:text-[10px] font-semibold tracking-wider text-white uppercase font-display">
+            Daily Prediction - Daily Returns
+          </span>
+        </div>
+
         {accountState === "inactive" && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="text-lg font-display font-bold text-white mb-1">
-                🔒 Your Prediction Window is Locked
-              </h3>
-              <p className="text-xs text-ink-muted">
-                Activate your account to unlock Daily Predictions and become eligible for monthly Return Plans.
-              </p>
-            </div>
+          <div className="flex flex-col items-center gap-2.5 w-full max-w-xl py-2">
+            <h3 className="text-base font-display font-bold text-white">
+              🔒 Your Prediction Window is Locked
+            </h3>
+            <p className="text-[11px] text-ink-muted max-w-md leading-relaxed">
+              Activate your account to unlock Daily Predictions and become eligible for monthly Return Plans.
+            </p>
             <Link
               href="/unlock-access"
-              className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-neon-cyan text-black hover:bg-neon-cyan/80 transition shrink-0 text-center"
+              className="px-5 py-2 text-xs font-bold rounded-lg bg-neon-cyan text-black hover:bg-neon-cyan/80 transition duration-300 shadow-[0_0_12px_rgba(0,229,255,0.25)]"
             >
               Activate Account
             </Link>
@@ -364,18 +373,16 @@ export default function DashboardPage() {
         )}
 
         {accountState === "investment_pending" && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="text-lg font-display font-bold text-white mb-1">
-                💰 Investment Required
-              </h3>
-              <p className="text-xs text-ink-muted">
-                Your account is active, but Daily Predictions become available only after completing the minimum investment amount configured by the Admin.
-              </p>
-            </div>
+          <div className="flex flex-col items-center gap-2.5 w-full max-w-xl py-2">
+            <h3 className="text-base font-display font-bold text-white">
+              💰 Investment Required
+            </h3>
+            <p className="text-[11px] text-ink-muted max-w-md leading-relaxed">
+              Your account is active, but Daily Predictions become available only after completing the minimum investment amount configured by the Admin.
+            </p>
             <Link
               href="/invest"
-              className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-neon-cyan text-black hover:bg-neon-cyan/80 transition shrink-0 text-center"
+              className="px-5 py-2 text-xs font-bold rounded-lg bg-neon-cyan text-black hover:bg-neon-cyan/80 transition duration-300 shadow-[0_0_12px_rgba(0,229,255,0.25)]"
             >
               Invest Now
             </Link>
@@ -383,41 +390,38 @@ export default function DashboardPage() {
         )}
 
         {accountState === "prediction_locked" && (
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex-1">
-              <div className="mb-3">
-                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neon-magenta/25 text-neon-magenta">
-                  Today's Return: 0% Return
-                </span>
-              </div>
-              <h3 className="text-lg font-display font-bold text-white mb-1">
+          <div className="flex flex-col items-center gap-4 w-full max-w-xl py-2">
+            <div className="flex flex-col items-center">
+              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neon-magenta/25 text-neon-magenta mb-2">
+                Today's Return: 0% Return
+              </span>
+              <h3 className="text-base font-display font-bold text-white mb-1">
                 🤣 Oops! You missed Daily Predictions three times this month.
               </h3>
-              <p className="text-xs text-ink-muted leading-relaxed">
-                Your Prediction Window has been locked for the rest of this month.<br />
-                Don't worry—everything will automatically unlock on the 1st of next month. 🚀
+              <p className="text-[11px] text-ink-muted leading-relaxed max-w-md">
+                Your Prediction Window has been locked for the rest of this month. Don't worry—everything will unlock on the 1st. 🚀
               </p>
             </div>
-            <div className="shrink-0 flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-2xl p-4 text-center min-w-[200px]">
-              <span className="text-[10px] text-ink-muted uppercase tracking-wider font-semibold mb-2 block">
+            <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-xl p-3 text-center min-w-[220px]">
+              <span className="text-[9px] text-ink-muted uppercase tracking-wider font-semibold mb-1 block">
                 Next Prediction Window Opens In
               </span>
               <div className="grid grid-cols-4 gap-2 text-white font-mono">
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold text-neon-cyan">{timeLeft.days}</span>
+                  <span className="text-lg font-bold text-neon-cyan">{timeLeft.days}</span>
                   <span className="text-[8px] text-ink-muted uppercase">Days</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold text-neon-cyan">{String(timeLeft.hours).padStart(2, "0")}</span>
+                  <span className="text-lg font-bold text-neon-cyan">{String(timeLeft.hours).padStart(2, "0")}</span>
                   <span className="text-[8px] text-ink-muted uppercase">Hours</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold text-neon-cyan">{String(timeLeft.minutes).padStart(2, "0")}</span>
-                  <span className="text-[8px] text-ink-muted uppercase">Minutes</span>
+                  <span className="text-lg font-bold text-neon-cyan">{String(timeLeft.minutes).padStart(2, "0")}</span>
+                  <span className="text-[8px] text-ink-muted uppercase">Min</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold text-neon-cyan">{String(timeLeft.seconds).padStart(2, "0")}</span>
-                  <span className="text-[8px] text-ink-muted uppercase">Seconds</span>
+                  <span className="text-lg font-bold text-neon-cyan">{String(timeLeft.seconds).padStart(2, "0")}</span>
+                  <span className="text-[8px] text-ink-muted uppercase">Sec</span>
                 </div>
               </div>
             </div>
@@ -425,29 +429,43 @@ export default function DashboardPage() {
         )}
 
         {accountState === "already_submitted" && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex-1">
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neon-cyan/25 text-neon-cyan">
-                {/* Today's Return: {monthlyMissCount <= 1 ? "7% Return Plan" : "5% Return Plan"} */}Daily Prediction - Daily Returns
-              </span>
-              <p className="text-md font-display font-medium mt-3 mb-1 text-white">
-                {predQuestion ? `"${predQuestion.questionText}"` : "Today's prediction question"}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-ink-muted">
-                <span>Monthly Misses: <strong className="text-white font-mono">{monthlyMissCount}</strong></span>
-                <span>•</span>
-                <span>Predictions Submitted: <strong className="text-neon-cyan font-mono">{predictionDaysCount} Days</strong></span>
-                <span>•</span>
-                <span>Remaining Free Misses: <strong className="text-yellow-400 font-mono">{remainingFreeMisses}</strong></span>
+          <div className="flex flex-col items-center w-full">
+            {/* Question Text */}
+            <h2 className="text-base md:text-lg font-medium text-white tracking-wide max-w-2xl leading-relaxed font-serif mb-2">
+              {predQuestion ? `"${predQuestion.questionText}"` : `"Today's Prediction Question"`}
+            </h2>
+
+            {/* Stats Row */}
+            <div className="flex items-center justify-center gap-2 md:gap-6 my-2 text-center w-full">
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Monthly Misses</span>
+                <span className="text-sm md:text-base font-bold text-white mt-0.5">{monthlyMissCount}</span>
+              </div>
+              <span className="text-zinc-600 text-xs">•</span>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Predictions Submitted</span>
+                <span className="text-sm md:text-base font-bold text-[#00E5FF] mt-0.5">
+                  {predictionDaysCount} <span className="text-[#00FFA3] text-[10px] font-medium">Days</span>
+                </span>
+              </div>
+              <span className="text-zinc-600 text-xs">•</span>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Remaining Free Misses</span>
+                <span className="text-sm md:text-base font-bold text-yellow-400 mt-0.5">{remainingFreeMisses}</span>
               </div>
             </div>
-            <div className="flex flex-col items-end gap-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-right shrink-0">
-              <span className="text-xs text-neon-green font-bold flex items-center gap-1">
-                ✓ Prediction Submitted Successfully
-              </span>
+
+            {/* Bottom Status Pill */}
+            <div className="w-full max-w-xl rounded-xl border border-emerald-500/40 bg-gradient-to-b from-emerald-500/10 to-transparent p-3 flex flex-col items-center justify-center gap-0.5 mt-2.5 shadow-[0_0_15px_rgba(16,185,129,0.03)] shrink-0">
+              <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px] md:text-xs">
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Prediction Submitted Successfully</span>
+              </div>
               {predSubmission && (
-                <span className="text-[10px] text-ink-muted">
-                  You predicted: <strong className="text-neon-cyan uppercase font-bold">{predSubmission.answer}</strong>
+                <span className="text-[9px] md:text-[10px] text-zinc-300 font-medium">
+                  You predicted: <span className="text-[#00E5FF] font-bold uppercase">{predSubmission.answer}</span>
                 </span>
               )}
             </div>
@@ -455,48 +473,59 @@ export default function DashboardPage() {
         )}
 
         {accountState === "prediction_available" && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex-1">
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neon-cyan/25 text-neon-cyan">
-                Today's Return: {monthlyMissCount <= 1 ? "7% Return Plan" : "5% Return Plan"}
-              </span>
-              {monthlyMissCount === 2 && (
-                <div className="mt-2 text-xs text-yellow-400 font-semibold">
-                  ⚠️ You have missed two Daily Predictions this month. Your Return Plan has been adjusted from the 7% Return Plan to the 5% Return Plan for the remainder of this month.
-                </div>
-              )}
-              <p className="text-md font-display font-medium mt-3 mb-1 text-white">
-                {predQuestion ? `"${predQuestion.questionText}"` : "Today's prediction question is being generated..."}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-ink-muted">
-                <span>Monthly Misses: <strong className="text-white font-mono">{monthlyMissCount}</strong></span>
-                <span>•</span>
-                <span>Predictions Submitted: <strong className="text-neon-cyan font-mono">{predictionDaysCount} Days</strong></span>
-                <span>•</span>
-                <span>Remaining Free Misses: <strong className="text-yellow-400 font-mono">{remainingFreeMisses}</strong></span>
+          <div className="flex flex-col items-center w-full">
+            {/* Question Text */}
+            <h2 className="text-base md:text-lg font-medium text-white tracking-wide max-w-2xl leading-relaxed font-serif mb-2">
+              {predQuestion ? `"${predQuestion.questionText}"` : `"Today's Prediction Question"`}
+            </h2>
+
+            {monthlyMissCount === 2 && (
+              <div className="mb-2 text-[10px] text-yellow-400 font-semibold px-3 py-1 border border-yellow-400/20 bg-yellow-400/5 rounded-lg max-w-md">
+                ⚠️ You missed two predictions. Yield rate adjusted to 5% Plan for this month.
+              </div>
+            )}
+
+            {/* Stats Row */}
+            <div className="flex items-center justify-center gap-2 md:gap-6 my-2 text-center w-full">
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Monthly Misses</span>
+                <span className="text-sm md:text-base font-bold text-white mt-0.5">{monthlyMissCount}</span>
+              </div>
+              <span className="text-zinc-600 text-xs">•</span>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Predictions Submitted</span>
+                <span className="text-sm md:text-base font-bold text-[#00E5FF] mt-0.5">
+                  {predictionDaysCount} <span className="text-[#00FFA3] text-[10px] font-medium">Days</span>
+                </span>
+              </div>
+              <span className="text-zinc-600 text-xs">•</span>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Remaining Free Misses</span>
+                <span className="text-sm md:text-base font-bold text-yellow-400 mt-0.5">{remainingFreeMisses}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            {/* Bottom Actions Container */}
+            <div className="w-full max-w-xl rounded-xl border border-[#7B5CFF]/30 bg-gradient-to-b from-[#7B5CFF]/10 to-transparent p-3 flex flex-col items-center justify-center gap-3 mt-2.5 shrink-0">
               {predQuestion ? (
-                <div className="flex gap-2">
+                <div className="flex gap-3 w-full">
                   <button
                     disabled={submittingPrediction}
                     onClick={() => handlePredict("yes")}
-                    className="px-5 py-2 text-xs font-semibold rounded-xl bg-neon-green text-black hover:bg-neon-green/80 disabled:opacity-50 transition"
+                    className="flex-1 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-emerald-500 to-[#00FFA3] text-black shadow-[0_0_12px_rgba(0,255,163,0.25)] hover:shadow-[0_0_20px_rgba(0,255,163,0.4)] transition duration-300 disabled:opacity-50 uppercase tracking-wider"
                   >
                     YES
                   </button>
                   <button
                     disabled={submittingPrediction}
                     onClick={() => handlePredict("no")}
-                    className="px-5 py-2 text-xs font-semibold rounded-xl bg-neon-magenta text-white hover:bg-neon-magenta/80 disabled:opacity-50 transition"
+                    className="flex-1 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-rose-500 to-[#FF3CAC] text-white shadow-[0_0_12px_rgba(255,60,172,0.25)] hover:shadow-[0_0_20px_rgba(255,60,172,0.4)] transition duration-300 disabled:opacity-50 uppercase tracking-wider"
                   >
                     NO
                   </button>
                 </div>
               ) : (
-                <span className="text-xs text-ink-muted italic">Waiting for daily generation...</span>
+                <span className="text-xs text-ink-muted italic py-1">Waiting for daily generation...</span>
               )}
             </div>
           </div>
