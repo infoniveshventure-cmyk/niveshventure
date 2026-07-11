@@ -159,6 +159,7 @@ export async function POST(req: NextRequest) {
     closing.frozenAt = new Date();
 
     const { startDate, endDate } = getMonthRange(month);
+    const today = new Date().toISOString().slice(0, 10);
 
     // Fetch website settings
     const settings = await WebsiteSettings.findOne({ key: "singleton" });
