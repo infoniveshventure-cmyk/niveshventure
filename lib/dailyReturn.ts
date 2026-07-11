@@ -141,6 +141,8 @@ export async function runDailyReturn(forceDate?: string) {
   // 2. Date strings in IST
   const today = forceDate || getISTDateString(); // "YYYY-MM-DD"
   const month = today.slice(0, 7); // "YYYY-MM"
+  const [yearStr, monthStr] = today.split("-");
+  const daysInMonth = new Date(Number(yearStr), Number(monthStr), 0).getDate();
 
   // 3. Process each member & admin
   const members = await User.find({ role: { $in: ["member", "admin"] } });
@@ -248,8 +250,8 @@ export async function runDailyReturn(forceDate?: string) {
       }
     }
 
-    // Compute effective daily percentage
-    const dailyPct = mode === "auto" ? dailyPlanRate : manualDailyPct;
+    // Compute effective daily percentage (e.g. 7% monthly / daysInMonth = daily percent)
+    const dailyPct = (mode === "auto" ? dailyPlanRate : manualDailyPct) / daysInMonth;
 
     // C. Calculate profit
     const profit = parseFloat(
@@ -286,10 +288,9 @@ export async function runDailyReturn(forceDate?: string) {
         });
       }
 
-      const dailyInvReturn = parseFloat(((totalActiveInvestment * 0.233) / 100).toFixed(6));
+      const dailyInvReturn = parseFloat(((totalActiveInvestment * dailyPct) / 100).toFixed(6));
       member.dailyReturnPending = runningTotal;
       member.returnsDailyEarnings = runningTotal;
-      member.returnsWalletBalance = (member.returnsWalletBalance || 0) + profit;
       member.totalInvestmentReturn = (member.totalInvestmentReturn || 0) + dailyInvReturn;
       await member.save();
       processed++;
