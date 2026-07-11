@@ -17,7 +17,7 @@ import ReturnsLevelIncome from "@/models/ReturnsLevelIncome";
 export const dynamic = "force-dynamic";
 
 // Default returns level percentages for 10 levels
-const DEFAULT_RETURNS_LEVELS = [5, 3, 2, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5];
+const DEFAULT_RETURNS_LEVELS = [1.00, 0.50, 0.30, 0.25, 0.20, 0.15, 0.15, 0.15, 0.15, 0.15];
 
 // Helper to get start and end dates of a given month string "YYYY-MM"
 function getMonthRange(monthStr: string) {
