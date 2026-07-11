@@ -29,7 +29,10 @@ export function otpEmailTemplate(code: string) {
   <div style="font-family:Arial,sans-serif;background:#0A0E1A;padding:32px;color:#E8E8F0">
     <h2 style="color:#7B5CFF">Your verification code</h2>
     <p>Use the code below to verify your email. It expires in 10 minutes.</p>
-    <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#00E5FF;margin:24px 0">${code}</div>
+    <div style="margin:24px 0">
+      <span style="font-family:monospace;font-size:32px;font-weight:bold;letter-spacing:4px;color:#00E5FF;background:#1E293B;padding:8px 16px;border-radius:6px;user-select:all;-webkit-user-select:all;display:inline-block;">${code}</span>
+      <div style="font-size:11px;color:#8A8AA0;margin-top:6px;">(Double-click or long-press to select & copy)</div>
+    </div>
     <p style="color:#8A8AA0">Never share this code with anyone.</p>
   </div>`;
 }
@@ -44,12 +47,28 @@ export function welcomeEmailTemplate(params: {
   return `
   <div style="font-family:Arial,sans-serif;background:#0A0E1A;padding:32px;color:#E8E8F0">
     <h2 style="color:#7B5CFF">Welcome, ${fullName}!</h2>
-    <p>Your account has been created successfully.</p>
-    <table style="margin-top:16px">
-      <tr><td style="padding:6px 12px;color:#8A8AA0">Member ID</td><td style="padding:6px 12px;color:#00E5FF">${memberId}</td></tr>
-      <tr><td style="padding:6px 12px;color:#8A8AA0">Login Key</td><td style="padding:6px 12px;color:#00E5FF">${loginKey}</td></tr>
-      <tr><td style="padding:6px 12px;color:#8A8AA0">Access Key</td><td style="padding:6px 12px;color:#00E5FF">${accessKey}</td></tr>
+    <p>Your account credentials have been successfully updated/created.</p>
+    <table style="margin-top:16px;border-spacing: 0 10px;">
+      <tr>
+        <td style="padding:6px 12px;color:#8A8AA0;vertical-align:middle;">Member ID</td>
+        <td style="padding:6px 12px;vertical-align:middle;">
+          <span style="font-family:monospace;color:#00E5FF;background:#1E293B;padding:4px 10px;border-radius:4px;user-select:all;-webkit-user-select:all;">${memberId}</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:6px 12px;color:#8A8AA0;vertical-align:middle;">Login Key</td>
+        <td style="padding:6px 12px;vertical-align:middle;">
+          <span style="font-family:monospace;color:#00E5FF;background:#1E293B;padding:4px 10px;border-radius:4px;user-select:all;-webkit-user-select:all;">${loginKey}</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:6px 12px;color:#8A8AA0;vertical-align:middle;">Access Key</td>
+        <td style="padding:6px 12px;vertical-align:middle;">
+          <span style="font-family:monospace;color:#00E5FF;background:#1E293B;padding:4px 10px;border-radius:4px;user-select:all;-webkit-user-select:all;">${accessKey}</span>
+        </td>
+      </tr>
     </table>
+    <p style="font-size:11px;color:#8A8AA0;margin-top:10px;">(Tip: Double-click or long-press on any key above to select it instantly for copy-paste)</p>
     <p style="margin-top:20px;color:#FF3CAC">Keep your Member ID, Login Key and Access Key safe and confidential.</p>
   </div>`;
 }
