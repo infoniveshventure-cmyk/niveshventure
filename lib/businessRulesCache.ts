@@ -16,9 +16,9 @@ export interface IBusinessRule {
 }
 
 export async function getCachedBusinessRules(): Promise<IBusinessRule[]> {
-  const cacheKey = "business_rules_all";
+  const cacheKey = "business_rules_list";
   const cached = appCache.get<IBusinessRule[]>(cacheKey);
-  if (cached) return cached;
+  if (cached && Array.isArray(cached)) return cached;
 
   const rules = await BusinessRule.find({}).lean();
   appCache.set(cacheKey, rules, TTL.MEDIUM);
