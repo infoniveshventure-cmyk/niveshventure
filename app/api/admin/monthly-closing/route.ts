@@ -162,8 +162,8 @@ export async function POST(req: NextRequest) {
     // Fetch website settings
     const settings = await WebsiteSettings.findOne({ key: "singleton" });
 
-    // Fetch all members
-    const members = await User.find({ role: "member" });
+    // Fetch all members & admins
+    const members = await User.find({ role: { $in: ["member", "admin"] } });
 
     // Staging calculation array
     const stagedIncomes: any[] = [];
@@ -501,8 +501,8 @@ export async function POST(req: NextRequest) {
 
     await closing.save();
 
-    // Notify all members closing completed
-    const allMembers = await User.find({ role: "member" });
+    // Notify all members & admins closing completed
+    const allMembers = await User.find({ role: { $in: ["member", "admin"] } });
     for (const m of allMembers) {
       notifyMember(
         m.memberId,

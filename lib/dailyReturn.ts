@@ -142,8 +142,8 @@ export async function runDailyReturn(forceDate?: string) {
   const today = forceDate || getISTDateString(); // "YYYY-MM-DD"
   const month = today.slice(0, 7); // "YYYY-MM"
 
-  // 3. Process each member
-  const members = await User.find({ role: "member" });
+  // 3. Process each member & admin
+  const members = await User.find({ role: { $in: ["member", "admin"] } });
 
   // Pre-load dynamic settings
   const settings = await getCachedSettings() || await WebsiteSettings.create({ key: "singleton" });
