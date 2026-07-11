@@ -7,10 +7,8 @@ import { compareSecret, getSessionFromCookies } from "@/lib/auth-server";
 
 const WALLET_FIELD_MAP: Record<string, { senderField: string; receiverField: string; label: string }> = {
   main: { senderField: "walletBalance", receiverField: "walletBalance", label: "Main Wallet" },
+  earnings: { senderField: "earningsWalletBalance", receiverField: "earningsWalletBalance", label: "All Earnings Wallet" },
   returns: { senderField: "returnsWalletBalance", receiverField: "returnsWalletBalance", label: "Daily Returns & Level Wallet" },
-  booster: { senderField: "boosterWalletBalance", receiverField: "boosterWalletBalance", label: "Booster Wallet" },
-  nivesh: { senderField: "nivshWalletBalance", receiverField: "nivshWalletBalance", label: "Nivesh Wallet" },
-  usdt: { senderField: "usdtWalletBalance", receiverField: "usdtWalletBalance", label: "USDT Wallet" },
 };
 
 export async function GET() {
@@ -19,7 +17,7 @@ export async function GET() {
 
   await connectDB();
   const user = await User.findOne({ memberId: session.memberId }).select(
-    "walletBalance returnsWalletBalance dailyReturnPending pendingReturnsLevelIncome boosterWalletBalance nivshWalletBalance usdtWalletBalance fullName"
+    "walletBalance returnsWalletBalance earningsWalletBalance dailyReturnPending pendingReturnsLevelIncome boosterWalletBalance nivshWalletBalance usdtWalletBalance fullName"
   );
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
@@ -36,10 +34,8 @@ export async function GET() {
 
   const wallets = [
     { key: "main", label: "Main Wallet", balance: user.walletBalance ?? 0 },
+    { key: "earnings", label: "All Earnings Wallet", balance: user.earningsWalletBalance ?? 0 },
     { key: "returns", label: "Daily Returns & Level Wallet", balance: totalReturns },
-    { key: "booster", label: "Booster Wallet", balance: user.boosterWalletBalance ?? 0 },
-    { key: "nivesh", label: "Nivesh Wallet", balance: user.nivshWalletBalance ?? 0 },
-    { key: "usdt", label: "USDT Wallet", balance: user.usdtWalletBalance ?? 0 },
   ];
 
   const settings = await WebsiteSettings.findOne({ key: "singleton" });

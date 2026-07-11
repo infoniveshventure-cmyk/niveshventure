@@ -277,9 +277,15 @@ export default function AdminMemberDetailsPage() {
     { label: "Matching Wallet", key: "matching", balance: m.totalMatchingIncome || 0 },
     { label: "Booster Wallet", key: "booster", balance: m.boosterWalletBalance || 0 },
     { label: "Nivesh Wallet", key: "nivesh", balance: m.nivshWalletBalance || 0 },
-    { label: "Returns Wallet", key: "returns", balance: m.totalReturnsIncome || 0 },
+    { label: "Returns Wallet", key: "returns", balance: m.returnsWalletBalance || 0 },
     { label: "Rewards Wallet", key: "rewards", balance: m.totalRewardIncome || 0 },
     { label: "Main Wallet Balance", key: "main", balance: m.walletBalance || 0 },
+    { label: "All Earnings Wallet", key: "earnings", balance: m.earningsWalletBalance || 0 },
+    { label: "Total Investment", key: "investment", balance: m.totalInvestment || 0 },
+    { label: "Pending Daily Return", key: "daily_pending", balance: m.dailyReturnPending || 0 },
+    { label: "Level Income Wallet", key: "level", balance: m.totalLevelIncome || 0 },
+    { label: "Pending Level Income", key: "level_pending", balance: m.pendingReturnsLevelIncome || 0 },
+    { label: "Lifetime Level Income Earned", key: "level_earned", balance: m.totalReturnsLevelIncomeEarned || 0 },
   ];
 
   return (
@@ -708,6 +714,12 @@ export default function AdminMemberDetailsPage() {
             <h3 className="text-lg font-bold text-white capitalize">
               {adjustDirection} {adjustingWallet} Wallet
             </h3>
+            <div className="bg-white/5 p-3 rounded-lg border border-white/10 flex justify-between items-center text-xs">
+              <span className="text-ink-muted">Current Balance:</span>
+              <span className="font-mono font-bold text-neon-cyan">
+                {symbol}{(wallets.find(w => w.key === adjustingWallet)?.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+              </span>
+            </div>
             <form onSubmit={handleAdjustWallet} className="space-y-3">
               <div>
                 <label className="text-xs text-ink-muted block mb-1">Amount</label>

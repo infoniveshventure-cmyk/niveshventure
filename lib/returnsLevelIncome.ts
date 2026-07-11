@@ -116,6 +116,20 @@ export async function calculateDailyReturnsLevelIncome(forceDate?: string) {
               status: "Pending"
             });
 
+            // Create Transaction record for daily ROI level income
+            const Transaction = (await import("@/models/Transaction")).default;
+            await Transaction.create({
+              memberId: upline.memberId,
+              type: "level_income",
+              direction: "credit",
+              amount: calculatedAmount,
+              currency: "USDT",
+              status: "completed",
+              note: `Level ${depth} Returns Level Income from downline ${downline.memberId}`,
+              description: `Level ${depth} yield of ${percentage}% on downline active investment $${totalActiveInvestment.toLocaleString()}`,
+              walletType: "returns",
+            });
+
             await User.updateOne(
               { _id: upline._id },
               { $inc: { returnsWalletBalance: calculatedAmount, pendingReturnsLevelIncome: calculatedAmount } }

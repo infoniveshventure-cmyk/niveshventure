@@ -67,7 +67,7 @@ async function creditRewardToUser(user: any, amount: number, type: string, note:
   if (isReferralReward) {
     user.totalReferralIncome = (user.totalReferralIncome || 0) + amount;
   }
-  user.walletBalance = (user.walletBalance || 0) + amount;
+  user.earningsWalletBalance = (user.earningsWalletBalance || 0) + amount;
   await user.save();
 
   await Transaction.create({

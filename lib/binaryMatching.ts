@@ -58,7 +58,7 @@ export async function processActivationIncomes(targetMemberId: string, customPri
         if (sponsor.isActive) {
           const amount = levelAmounts[level - 1];
           if (amount > 0) {
-            sponsor.walletBalance = (sponsor.walletBalance || 0) + amount;
+            sponsor.earningsWalletBalance = (sponsor.earningsWalletBalance || 0) + amount;
             sponsor.totalReferralIncome = (sponsor.totalReferralIncome || 0) + amount;
             await sponsor.save();
 
@@ -142,7 +142,7 @@ export async function processActivationIncomes(targetMemberId: string, customPri
           if (matchedPairs > 0) {
             if (parent.isActive) {
               parent.totalMatchingIncome = (parent.totalMatchingIncome || 0) + matchingIncome;
-              parent.walletBalance = (parent.walletBalance || 0) + matchingIncome;
+              parent.earningsWalletBalance = (parent.earningsWalletBalance || 0) + matchingIncome;
 
               await Transaction.create({
                 memberId: parent.memberId,

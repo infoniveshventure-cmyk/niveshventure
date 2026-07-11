@@ -4,6 +4,7 @@ import User from "@/models/User";
 import Transaction from "@/models/Transaction";
 import RewardHistory from "@/models/RewardHistory";
 import { getSessionFromCookies } from "@/lib/auth-server";
+import ReturnsLevelIncome from "@/models/ReturnsLevelIncome";
 import { getCachedSettings } from "@/lib/settingsCache";
 import { getCachedBusinessRule } from "@/lib/businessRulesCache";
 import { appCache, TTL } from "@/lib/cache";
@@ -147,7 +148,7 @@ export async function GET() {
       });
       if (!rewardExists) {
         user.totalRewardIncome = (user.totalRewardIncome || 0) + rank.reward;
-        user.walletBalance = (user.walletBalance || 0) + rank.reward;
+        user.earningsWalletBalance = (user.earningsWalletBalance || 0) + rank.reward;
         highestQualifiedRank = rank.code;
 
         await Transaction.create({
@@ -222,8 +223,23 @@ export async function GET() {
     walletType: "booster",
   }).sort({ createdAt: -1 }).lean();
 
+  const { getISTDateString } = await import("@/lib/dailyReturn");
+  const todayISTStr = getISTDateString();
+  const closingMonth = todayISTStr.slice(0, 7); // Format: "YYYY-MM"
+
+  const levelIncomes = await ReturnsLevelIncome.find({
+    recipientMemberId: user.memberId,
+    closingMonth,
+  }).select("calculatedAmount").lean();
+  const calculatedPendingReturnsLevelIncome = levelIncomes.reduce((sum, item) => sum + (item.calculatedAmount || 0), 0);
+
+  const userObj = {
+    ...user.toObject(),
+    pendingReturnsLevelIncome: calculatedPendingReturnsLevelIncome,
+  };
+
   return NextResponse.json({
-    user,
+    user: userObj,
     stats: {
       direct: directCount,
       directsList: directsList,
@@ -239,6 +255,7 @@ export async function GET() {
       leftCarryForward: user.leftCarryForward,
       rightCarryForward: user.rightCarryForward,
       dailyReturnPending: user.dailyReturnPending || 0,
+      pendingReturnsLevelIncome: calculatedPendingReturnsLevelIncome,
       totalDailyReturnSettled: user.totalDailyReturnSettled || 0,
       returnsDailyEarnings: user.returnsDailyEarnings || 0,
       lastReturnsClosingPeriod: user.lastReturnsClosingPeriod || "",

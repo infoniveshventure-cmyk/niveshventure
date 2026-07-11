@@ -6,7 +6,9 @@ import PredictionSubmission from "@/models/PredictionSubmission";
 import User from "@/models/User";
 import WebsiteSettings from "@/models/WebsiteSettings";
 import Investment from "@/models/Investment";
-import { getISTDateString } from "@/lib/dailyReturn";
+import { getISTDateString, recalculateDailyReturnForUser } from "@/lib/dailyReturn";
+import ReturnsLevelIncome from "@/models/ReturnsLevelIncome";
+import DailyReturn from "@/models/DailyReturn";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +76,18 @@ export async function GET() {
         user.lastPredictionDate = today;
         await user.save();
       }
+      const repairResult = await recalculateDailyReturnForUser(session.memberId, today);
+      if (repairResult && repairResult.updated) {
+        const updatedUser = await User.findOne({ memberId: session.memberId }).select(
+          "isActive totalInvestment monthlyMissCount lastMissResetMonth currentReturnPlan predictionLocked predictionSubmitted lastPredictionDate dailyReturnPending returnsWalletBalance"
+        );
+        if (updatedUser) {
+          user.monthlyMissCount = updatedUser.monthlyMissCount;
+          user.predictionLocked = updatedUser.predictionLocked;
+          user.dailyReturnPending = updatedUser.dailyReturnPending;
+          user.returnsWalletBalance = updatedUser.returnsWalletBalance;
+        }
+      }
     } else {
       if (user.predictionSubmitted || user.lastPredictionDate === today) {
         user.predictionSubmitted = false;
@@ -130,6 +144,17 @@ export async function GET() {
 
   const dailyReturn = (totalActiveInvestment * effectiveRate) / 100;
 
+  // Calculate the actual sum of ReturnsLevelIncome for this month
+  const levelIncomes = await ReturnsLevelIncome.find({
+    recipientMemberId: session.memberId,
+    closingMonth: month,
+  }).select("calculatedAmount").lean();
+  const calculatedPendingReturnsLevelIncome = levelIncomes.reduce((sum, item) => sum + (item.calculatedAmount || 0), 0);
+
+  // Check if today's DailyReturn record already exists
+  const dailyReturnRecord = await DailyReturn.findOne({ memberId: session.memberId, date: today }).lean();
+  const hasDailyReturnRecordToday = !!dailyReturnRecord;
+
   return NextResponse.json({
     accountState,
     today,
@@ -145,6 +170,9 @@ export async function GET() {
     totalActiveInvestment,
     dailyReturn,
     predictionDaysCount,
+    dailyReturnPending: user.dailyReturnPending || 0,
+    pendingReturnsLevelIncome: calculatedPendingReturnsLevelIncome,
+    hasDailyReturnRecordToday,
   });
 }
 
@@ -215,6 +243,9 @@ export async function POST(req: NextRequest) {
     user.predictionSubmitted = true;
     user.lastPredictionDate = today;
     await user.save();
+
+    // Retroactively calculate daily return if the daily ROI cron has already run today
+    await recalculateDailyReturnForUser(session.memberId, today);
 
     return NextResponse.json({ success: true, submission });
   } catch (err: any) {

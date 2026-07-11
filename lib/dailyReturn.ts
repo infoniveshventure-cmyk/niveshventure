@@ -249,7 +249,7 @@ export async function runDailyReturn(forceDate?: string) {
     }
 
     // Compute effective daily percentage
-    const dailyPct = mode === "auto" ? dailyPlanRate / 30 : manualDailyPct;
+    const dailyPct = mode === "auto" ? dailyPlanRate : manualDailyPct;
 
     // C. Calculate profit
     const profit = parseFloat(
@@ -271,6 +271,20 @@ export async function runDailyReturn(forceDate?: string) {
         runningTotal,
         settled: false,
       });
+
+      if (profit > 0) {
+        await Transaction.create({
+          memberId: member.memberId,
+          type: "returns_income",
+          direction: "credit",
+          amount: profit,
+          currency: "USDT",
+          status: "completed",
+          note: `Daily ROI return for ${today}`,
+          description: `Daily ROI yield of ${dailyPct.toFixed(4)}% on active investment $${totalActiveInvestment.toLocaleString()}`,
+          walletType: "returns",
+        });
+      }
 
       member.dailyReturnPending = runningTotal;
       member.returnsDailyEarnings = runningTotal;
@@ -488,3 +502,127 @@ export async function runMonthlySettlement(force = false) {
     forced: force,
   };
 }
+
+export async function recalculateDailyReturnForUser(memberId: string, date: string) {
+  await connectDB();
+
+  const today = date;
+  const month = today.slice(0, 7);
+
+  const member = await User.findOne({ memberId });
+  if (!member) return { error: "Member not found" };
+
+  // Check if there is a DailyReturn record for today
+  const dailyReturnRecord = await DailyReturn.findOne({ memberId, date: today });
+  if (!dailyReturnRecord) {
+    // If no record exists, the cron hasn't run yet, so we don't need to retroactively credit.
+    // The cron will process it normally when it runs.
+    return { success: true, updated: false, reason: "Cron has not run yet for today" };
+  }
+
+  // If a record exists, check if it was processed as a miss (i.e. profit was 0 or dailyPct was 0)
+  if (dailyReturnRecord.profit > 0 && dailyReturnRecord.dailyPct > 0) {
+    // Already has positive profit, no need to recalculate
+    return { success: true, updated: false, reason: "Already credited positive profit" };
+  }
+
+  // Load business rules
+  const [completedRule, missedRule, maxMissLimitRule, modeRule, manualPctRule] = await Promise.all([
+    getCachedBusinessRule("production_completed_monthly_rate"),
+    getCachedBusinessRule("production_missed_monthly_rate"),
+    getCachedBusinessRule("production_max_miss_limit"),
+    getCachedBusinessRule("daily_return_mode"),
+    getCachedBusinessRule("daily_return_manual_pct"),
+  ]);
+
+  const completedRate = completedRule ? Number(completedRule.value) : 7;
+  const missedRate = missedRule ? Number(missedRule.value) : 5;
+  const maxMissLimit = maxMissLimitRule ? Number(maxMissLimitRule.value) : 3;
+
+  const mode = modeRule ? String(modeRule.value) : "auto";
+  const manualDailyPct = manualPctRule ? Number(manualPctRule.value) : 0.2;
+
+  const settings = await getCachedSettings() || await WebsiteSettings.create({ key: "singleton" });
+  const returnAfterOneMiss = settings.returnPlanAfterOneMiss ?? 5;
+  const maxMissAllowed = settings.maximumMissAllowed ?? 2;
+
+  // Since they just submitted the prediction, we decrement their monthlyMissCount by 1
+  const oldMissCount = member.monthlyMissCount || 0;
+  if (oldMissCount > 0) {
+    member.monthlyMissCount = oldMissCount - 1;
+  }
+  
+  // Unlock if they were locked
+  member.predictionLocked = false;
+  member.productionStatus = "active";
+
+  let dailyPlanRate = completedRate;
+  if (member.monthlyMissCount === 2) {
+    dailyPlanRate = returnAfterOneMiss;
+  } else {
+    dailyPlanRate = completedRate;
+  }
+  member.currentReturnPlan = dailyPlanRate;
+
+  // Compute effective daily percentage
+  const dailyPct = mode === "auto" ? dailyPlanRate : manualDailyPct;
+
+  // Calculate profit
+  const totalActiveInvestment = dailyReturnRecord.investmentAmount || 0;
+  const profit = parseFloat(
+    ((totalActiveInvestment * dailyPct) / 100).toFixed(6)
+  );
+
+  // Update DailyReturn record
+  dailyReturnRecord.dailyPct = dailyPct;
+  dailyReturnRecord.profit = profit;
+  
+  // Recalculate running total
+  const oldProfit = 0;
+  const diff = profit - oldProfit;
+  
+  dailyReturnRecord.runningTotal = parseFloat(
+    ((dailyReturnRecord.runningTotal || 0) + diff).toFixed(6)
+  );
+  await dailyReturnRecord.save();
+
+  // Update member balances
+  member.dailyReturnPending = parseFloat(
+    ((member.dailyReturnPending || 0) + diff).toFixed(6)
+  );
+  member.returnsDailyEarnings = member.dailyReturnPending;
+  member.returnsWalletBalance = parseFloat(
+    ((member.returnsWalletBalance || 0) + profit).toFixed(6)
+  );
+
+  if (profit > 0) {
+    await Transaction.create({
+      memberId: member.memberId,
+      type: "returns_income",
+      direction: "credit",
+      amount: profit,
+      currency: "USDT",
+      status: "completed",
+      note: `Daily ROI return for ${today} (Retroactive prediction)`,
+      description: `Daily ROI yield of ${dailyPct.toFixed(4)}% on active investment $${totalActiveInvestment.toLocaleString()} (Retroactive prediction)`,
+      walletType: "returns",
+    });
+  }
+
+  member.predictionSubmitted = true;
+  member.lastPredictionDate = today;
+
+  await member.save();
+
+  // Trigger daily Returns Level Income calculation for this retro credited amount
+  try {
+    const { calculateDailyReturnsLevelIncome } = await import("@/lib/returnsLevelIncome");
+    // We can run it; calculateDailyReturnsLevelIncome handles all matching level incomes based on active ROI records.
+    await calculateDailyReturnsLevelIncome();
+  } catch (lvlErr) {
+    console.error("Failed to run Level ROI calculation inside recalculateDailyReturnForUser:", lvlErr);
+  }
+
+  return { success: true, updated: true, profit, newMissCount: member.monthlyMissCount };
+}
+

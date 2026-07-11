@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
 
       const userField = typeUserFieldMap[incomeType];
       (user as any)[userField] = ((user as any)[userField] || 0) + amount;
-      user.walletBalance = (user.walletBalance || 0) + amount;
+      user.earningsWalletBalance = (user.earningsWalletBalance || 0) + amount;
       totalReleased += amount;
       releaseSummary[incomeType] = (releaseSummary[incomeType] || 0) + amount;
       userUpdated = true;

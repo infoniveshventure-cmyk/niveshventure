@@ -254,9 +254,41 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
 
     // Identify balance field
     let balanceField = "walletBalance";
-    if (walletType === "booster") balanceField = "boosterWalletBalance";
-    if (walletType === "nivesh") balanceField = "nivshWalletBalance";
-    if (walletType === "usdt") balanceField = "usdtWalletBalance";
+    let isMainWalletLinked = false;
+
+    if (walletType === "booster") {
+      balanceField = "boosterWalletBalance";
+    } else if (walletType === "nivesh") {
+      balanceField = "nivshWalletBalance";
+    } else if (walletType === "usdt") {
+      balanceField = "usdtWalletBalance";
+    } else if (walletType === "returns") {
+      balanceField = "returnsWalletBalance";
+    } else if (walletType === "referral") {
+      balanceField = "totalReferralIncome";
+      isMainWalletLinked = true;
+    } else if (walletType === "matching") {
+      balanceField = "totalMatchingIncome";
+      isMainWalletLinked = true;
+    } else if (walletType === "rewards") {
+      balanceField = "totalRewardIncome";
+      isMainWalletLinked = true;
+    } else if (walletType === "main") {
+      balanceField = "walletBalance";
+    } else if (walletType === "earnings") {
+      balanceField = "earningsWalletBalance";
+    } else if (walletType === "investment") {
+      balanceField = "totalInvestment";
+    } else if (walletType === "daily_pending") {
+      balanceField = "dailyReturnPending";
+    } else if (walletType === "level") {
+      balanceField = "totalLevelIncome";
+      isMainWalletLinked = true;
+    } else if (walletType === "level_pending") {
+      balanceField = "pendingReturnsLevelIncome";
+    } else if (walletType === "level_earned") {
+      balanceField = "totalReturnsLevelIncomeEarned";
+    }
 
     const currentBalance = (user as any)[balanceField] || 0;
     let newBalance = currentBalance;
@@ -265,7 +297,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
       newBalance += amount;
     } else {
       if (currentBalance < amount) {
-        return NextResponse.json({ error: "Insufficient wallet balance for debit" }, { status: 400 });
+        return NextResponse.json({ error: `Insufficient ${walletType} balance for debit` }, { status: 400 });
+      }
+      if (isMainWalletLinked && (user.walletBalance || 0) < amount) {
+        return NextResponse.json({ error: "Insufficient Main Wallet balance for debit" }, { status: 400 });
       }
       newBalance -= amount;
     }
@@ -302,9 +337,34 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
 
     // Update user balance
     (user as any)[balanceField] = newBalance;
+    if (isMainWalletLinked) {
+      user.walletBalance = (user.walletBalance || 0) + (direction === "credit" ? amount : -amount);
+    }
+    
+    // Dynamically update investmentCompleted status if totalInvestment is adjusted
+    if (walletType === "investment") {
+      const WebsiteSettings = (await import("@/models/WebsiteSettings")).default;
+      const settings = await WebsiteSettings.findOne({ key: "singleton" });
+      const minInvestment = settings?.minimumInvestment ?? settings?.pricing?.minInvestment ?? 100;
+      user.investmentCompleted = newBalance >= minInvestment;
+    }
+
     await user.save();
 
-    const walletLabel = walletType === "booster" ? "Booster Wallet" : walletType === "nivesh" ? "Nivesh Wallet" : walletType === "usdt" ? "USDT Wallet" : "Main Wallet";
+    const walletLabel = 
+      walletType === "booster" ? "Booster Wallet" : 
+      walletType === "nivesh" ? "Nivesh Wallet" : 
+      walletType === "usdt" ? "USDT Wallet" : 
+      walletType === "returns" ? "Returns Wallet" : 
+      walletType === "referral" ? "Referral Wallet" : 
+      walletType === "matching" ? "Matching Wallet" : 
+      walletType === "rewards" ? "Rewards Wallet" : 
+      walletType === "investment" ? "Total Investment" :
+      walletType === "daily_pending" ? "Pending Daily Return" :
+      walletType === "level" ? "Level Income Wallet" :
+      walletType === "level_pending" ? "Pending Level Income" :
+      walletType === "level_earned" ? "Lifetime Level Income Earned" :
+      "Main Wallet";
 
     // Notify user of wallet adjustment
     notifyMember(

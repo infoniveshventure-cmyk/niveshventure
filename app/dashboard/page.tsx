@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import DashboardShell from "@/components/DashboardShell";
 import { useAuth } from "@/lib/AuthContext";
-import { Wallet, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react";
+import { Wallet, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Clock, Briefcase, X, Calendar } from "lucide-react";
 import Link from "next/link";
 import DirectProgressCard from "@/components/DirectProgressCard";
 import BoosterProgressCard from "@/components/BoosterProgressCard";
@@ -39,8 +39,34 @@ export default function DashboardPage() {
   const [totalActiveInvestment, setTotalActiveInvestment] = useState(0);
   const [dailyReturn, setDailyReturn] = useState(0);
   const [predictionDaysCount, setPredictionDaysCount] = useState(0);
+  const [hasDailyReturnRecordToday, setHasDailyReturnRecordToday] = useState(false);
 
   const [user, setUser] = useState<any>(null);
+
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyData, setHistoryData] = useState<any[]>([]);
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch("/api/user/predictions/history");
+      if (res.ok) {
+        const json = await res.json();
+        setHistoryData(json.history || []);
+      }
+    } catch (err) {
+      console.error("Failed to load history:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showHistoryModal) {
+      void loadHistory();
+    }
+  }, [showHistoryModal]);
 
   useEffect(() => {
     async function load() {
@@ -79,6 +105,7 @@ export default function DashboardPage() {
           setTotalActiveInvestment(pred.totalActiveInvestment || 0);
           setDailyReturn(pred.dailyReturn || 0);
           setPredictionDaysCount(pred.predictionDaysCount || 0);
+          setHasDailyReturnRecordToday(pred.hasDailyReturnRecordToday || false);
           if (pred.dailyReturnPending !== undefined) {
             setDailyReturnPending(pred.dailyReturnPending);
           }
@@ -117,6 +144,7 @@ export default function DashboardPage() {
             setTotalActiveInvestment(pred.totalActiveInvestment || 0);
             setDailyReturn(pred.dailyReturn || 0);
             setPredictionDaysCount(pred.predictionDaysCount || 0);
+            setHasDailyReturnRecordToday(pred.hasDailyReturnRecordToday || false);
             if (pred.dailyReturnPending !== undefined) {
               setDailyReturnPending(pred.dailyReturnPending);
             }
@@ -137,9 +165,15 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [countdownEndTime, accountState]);
 
+  const isPredictedToday = !!predSubmission;
+  const todayRoiYield = isPredictedToday ? ((totalActiveInvestment * currentReturnPlan) / 100) : 0;
+  const pendingDailyAmt = (dailyReturnPending || user?.dailyReturnPending || 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayRoiYield : 0);
+  const totalPendingReturnsAndLevel = pendingDailyAmt + (user?.pendingReturnsLevelIncome ?? 0);
+
   const cards = [
     { label: "Main Wallet Balance", value: user?.walletBalance ?? profile?.walletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
     { label: "Daily Returns Wallet Balance", value: user?.returnsWalletBalance ?? profile?.returnsWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Active Investment", value: totalActiveInvestment || user?.totalInvestment || 0, icon: Briefcase, prefix: "$", href: "/invest", color: "text-neon-green" },
     {
       label: "Total Earnings", value:
         (user?.totalReferralIncome ?? profile?.totalReferralIncome ?? 0) +
@@ -153,8 +187,8 @@ export default function DashboardPage() {
     },
     { label: "Total Team", value: stats?.totalTeam ?? 0, icon: Users, prefix: "", href: "/team", color: "" },
     { label: "Total Withdrawn", value: user?.totalWithdrawn ?? profile?.totalWithdrawn ?? 0, icon: ArrowUpRight, prefix: "$", href: "/withdrawal", color: "" },
-    { label: "Daily Return (Pending)", value: dailyReturnPending || user?.dailyReturnPending || 0, icon: Clock, prefix: "$", href: "/income", color: "text-yellow-400", isPending: true },
-    { label: "Pending Returns Level Income", value: user?.pendingReturnsLevelIncome ?? 0, icon: Clock, prefix: "$", href: "/income", color: "text-neon-magenta", isPendingReturnsLevel: true },
+    { label: "Daily Return (Today)", value: todayRoiYield, icon: Clock, prefix: "$", href: "#", color: "text-yellow-400", isPending: true, onClick: () => setShowHistoryModal(true) },
+    { label: "Total daily return Income", value: totalPendingReturnsAndLevel, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", isPendingReturnsLevel: true, onClick: () => setShowHistoryModal(true) },
     { label: "Booster Wallet Balance", value: user?.boosterWalletBalance ?? profile?.boosterWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/booster-wallet", color: "text-amber-400", isBooster: true },
   ];
 
@@ -173,10 +207,21 @@ export default function DashboardPage() {
       setPredSubmission(data.submission);
       toast.success("Prediction Submitted Successfully!");
 
-      // Reload me stats
-      const meRes = await fetch("/api/user/predictions", { cache: "no-store" });
-      if (meRes.ok) {
-        const pred = await meRes.json();
+      // Reload me stats and predictions state
+      const [predRes, userRes] = await Promise.all([
+        fetch("/api/user/predictions", { cache: "no-store" }),
+        fetch("/api/user/me", { cache: "no-store" })
+      ]);
+
+      if (userRes.ok) {
+        const me = await userRes.json();
+        setStats(me.stats);
+        setUser(me.user);
+        setDailyReturnPending(me.stats?.dailyReturnPending || 0);
+      }
+
+      if (predRes.ok) {
+        const pred = await predRes.json();
         setAccountState(pred.accountState || "prediction_available");
         setPredQuestion(pred.dailyQuestion);
         setPredSubmission(pred.submission);
@@ -189,6 +234,7 @@ export default function DashboardPage() {
         setTotalActiveInvestment(pred.totalActiveInvestment || 0);
         setDailyReturn(pred.dailyReturn || 0);
         setPredictionDaysCount(pred.predictionDaysCount || 0);
+        setHasDailyReturnRecordToday(pred.hasDailyReturnRecordToday || false);
         if (pred.dailyReturnPending !== undefined) {
           setDailyReturnPending(pred.dailyReturnPending);
         }
@@ -368,7 +414,7 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex-1">
               <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neon-cyan/25 text-neon-cyan">
-                Today's Return: {monthlyMissCount <= 1 ? "7% Return Plan" : "5% Return Plan"}
+                {/* Today's Return: {monthlyMissCount <= 1 ? "7% Return Plan" : "5% Return Plan"} */}Daily Prediction - Daily Returns
               </span>
               <p className="text-md font-display font-medium mt-3 mb-1 text-white">
                 {predQuestion ? `"${predQuestion.questionText}"` : "Today's prediction question"}
@@ -458,26 +504,25 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-        {cards.map((c) => (
-          <Link key={c.label} href={c.href} className="stat-card group py-4 px-5">
-            <div className="flex flex-row items-start gap-4 w-full">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                c.isPending
-                  ? "bg-yellow-400/20"
-                  : c.isPendingReturnsLevel
+        {cards.map((c) => {
+          const CardContent = (
+            <div className="flex flex-row items-start gap-4 w-full text-left">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${c.isPending
+                ? "bg-yellow-400/20"
+                : c.isPendingReturnsLevel
                   ? "bg-neon-magenta/20"
                   : c.isBooster
-                  ? "bg-amber-500/20"
-                  : "bg-gradient-to-br from-neon-violet to-neon-cyan"
-              }`}>
+                    ? "bg-amber-500/20"
+                    : "bg-gradient-to-br from-neon-violet to-neon-cyan"
+                }`}>
                 <c.icon size={18} className={
                   c.isPending
                     ? "text-yellow-400"
                     : c.isPendingReturnsLevel
-                    ? "text-neon-magenta"
-                    : c.isBooster
-                    ? "text-amber-400 animate-pulse"
-                    : "text-base"
+                      ? "text-neon-magenta"
+                      : c.isBooster
+                        ? "text-amber-400 animate-pulse"
+                        : "text-base"
                 } />
               </div>
               <div className="flex-1 min-w-0 flex flex-col items-start">
@@ -487,7 +532,8 @@ export default function DashboardPage() {
                 </p>
                 {c.isPending ? (
                   <div className="mt-2 text-[10px] text-ink-muted space-y-0.5 border-t border-white/5 pt-1.5 leading-snug w-full">
-                    <div>Today's Return: <span className="text-yellow-400 font-semibold">{currentReturnPlan}% Return Plan</span></div>
+                    <div>Today's Return Plan: <span className="text-yellow-400 font-semibold">{currentReturnPlan}% Return Plan</span></div>
+                    {/* <div>Today's Yield: <span className="text-neon-green font-bold">${((totalActiveInvestment * currentReturnPlan) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div> */}
                     <div>Active Investment: <span className="text-white font-mono">${totalActiveInvestment.toLocaleString()}</span></div>
                   </div>
                 ) : null}
@@ -505,8 +551,22 @@ export default function DashboardPage() {
                 ) : null}
               </div>
             </div>
-          </Link>
-        ))}
+          );
+
+          if (c.onClick) {
+            return (
+              <button key={c.label} onClick={c.onClick} className="stat-card group py-4 px-5 w-full">
+                {CardContent}
+              </button>
+            );
+          }
+
+          return (
+            <Link key={c.label} href={c.href} className="stat-card group py-4 px-5">
+              {CardContent}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -553,7 +613,7 @@ export default function DashboardPage() {
       {/* ── Returns Monthly Closing Details & History ── */}
       <div className="glass-card p-5 mt-6">
         <h2 className="font-display font-semibold mb-4 text-white">Returns Monthly Closing System</h2>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mb-6">
           <div className="p-3 bg-white/5 border border-white/5 rounded-xl">
             <p className="text-ink-muted">Returns Daily Earnings</p>
@@ -618,9 +678,8 @@ export default function DashboardPage() {
                     <td className="py-2.5 px-2 text-neon-green font-bold">${h.totalReturn.toFixed(2)}</td>
                     <td className="py-2.5 px-2 text-ink-muted">{new Date(h.closingDate).toLocaleDateString()}</td>
                     <td className="py-2.5 px-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                        h.status === "Success" ? "bg-neon-green/20 text-neon-green" : "bg-neon-magenta/20 text-neon-magenta"
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${h.status === "Success" ? "bg-neon-green/20 text-neon-green" : "bg-neon-magenta/20 text-neon-magenta"
+                        }`}>
                         {h.status}
                       </span>
                     </td>
@@ -652,6 +711,91 @@ export default function DashboardPage() {
           <div><p className="text-xs text-ink-muted">Right Total Business</p><p className="font-semibold mt-0.5">${(stats?.rightTotalBusiness ?? profile?.rightTotalBusiness ?? 0).toLocaleString()}</p></div>
         </div>
       </div>
+
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card max-w-3xl w-full p-6 relative max-h-[85vh] flex flex-col border border-white/10 shadow-2xl">
+            <button
+              onClick={() => setShowHistoryModal(false)}
+              className="absolute top-4 right-4 text-ink-muted hover:text-white transition"
+            >
+              <X size={20} />
+            </button>
+
+            <h3 className="font-display font-semibold text-lg text-white mb-2 flex items-center gap-2">
+              <Calendar className="text-neon-cyan" size={20} /> Returns & Prediction History
+            </h3>
+            <p className="text-xs text-ink-muted mb-4 border-b border-white/5 pb-2">
+              Detailed history of prediction submissions, daily ROI earnings, and level commissions.
+            </p>
+
+            <div className="overflow-y-auto flex-1 pr-1 space-y-4">
+              {historyLoading ? (
+                <div className="py-12 text-center text-sm text-ink-muted animate-pulse">
+                  Loading prediction history...
+                </div>
+              ) : historyData.length === 0 ? (
+                <div className="py-12 text-center text-sm text-ink-muted italic">
+                  No prediction submissions or daily return history found.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10 text-ink-muted font-bold uppercase tracking-wider text-[10px]">
+                        <th className="py-2 px-2">Date</th>
+                        <th className="py-2 px-2">Question</th>
+                        <th className="py-2 px-2">Answered At</th>
+                        <th className="py-2 px-2 text-center">Prediction</th>
+                        <th className="py-2 px-2 text-right">Daily ROI</th>
+                        <th className="py-2 px-2 text-right">Level Income</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {historyData.map((item) => (
+                        <tr key={item.date} className="hover:bg-white/5 border-b border-white/5 last:border-0">
+                          <td className="py-3 px-2 font-mono text-white whitespace-nowrap">{item.date}</td>
+                          <td className="py-3 px-2 text-ink-muted max-w-[200px] truncate" title={item.questionText}>
+                            {item.questionText}
+                          </td>
+                          <td className="py-3 px-2 text-ink-muted whitespace-nowrap font-mono">
+                            {item.submittedAt ? new Date(item.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "—"}
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${item.answer === "yes"
+                              ? "bg-neon-green/10 text-neon-green"
+                              : item.answer === "no"
+                                ? "bg-neon-magenta/10 text-neon-magenta"
+                                : "bg-white/5 text-ink-muted"
+                              }`}>
+                              {item.answer}
+                            </span>
+                          </td>
+                          <td className="py-3 px-2 text-right text-neon-green font-mono font-bold">
+                            {item.roiProfit > 0 ? `$${item.roiProfit.toFixed(4)}` : "—"}
+                          </td>
+                          <td className="py-3 px-2 text-right text-neon-magenta font-mono font-bold">
+                            {item.levelIncome > 0 ? `$${item.levelIncome.toFixed(4)}` : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-white/5 flex justify-end">
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-white/10 hover:bg-white/5 text-white transition bg-white/5 hover:border-white/20"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }

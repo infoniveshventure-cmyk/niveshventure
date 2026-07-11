@@ -141,7 +141,7 @@ export default function AdminDailyReturnPage() {
   // Computed daily % to display
   const computedDailyPct =
     editMode === "auto"
-      ? parseFloat(editMonthlyPct || "0") / 30
+      ? parseFloat(editMonthlyPct || "0")
       : parseFloat(editManualDailyPct || "0");
 
   return (

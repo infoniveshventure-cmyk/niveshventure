@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const mode = modeRule ? String(modeRule.value) : "auto";
   const monthlyPct = monthlyPctRule ? Number(monthlyPctRule.value) : 6;
   const manualDailyPct = manualPctRule ? Number(manualPctRule.value) : 0.2;
-  const effectiveDailyPct = mode === "auto" ? monthlyPct / 30 : manualDailyPct;
+  const effectiveDailyPct = mode === "auto" ? monthlyPct : manualDailyPct;
 
   // Build query for records
   const query: any = {};

@@ -24,9 +24,8 @@ type TransferRecord = {
 
 const WALLET_LABELS: Record<string, string> = {
   main: "Main Wallet",
-  booster: "Booster Wallet",
-  nivesh: "Nivesh Wallet",
-  usdt: "USDT Wallet",
+  earnings: "All Earnings Wallet",
+  returns: "Daily Returns & Level Wallet",
 };
 
 function ShareModal({ tx, onClose }: { tx: TransferRecord; onClose: () => void }) {
