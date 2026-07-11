@@ -57,6 +57,8 @@ export default function MyEarningsPage() {
   const [txType, setTxType] = useState("all");
   const [searchTxId, setSearchTxId] = useState("");
 
+  const [levelBreakdown, setLevelBreakdown] = useState<any[]>([]);
+
   // Active filters applied on submit
   const [activeFilters, setActiveFilters] = useState({
     wallet: "all",
@@ -69,13 +71,20 @@ export default function MyEarningsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/income", { cache: "no-store" });
+      const [res, levelRes] = await Promise.all([
+        fetch("/api/income", { cache: "no-store" }),
+        fetch("/api/income/level", { cache: "no-store" }),
+      ]);
       if (res.ok) {
         const d = await res.json();
         setData(d);
         setTxHistory(d.transactions || []);
       } else {
         toast.error("Failed to load earnings data");
+      }
+      if (levelRes.ok) {
+        const ld = await levelRes.json();
+        setLevelBreakdown(ld.list || []);
       }
     } catch {
       toast.error("Error connecting to server");
@@ -435,6 +444,62 @@ export default function MyEarningsPage() {
           </div>
         )}
       </div>
+
+      {levelBreakdown.length > 0 && (
+        <div className="glass-card p-5 mt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 pb-3 border-b border-white/5">
+            <h3 className="font-display font-semibold text-sm">Returns Level Income - Downline Breakdown</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="text-ink-muted border-b border-white/10 uppercase tracking-wider text-[10px]">
+                  <th className="py-2.5 pr-3">Date</th>
+                  <th className="py-2.5 pr-3">Downline User</th>
+                  <th className="py-2.5 pr-3">Level</th>
+                  <th className="py-2.5 pr-3">Downline Investment</th>
+                  <th className="py-2.5 pr-3">Level Pct</th>
+                  <th className="py-2.5 pr-3">Income Amount</th>
+                  <th className="py-2.5">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {levelBreakdown.map((row, idx) => (
+                  <tr key={row._id || idx} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+                    <td className="py-3 pr-3 text-ink-muted whitespace-nowrap">
+                      {row.calculationDate || new Date(row.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 pr-3 font-mono text-[11px] text-white">
+                      {row.downlineMemberId}
+                    </td>
+                    <td className="py-3 pr-3 text-neon-cyan font-semibold">
+                      Level {row.level}
+                    </td>
+                    <td className="py-3 pr-3 font-semibold text-ink-muted">
+                      ${row.investmentAmount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 pr-3 text-yellow-400 font-mono">
+                      {row.percentage}%
+                    </td>
+                    <td className="py-3 pr-3 font-bold text-neon-green">
+                      +${row.calculatedAmount?.toLocaleString(undefined, { minimumFractionDigits: 4 })}
+                    </td>
+                    <td className="py-3 whitespace-nowrap">
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                        row.status === "Credited" 
+                          ? "bg-neon-green/10 text-neon-green border border-neon-green/20" 
+                          : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                      }`}>
+                        {row.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }

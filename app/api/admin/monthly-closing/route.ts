@@ -12,6 +12,7 @@ import ManualOverrideLog from "@/models/ManualOverrideLog";
 import { requireAdmin } from "@/lib/require-admin";
 import { notifyMember } from "@/lib/notification";
 import { getSessionFromCookies } from "@/lib/auth-server";
+import ReturnsLevelIncome from "@/models/ReturnsLevelIncome";
 
 export const dynamic = "force-dynamic";
 
@@ -313,21 +314,55 @@ export async function POST(req: NextRequest) {
 
     // Pass 2: Calculate Returns Level Income (10 levels)
     const stagedIncomeMap = new Map(stagedIncomes.map((si) => [si.memberId, si]));
+    const userDbMap = new Map(members.map((m) => [m.memberId, m]));
+    const returnsLevelIncomeDocsToCreate: any[] = [];
+
+    // Clear any existing Pending level incomes for this closingMonth to avoid duplicates
+    await ReturnsLevelIncome.deleteMany({ closingMonth: month, status: "Pending" });
+
     for (const si of stagedIncomes) {
       let stagedReturnsLevelIncome = 0;
+      const recipientDoc = userDbMap.get(si.memberId);
+      if (!recipientDoc) continue;
+
       const downlineMapL10 = getDownlineLevels(si.memberId, 10);
       for (const [dId, level] of Object.entries(downlineMapL10)) {
         const downlineStaged = stagedIncomeMap.get(dId);
-        if (downlineStaged && downlineStaged.monthlyReturns > 0) {
+        const downlineDoc = userDbMap.get(dId);
+        if (downlineStaged && downlineStaged.monthlyReturns > 0 && downlineDoc) {
           const ruleKey = `returns_level${level}_pct`;
           const rate = ruleMap.has(ruleKey) ? ruleMap.get(ruleKey)! : (DEFAULT_RETURNS_LEVELS[Number(level) - 1] || 0);
-          stagedReturnsLevelIncome += downlineStaged.monthlyReturns * (rate / 100);
+          
+          const amount = downlineStaged.monthlyReturns * (rate / 100);
+          stagedReturnsLevelIncome += amount;
+
+          // Find downline active investment amount
+          const downlineActiveInvestments = activeInvestmentsMap.get(dId) || [];
+          const downlineInvestmentAmount = downlineActiveInvestments.reduce((sum, inv) => sum + inv.amount, 0) || downlineDoc.totalInvestment || 0;
+
+          returnsLevelIncomeDocsToCreate.push({
+            recipientMemberId: si.memberId,
+            recipientUserId: recipientDoc._id,
+            downlineMemberId: dId,
+            downlineUserId: downlineDoc._id,
+            level: Number(level),
+            percentage: rate,
+            investmentAmount: downlineInvestmentAmount,
+            calculatedAmount: Number((amount * (distPct / 100)).toFixed(6)),
+            calculationDate: today,
+            closingMonth: month,
+            status: "Pending",
+          });
         }
       }
       
       const memberDoc = members.find((m) => m.memberId === si.memberId);
       const isFreePinUser = memberDoc?.activatedByFreePin === true;
       si.returnsLevelIncome = isFreePinUser ? 0 : Number((stagedReturnsLevelIncome * (distPct / 100)).toFixed(2));
+    }
+
+    if (returnsLevelIncomeDocsToCreate.length > 0) {
+      await ReturnsLevelIncome.insertMany(returnsLevelIncomeDocsToCreate);
     }
 
     closing.calculatedIncomes = stagedIncomes;
@@ -656,6 +691,13 @@ export async function POST(req: NextRequest) {
       await RewardHistory.updateMany(
         { status: "pending", createdAt: { $gte: startDate, $lte: endDate } },
         { $set: { status: "released", adminRemarks: `Released in Monthly Closing ${month}` } }
+      );
+    }
+
+    if (incomeType === "level_income" && totalReleased > 0) {
+      await ReturnsLevelIncome.updateMany(
+        { closingMonth: month, status: "Pending" },
+        { $set: { status: "Credited", creditedAt: new Date() } }
       );
     }
 
