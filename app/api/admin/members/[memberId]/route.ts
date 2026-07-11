@@ -355,7 +355,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
       walletType === "referral" ? "Referral Wallet" : 
       walletType === "matching" ? "Matching Wallet" : 
       walletType === "rewards" ? "Rewards Wallet" : 
-      walletType === "investment" ? "Total Investment" :
+      walletType === "investment" ? "Active Investment" :
       walletType === "total_investment_return" ? "Total Investment Return" :
       walletType === "daily_pending" ? "Pending Daily Return" :
       walletType === "level" ? "Level Income Wallet" :

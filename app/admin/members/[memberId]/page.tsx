@@ -281,7 +281,7 @@ export default function AdminMemberDetailsPage() {
     { label: "Rewards Wallet", key: "rewards", balance: m.totalRewardIncome || 0 },
     { label: "Main Wallet Balance", key: "main", balance: m.walletBalance || 0 },
     { label: "All Earnings Wallet", key: "earnings", balance: m.earningsWalletBalance || 0 },
-    { label: "Total Investment", key: "investment", balance: m.totalInvestment || 0 },
+    { label: "Active Investment", key: "investment", balance: m.totalInvestment || 0 },
     { label: "Total Investment Return", key: "total_investment_return", balance: m.totalInvestmentReturn || 0 },
     { label: "Pending Daily Return", key: "daily_pending", balance: m.dailyReturnPending || 0 },
     { label: "Level Income Wallet", key: "level", balance: m.totalLevelIncome || 0 },
