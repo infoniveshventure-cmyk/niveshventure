@@ -223,12 +223,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
     }
 
     try {
-      // Update in Firebase Auth
-      await updateFirebaseUserPasswordByEmail(user.email, password);
-      const hash = crypto.createHash("sha256").update(password).digest("hex");
-      user.loginKeyHash = hash;
-      user.accessKeyHash = hash;
-      await user.save();
+      // Update in Firebase Auth using UID (more robust than email lookup)
+      await updateFirebaseUser(user.firebaseUid, { password });
+      // Do NOT overwrite user.loginKeyHash or user.accessKeyHash to avoid access key corruption!
 
       // Notify user of password reset by admin
       notifyMember(

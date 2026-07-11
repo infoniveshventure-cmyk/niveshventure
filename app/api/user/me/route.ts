@@ -28,7 +28,7 @@ export async function GET() {
 
   // Single query to fetch all members for in-memory downline computation
   const allUsers = await User.find({ role: "member" })
-    .select("memberId parentId sponsorId fullName isActive walletBalance totalInvestment boosterWalletBalance nivshWalletBalance usdtWalletBalance position accessExpiresAt")
+    .select("memberId parentId sponsorId fullName isActive walletBalance returnsWalletBalance totalInvestment boosterWalletBalance nivshWalletBalance usdtWalletBalance position accessExpiresAt")
     .lean();
 
   const parentMap = new Map<string, any[]>();
@@ -306,7 +306,7 @@ async function checkAndRunAutoRoi() {
       if (roiAmount <= 0) continue;
 
       // Credit member
-      member.walletBalance = (member.walletBalance || 0) + roiAmount;
+      member.returnsWalletBalance = (member.returnsWalletBalance || 0) + roiAmount;
       member.totalReturnsIncome = (member.totalReturnsIncome || 0) + roiAmount;
       await member.save();
 
@@ -319,6 +319,7 @@ async function checkAndRunAutoRoi() {
         status: "completed",
         note: `Monthly ROI - ${period}`,
         description: `Auto-released ${settings.roiPercentage}% Monthly Returns on investment of $${totalInvested}`,
+        walletType: "returns",
       });
 
       totalRoiPaid += roiAmount;
@@ -347,7 +348,7 @@ async function checkAndRunAutoRoi() {
 
       const upline = memberMap.get(uplineId);
       if (upline) {
-        upline.walletBalance = (upline.walletBalance || 0) + levelAmount;
+        upline.returnsWalletBalance = (upline.returnsWalletBalance || 0) + levelAmount;
         upline.totalLevelIncome = (upline.totalLevelIncome || 0) + levelAmount;
         await upline.save();
 
@@ -360,6 +361,7 @@ async function checkAndRunAutoRoi() {
           status: "completed",
           note: `Monthly Level ROI - ${period}`,
           description: `Auto-distributed Returns Level Income for period ${period}`,
+          walletType: "returns",
         });
 
         totalLevelPaid += levelAmount;

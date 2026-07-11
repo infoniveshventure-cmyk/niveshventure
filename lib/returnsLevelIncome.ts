@@ -116,10 +116,9 @@ export async function calculateDailyReturnsLevelIncome(forceDate?: string) {
               status: "Pending"
             });
 
-            // Update pending income in upline User document
             await User.updateOne(
               { _id: upline._id },
-              { $inc: { pendingReturnsLevelIncome: calculatedAmount } }
+              { $inc: { returnsWalletBalance: calculatedAmount, pendingReturnsLevelIncome: calculatedAmount } }
             );
 
           } catch (err: any) {

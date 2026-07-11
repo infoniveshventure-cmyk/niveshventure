@@ -32,6 +32,12 @@ export async function POST(req: NextRequest) {
       if (existing) {
         return NextResponse.json({ error: "Email is already registered" }, { status: 409 });
       }
+    } else if (purpose !== "change_email") {
+      // For any purpose other than register or change_email, the email must already exist in MongoDB
+      const existing = await User.findOne({ email: email.toLowerCase() });
+      if (!existing) {
+        return NextResponse.json({ error: "Email address is not registered" }, { status: 404 });
+      }
     }
 
     const code = generateOtp();

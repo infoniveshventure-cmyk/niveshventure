@@ -11,6 +11,7 @@ export default function WithdrawalPage() {
   const { profile } = useAuth();
   const [mode, setMode] = useState<"USDT" | "INR">("USDT");
   const [kind, setKind] = useState<"earning" | "capital">("earning");
+  const [walletType, setWalletType] = useState<"main" | "returns">("main");
   const [amount, setAmount] = useState("");
   const [accessKey, setAccessKey] = useState("");
   const [bank, setBank] = useState({ bankName: "", accountNumber: "", ifsc: "", accountHolder: "" });
@@ -74,6 +75,7 @@ export default function WithdrawalPage() {
           bankDetails: mode === "INR" ? bank : undefined,
           usdtAddress: mode === "USDT" ? usdtAddress : undefined,
           withdrawalKind: kind,
+          walletType: kind === "earning" ? walletType : "main",
         }),
       });
       const data = await res.json();
@@ -123,6 +125,34 @@ export default function WithdrawalPage() {
             </div>
             {kind === "capital" && (
               <p className="text-xs text-neon-magenta">Capital (Nivesh) withdrawable only after 11-month lock-in completes.</p>
+            )}
+
+            {kind === "earning" && (
+              <div className="space-y-2 my-2">
+                <label className="text-xs text-ink-muted block">Select Source Wallet</label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setWalletType("main")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs border text-left transition ${
+                      walletType === "main" ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
+                    }`}
+                  >
+                    <div className="font-semibold text-white">Main Wallet</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.walletBalance ?? 0).toLocaleString()} (Withdraw anytime)</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWalletType("returns")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs border text-left transition ${
+                      walletType === "returns" ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
+                    }`}
+                  >
+                    <div className="font-semibold text-white">Daily Returns & Level Wallet</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.returnsWalletBalance ?? 0).toLocaleString()} (Withdraw on 1st only)</div>
+                  </button>
+                </div>
+              </div>
             )}
 
             <div className="flex gap-3">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import DashboardShell from "@/components/DashboardShell";
 import {
   Users,
@@ -17,7 +18,10 @@ import {
   Moon,
   Sun,
   MapPin,
-  ChevronUp
+  ChevronUp,
+  RotateCw,
+  Fullscreen,
+  Minimize
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { motion, useSpring, AnimatePresence } from "framer-motion";
@@ -74,6 +78,11 @@ const V_SPACING = 120;
 const NODE_GAP = 20; // Gap between sibling cards/subtrees
 
 export default function TeamPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [treeState, setTreeState] = useState<Record<string, LocalNodeState>>({});
   const [rootId, setRootId] = useState<string>("");
   const [sessionRootId, setSessionRootId] = useState<string>("");
@@ -95,7 +104,12 @@ export default function TeamPage() {
   const [zoom, setZoom] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
+  const startPan = useRef({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Fullscreen and Rotation State
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [rotation, setRotation] = useState(0); // 0, 90, 180, 270
 
   // Smooth springs for translation/zoom
   const springX = useSpring(0, { stiffness: 95, damping: 18 });
@@ -113,6 +127,16 @@ export default function TeamPage() {
   useEffect(() => {
     springZoom.set(zoom);
   }, [zoom, springZoom]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen]);
 
   // Load a single level of the tree
   const loadNode = useCallback(async (memberId: string, expandAfterLoad = false) => {
@@ -174,6 +198,23 @@ export default function TeamPage() {
       .then((d) => setDirectTeam(d.directTeam || []))
       .catch(() => { });
   }, [initTree]);
+
+  // Center tree once mounted and loaded, and handle window resize/rotation
+  useEffect(() => {
+    if (loading || !rootId) return;
+
+    const handleCentering = () => {
+      if (canvasRef.current) {
+        const width = canvasRef.current.clientWidth;
+        setPan({ x: width / 2 - CARD_WIDTH / 2, y: 60 });
+      }
+    };
+
+    handleCentering();
+
+    window.addEventListener("resize", handleCentering);
+    return () => window.removeEventListener("resize", handleCentering);
+  }, [loading, rootId]);
 
   // Center a node coordinate in viewport
   const centerNode = useCallback((x: number, y: number) => {
@@ -381,14 +422,20 @@ export default function TeamPage() {
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     setIsDragging(true);
-    dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    startPan.current = { ...pan };
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    const angle = (-rotation * Math.PI) / 180;
+    const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+    const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
     setPan({
-      x: e.clientX - dragStart.current.x,
-      y: e.clientY - dragStart.current.y,
+      x: startPan.current.x + rx,
+      y: startPan.current.y + ry,
     });
   };
 
@@ -402,38 +449,51 @@ export default function TeamPage() {
   const initialZoom = useRef<number>(1);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
+    if (e.touches.length === 2) {
       setIsDragging(true);
-      touchStart.current = {
-        x: e.touches[0].clientX - pan.x,
-        y: e.touches[0].clientY - pan.y,
-      };
-      initialTouchDistance.current = null;
-    } else if (e.touches.length === 2) {
-      setIsDragging(false);
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      touchStart.current = { x: mx, y: my };
+      startPan.current = { ...pan };
+
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
       initialTouchDistance.current = dist;
       initialZoom.current = zoom;
+    } else {
+      setIsDragging(false);
+      initialTouchDistance.current = null;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && isDragging) {
+    if (e.touches.length === 2 && isDragging) {
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const dx = mx - touchStart.current.x;
+      const dy = my - touchStart.current.y;
+      
+      const angle = (-rotation * Math.PI) / 180;
+      const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+      const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+
+      let nextZoom = zoom;
+      if (initialTouchDistance.current !== null) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const ratio = dist / initialTouchDistance.current;
+        nextZoom = Math.max(0.3, Math.min(2, initialZoom.current * ratio));
+        setZoom(nextZoom);
+      }
+
       setPan({
-        x: e.touches[0].clientX - touchStart.current.x,
-        y: e.touches[0].clientY - touchStart.current.y,
+        x: startPan.current.x + rx,
+        y: startPan.current.y + ry,
       });
-    } else if (e.touches.length === 2 && initialTouchDistance.current !== null) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const ratio = dist / initialTouchDistance.current;
-      const newZoom = Math.max(0.3, Math.min(2, initialZoom.current * ratio));
-      setZoom(newZoom);
     }
   };
 
@@ -458,7 +518,7 @@ export default function TeamPage() {
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (e.cancelable) {
+      if (e.touches.length === 2 && e.cancelable) {
         e.preventDefault();
       }
     };
@@ -470,7 +530,7 @@ export default function TeamPage() {
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("touchmove", onTouchMove);
     };
-  }, []);
+  }, [mounted, isFullscreen]);
 
   const handleZoomIn = () => setZoom((z) => Math.min(2, z + 0.1));
   const handleZoomOut = () => setZoom((z) => Math.max(0.3, z - 0.1));
@@ -521,90 +581,12 @@ export default function TeamPage() {
   };
 
   const coordinates = getCoordinatesLayout();
-
   const themeClass = theme === "dark"
     ? "bg-slate-950 text-white"
     : "bg-slate-50 text-slate-900";
 
-  return (
-    <DashboardShell>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-neon-cyan/10 border border-neon-cyan/20 flex items-center justify-center">
-            <Users className="text-neon-cyan" size={20} />
-          </div>
-          <div>
-            <h1 className="font-display text-2xl font-bold">Genealogy Tree View</h1>
-            <p className="text-xs text-ink-muted">Redesigned multi-node sponsor referral layout with dynamic alignment.</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-            className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-ink-muted hover:text-white transition"
-            title="Toggle theme view"
-          >
-            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
-          <button
-            onClick={initTree}
-            className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-ink-muted hover:text-white transition"
-            title="Reload tree"
-          >
-            <RefreshCw size={15} />
-          </button>
-        </div>
-      </div>
-
-      {/* Search Header */}
-      <div className="glass-card p-4 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <form onSubmit={handleSearch} className="relative w-full md:max-w-md">
-          <input
-            type="text"
-            placeholder="Search Member ID or Name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input-field w-full pl-10 pr-24 py-2 text-sm"
-          />
-          <Search className="absolute left-3 top-2.5 text-ink-muted" size={16} />
-          <button
-            type="submit"
-            disabled={searching}
-            className="absolute right-1.5 top-1.5 px-3 py-1 rounded-lg bg-neon-cyan hover:bg-neon-cyan/80 text-black text-xs font-semibold transition"
-          >
-            {searching ? "..." : "Locate"}
-          </button>
-        </form>
-
-        {/* Breadcrumb Path */}
-        <div className="flex items-center gap-1.5 text-xs text-ink-muted flex-wrap">
-          <button
-            onClick={() => navigateBack(-1)}
-            className="hover:text-neon-cyan transition font-semibold"
-          >
-            Root
-          </button>
-          {breadcrumb.map((b, idx) => (
-            <div key={b.id} className="flex items-center gap-1">
-              <ChevronRight size={12} className="opacity-50" />
-              <button
-                onClick={() => navigateBack(idx)}
-                className="hover:text-neon-cyan transition font-semibold"
-              >
-                {b.name}
-              </button>
-            </div>
-          ))}
-          {rootId && treeState[rootId] && (
-            <>
-              <ChevronRight size={12} className="opacity-50" />
-              <span className="text-neon-cyan font-bold">{treeState[rootId].node.fullName}</span>
-            </>
-          )}
-        </div>
-      </div>
-
+  const renderCanvas = () => {
+    return (
       <div
         ref={canvasRef}
         onMouseDown={handleMouseDown}
@@ -614,7 +596,11 @@ export default function TeamPage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative w-full h-[580px] rounded-2xl overflow-hidden bg-[#424242] border border-[#555] select-none cursor-grab active:cursor-grabbing text-white"
+        className={
+          isFullscreen
+            ? "fixed inset-0 z-[999] w-screen h-screen rounded-none overflow-hidden bg-[#424242] border border-[#555] select-none cursor-grab active:cursor-grabbing text-white"
+            : "relative w-full h-[580px] rounded-2xl overflow-hidden bg-[#424242] border border-[#555] select-none cursor-grab active:cursor-grabbing text-white"
+        }
       >
         {/* Top Info Banner - Exactly matching screenshot */}
         <div className="absolute top-4 left-4 right-4 z-10 bg-black/30 border border-yellow-500/30 rounded-lg p-2.5 text-center text-xs text-yellow-500 font-medium">
@@ -628,6 +614,7 @@ export default function TeamPage() {
             x: springX,
             y: springY,
             scale: springZoom,
+            rotate: rotation,
             transformOrigin: "0 0",
           }}
         >
@@ -720,6 +707,7 @@ export default function TeamPage() {
             x: springX,
             y: springY,
             scale: springZoom,
+            rotate: rotation,
           }}
         >
           <AnimatePresence>
@@ -792,54 +780,110 @@ export default function TeamPage() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Floating controls panel commented out
-        <div className="absolute bottom-4 right-4 flex flex-col sm:flex-row gap-2 bg-slate-900/90 border border-white/10 p-1.5 rounded-xl shadow-2xl backdrop-blur-md">
+        {/* Floating controls panel */}
+        <div className="absolute bottom-4 right-4 z-20 flex flex-row items-center gap-2 bg-slate-900/90 border border-white/10 p-1.5 rounded-xl shadow-2xl backdrop-blur-md">
           <button
-            onClick={handleZoomIn}
-            className="p-2 rounded-lg text-ink-muted hover:text-white hover:bg-white/5 transition"
-            title="Zoom In"
+            type="button"
+            onClick={() => setRotation((r) => (r === 0 ? 90 : 0))}
+            className="p-2 rounded-lg text-ink-muted hover:text-white hover:bg-white/5 transition flex items-center gap-1.5 text-xs font-semibold"
+            title="Rotate Tree"
           >
-            <ZoomIn size={14} />
+            <RotateCw size={16} />
+            <span>{rotation === 0 ? "Vertical" : "Horizontal"}</span>
           </button>
           <button
-            onClick={handleZoomOut}
+            type="button"
+            onClick={() => setIsFullscreen(!isFullscreen)}
             className="p-2 rounded-lg text-ink-muted hover:text-white hover:bg-white/5 transition"
-            title="Zoom Out"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen View"}
           >
-            <ZoomOut size={14} />
-          </button>
-          <button
-            onClick={handleZoomReset}
-            className="p-2 rounded-lg text-ink-muted hover:text-white hover:bg-white/5 transition text-xs font-semibold"
-            title="Reset view"
-          >
-            Reset
-          </button>
-          <div className="w-px h-auto bg-white/10 hidden sm:block" />
-          <button
-            onClick={handleExpandAll}
-            className="p-2 rounded-lg text-ink-muted hover:text-white hover:bg-white/5 transition"
-            title="Expand All branches"
-          >
-            <Maximize2 size={14} />
-          </button>
-          <button
-            onClick={handleCollapseAll}
-            className="p-2 rounded-lg text-ink-muted hover:text-white hover:bg-white/5 transition"
-            title="Collapse All branches"
-          >
-            <Minimize2 size={14} />
-          </button>
-          <button
-            onClick={handleZoomReset}
-            className="p-2 rounded-lg text-ink-muted hover:text-white hover:bg-white/5 transition"
-            title="Center Root"
-          >
-            <MapPin size={14} />
+            {isFullscreen ? <Minimize size={16} /> : <Fullscreen size={16} />}
           </button>
         </div>
-        */}
       </div>
+    );
+  };
+
+  return (
+    <DashboardShell>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-xl bg-neon-cyan/10 border border-neon-cyan/20 flex items-center justify-center">
+            <Users className="text-neon-cyan" size={20} />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold">Genealogy Tree View</h1>
+            <p className="text-xs text-ink-muted">Redesigned multi-node sponsor referral layout with dynamic alignment.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+            className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-ink-muted hover:text-white transition"
+            title="Toggle theme view"
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+          <button
+            onClick={initTree}
+            className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-ink-muted hover:text-white transition"
+            title="Reload tree"
+          >
+            <RefreshCw size={15} />
+          </button>
+        </div>
+      </div>
+
+      {/* Search Header */}
+      <div className="glass-card p-4 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <form onSubmit={handleSearch} className="relative w-full md:max-w-md">
+          <input
+            type="text"
+            placeholder="Search Member ID or Name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input-field w-full pl-10 pr-24 py-2 text-sm"
+          />
+          <Search className="absolute left-3 top-2.5 text-ink-muted" size={16} />
+          <button
+            type="submit"
+            disabled={searching}
+            className="absolute right-1.5 top-1.5 px-3 py-1 rounded-lg bg-neon-cyan hover:bg-neon-cyan/80 text-black text-xs font-semibold transition"
+          >
+            {searching ? "..." : "Locate"}
+          </button>
+        </form>
+
+        {/* Breadcrumb Path */}
+        <div className="flex items-center gap-1.5 text-xs text-ink-muted flex-wrap">
+          <button
+            onClick={() => navigateBack(-1)}
+            className="hover:text-neon-cyan transition font-semibold"
+          >
+            Root
+          </button>
+          {breadcrumb.map((b, idx) => (
+            <div key={b.id} className="flex items-center gap-1">
+              <ChevronRight size={12} className="opacity-50" />
+              <button
+                onClick={() => navigateBack(idx)}
+                className="hover:text-neon-cyan transition font-semibold"
+              >
+                {b.name}
+              </button>
+            </div>
+          ))}
+          {rootId && treeState[rootId] && (
+            <>
+              <ChevronRight size={12} className="opacity-50" />
+              <span className="text-neon-cyan font-bold">{treeState[rootId].node.fullName}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {mounted && isFullscreen ? createPortal(renderCanvas(), document.body) : renderCanvas()}
 
       {/* Selected Node Details Stats Panel */}
       {selectedNode && (

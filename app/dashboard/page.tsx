@@ -138,7 +138,8 @@ export default function DashboardPage() {
   }, [countdownEndTime, accountState]);
 
   const cards = [
-    { label: "Wallet Balance", value: user?.walletBalance ?? profile?.walletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Main Wallet Balance", value: user?.walletBalance ?? profile?.walletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Daily Returns Wallet Balance", value: user?.returnsWalletBalance ?? profile?.returnsWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
     {
       label: "Total Earnings", value:
         (user?.totalReferralIncome ?? profile?.totalReferralIncome ?? 0) +
@@ -152,7 +153,7 @@ export default function DashboardPage() {
     },
     { label: "Total Team", value: stats?.totalTeam ?? 0, icon: Users, prefix: "", href: "/team", color: "" },
     { label: "Total Withdrawn", value: user?.totalWithdrawn ?? profile?.totalWithdrawn ?? 0, icon: ArrowUpRight, prefix: "$", href: "/withdrawal", color: "" },
-    { label: "Daily Return (Pending)", value: dailyReturn, icon: Clock, prefix: "$", href: "/income", color: "text-yellow-400", isPending: true },
+    { label: "Daily Return (Pending)", value: dailyReturnPending || user?.dailyReturnPending || 0, icon: Clock, prefix: "$", href: "/income", color: "text-yellow-400", isPending: true },
     { label: "Pending Returns Level Income", value: user?.pendingReturnsLevelIncome ?? 0, icon: Clock, prefix: "$", href: "/income", color: "text-neon-magenta", isPendingReturnsLevel: true },
     { label: "Booster Wallet Balance", value: user?.boosterWalletBalance ?? profile?.boosterWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/booster-wallet", color: "text-amber-400", isBooster: true },
   ];
@@ -456,11 +457,11 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
         {cards.map((c) => (
-          <Link key={c.label} href={c.href} className="stat-card group">
-            <div className="flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 md:mb-3 ${
+          <Link key={c.label} href={c.href} className="stat-card group py-4 px-5">
+            <div className="flex flex-row items-start gap-4 w-full">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                 c.isPending
                   ? "bg-yellow-400/20"
                   : c.isPendingReturnsLevel
@@ -481,7 +482,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex-1 min-w-0 flex flex-col items-start">
                 <p className="text-xs text-ink-muted leading-tight">{c.label}</p>
-                <p className={`font-display text-xl font-bold mt-1 group-hover:text-neon-cyan transition leading-tight ${c.color || ""}`}>
+                <p className={`font-display text-lg md:text-xl font-bold mt-1 group-hover:text-neon-cyan transition leading-tight ${c.color || ""}`}>
                   {c.prefix}{typeof c.value === "number" ? c.value.toLocaleString(undefined, { minimumFractionDigits: 2 }) : c.value}
                 </p>
                 {c.isPending ? (

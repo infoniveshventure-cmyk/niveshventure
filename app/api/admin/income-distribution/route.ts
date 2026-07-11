@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Credit user
-      member.walletBalance = (member.walletBalance || 0) + roiAmount;
+      member.returnsWalletBalance = (member.returnsWalletBalance || 0) + roiAmount;
       member.totalReturnsIncome = (member.totalReturnsIncome || 0) + roiAmount;
       await member.save();
 
@@ -155,6 +155,7 @@ export async function POST(req: NextRequest) {
         status: "completed",
         note: `Monthly ROI - ${period}`,
         description: `Credited ${percentage}% Returns Income on Investment volume of $${totalInvested}`,
+        walletType: "returns",
       });
 
       totalCreditedRoi += roiAmount;
@@ -199,7 +200,7 @@ export async function POST(req: NextRequest) {
 
       const lvlMember = memberMap.get(lvlMemberId);
       if (lvlMember) {
-        lvlMember.walletBalance = (lvlMember.walletBalance || 0) + levelAmount;
+        lvlMember.returnsWalletBalance = (lvlMember.returnsWalletBalance || 0) + levelAmount;
         lvlMember.totalLevelIncome = (lvlMember.totalLevelIncome || 0) + levelAmount;
         await lvlMember.save();
 
@@ -212,8 +213,8 @@ export async function POST(req: NextRequest) {
           status: "completed",
           note: `Monthly Level ROI - ${period}`,
           description: `Returns Level Income commission for period ${period}`,
+          walletType: "returns",
         });
-
         totalCreditedLevel += levelAmount;
 
         notifyMember(

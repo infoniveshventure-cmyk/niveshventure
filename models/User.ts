@@ -22,6 +22,7 @@ const UserSchema = new Schema(
     role: { type: String, enum: ["member", "admin"], default: "member" },
 
     walletBalance: { type: Number, default: 0 },
+    returnsWalletBalance: { type: Number, default: 0 },
     boosterWalletBalance: { type: Number, default: 0 },
     nivshWalletBalance: { type: Number, default: 0 },
     usdtWalletBalance: { type: Number, default: 0 },

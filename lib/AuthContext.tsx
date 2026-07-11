@@ -116,17 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const init = async () => {
-      if (!mounted) return;
-      await refreshProfile();
-      if (mounted) {
-        setLoading(false);
-        startPolling();
-      }
-    };
-
-    init();
-
     return () => {
       mounted = false;
       unsub();

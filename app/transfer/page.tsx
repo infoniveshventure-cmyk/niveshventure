@@ -198,9 +198,19 @@ export default function TransferPage() {
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
             </div>
             {selectedWalletInfo && (
-              <p className="text-xs text-neon-cyan mt-1">
-                Available: <span className="font-bold">${selectedWalletInfo.balance.toLocaleString()}</span>
-              </p>
+              <div className="flex justify-between items-center mt-1">
+                <p className="text-xs text-neon-cyan">
+                  Available: <span className="font-bold">${selectedWalletInfo.balance.toLocaleString()}</span>
+                </p>
+                <button
+                  type="button"
+                  disabled={!p2pEnabled}
+                  onClick={() => setAmount(selectedWalletInfo.balance.toString())}
+                  className="text-xs text-neon-cyan font-bold hover:underline hover:text-neon-cyan/80 transition disabled:opacity-50"
+                >
+                  Transfer All
+                </button>
+              </div>
             )}
           </div>
 

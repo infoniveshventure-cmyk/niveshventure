@@ -227,23 +227,21 @@ export async function runDailyReturn(forceDate?: string) {
         member.lastPredictionDate = today;
         await member.save();
       } else {
-        // Prediction Missed
+        // Prediction Missed - Today's return is 0
         member.monthlyMissCount = (member.monthlyMissCount || 0) + 1;
         predictionMisses++;
+        dailyPlanRate = 0;
 
         if (member.monthlyMissCount >= maxMissAllowed) {
-          // 3 Misses -> Locked, 0% Plan
-          dailyPlanRate = 0;
+          // Max misses reached -> Locked, 0% Plan
           member.currentReturnPlan = 0;
           member.predictionLocked = true;
           member.productionStatus = "closed";
         } else if (member.monthlyMissCount === 2) {
           // 2nd Miss -> 5% Plan, remains active
-          dailyPlanRate = returnAfterOneMiss;
           member.currentReturnPlan = returnAfterOneMiss;
         } else {
           // 1st Miss -> remains on 7% Plan, remains active
-          dailyPlanRate = completedRate;
           member.currentReturnPlan = completedRate;
         }
         await member.save();
@@ -276,6 +274,7 @@ export async function runDailyReturn(forceDate?: string) {
 
       member.dailyReturnPending = runningTotal;
       member.returnsDailyEarnings = runningTotal;
+      member.returnsWalletBalance = (member.returnsWalletBalance || 0) + profit;
       await member.save();
       processed++;
     } catch (err: any) {
@@ -378,7 +377,6 @@ export async function runMonthlySettlement(force = false) {
 
     if (amount > 0 || levelIncomeAmt > 0) {
       const combinedAmount = amount + levelIncomeAmt;
-      member.walletBalance = (member.walletBalance || 0) + combinedAmount;
 
       if (amount > 0) {
         member.totalReturnsIncome = (member.totalReturnsIncome || 0) + amount;
@@ -398,7 +396,7 @@ export async function runMonthlySettlement(force = false) {
           status: "completed",
           note: `Monthly settlement of daily returns for ${prevMonth}`,
           description: `Returns Income Closing - ${prevMonth}`,
-          walletType: "main",
+          walletType: "returns",
         });
 
         // Mark all daily records for this member in the previous month as settled
@@ -456,7 +454,7 @@ export async function runMonthlySettlement(force = false) {
           status: "completed",
           note: `Monthly Returns Level Income Settlement - ${prevMonth}`,
           description: `Monthly Returns Level Income Settlement accumulated during ${prevMonth} credited to wallet.`,
-          walletType: "main",
+          walletType: "returns",
         });
 
         // Mark specific ReturnsLevelIncome records as Credited

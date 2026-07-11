@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { amount, mode, bankDetails, usdtAddress, accessKey, withdrawalKind } = body;
+    const { amount, mode, bankDetails, usdtAddress, accessKey, withdrawalKind, walletType = "main" } = body;
 
     await connectDB();
     const BusinessRule = (await import("@/models/BusinessRule")).default;
@@ -76,8 +76,19 @@ export async function POST(req: NextRequest) {
     const validKey = await compareSecret(accessKey, user.accessKeyHash);
     if (!validKey) return NextResponse.json({ error: "Invalid Access Key" }, { status: 401 });
 
-    if (user.walletBalance < amount) {
-      return NextResponse.json({ error: "Insufficient wallet balance" }, { status: 400 });
+    if (walletType === "returns" && withdrawalKind !== "capital") {
+      const istDate = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+      if (istDate.getDate() !== 1) {
+        return NextResponse.json(
+          { error: "Daily Returns & Level Income Wallet cash withdrawals are only allowed on the 1st of the month." },
+          { status: 400 }
+        );
+      }
+    }
+
+    const balanceField = walletType === "returns" ? "returnsWalletBalance" : "walletBalance";
+    if ((user as any)[balanceField] < amount) {
+      return NextResponse.json({ error: `Insufficient ${walletType === "returns" ? "Daily Returns & Level Wallet" : "wallet"} balance` }, { status: 400 });
     }
 
     const processingCharge = Number((amount * feeRate).toFixed(2));
@@ -93,9 +104,10 @@ export async function POST(req: NextRequest) {
       usdtAddress: mode === "USDT" ? usdtAddress : "",
       withdrawalKind: withdrawalKind || "earning",
       status: "pending",
+      walletType,
     });
 
-    user.walletBalance -= amount;
+    (user as any)[balanceField] -= amount;
     await user.save();
 
     await Transaction.create({
@@ -105,8 +117,9 @@ export async function POST(req: NextRequest) {
       amount,
       currency: mode,
       status: "pending",
-      note: "Withdrawal request submitted",
+      note: `Withdrawal request submitted from ${walletType === "returns" ? "Daily Returns & Level Wallet" : "Main Wallet"}`,
       referenceId: withdrawal._id.toString(),
+      walletType,
     });
 
     // Notify user

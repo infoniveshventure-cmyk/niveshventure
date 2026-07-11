@@ -16,6 +16,7 @@ const WithdrawalSchema = new Schema(
     usdtAddress: { type: String, default: "" },
     withdrawalKind: { type: String, enum: ["capital", "earning"], default: "earning" },
     status: { type: String, enum: ["pending", "approved", "rejected", "completed"], default: "pending" },
+    walletType: { type: String, default: "main" },
     adminNote: { type: String, default: "" },
     processedAt: { type: Date, default: null },
   },
