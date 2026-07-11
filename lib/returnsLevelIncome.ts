@@ -91,18 +91,7 @@ export async function calculateDailyReturnsLevelIncome(forceDate?: string) {
         upline.isBlocked !== true &&
         upline.activatedByFreePin !== true;
 
-      // Count active directs to determine unlocked levels
-      const activeDirectsCount = members.filter(m => m.sponsorId === upline.memberId && m.isActive === true).length;
-      let maxUnlockedLevel = 0;
-      if (activeDirectsCount >= 5) maxUnlockedLevel = 10;
-      else if (activeDirectsCount === 4) maxUnlockedLevel = 4;
-      else if (activeDirectsCount === 3) maxUnlockedLevel = 3;
-      else if (activeDirectsCount === 2) maxUnlockedLevel = 2;
-      else if (activeDirectsCount === 1) maxUnlockedLevel = 1;
-
-      const isLevelUnlocked = depth <= maxUnlockedLevel;
-
-      if (isUplineEligible && isLevelUnlocked) {
+      if (isUplineEligible) {
         const percentage = percentageMap.get(depth) || 0;
         
         // Calculation Formula: (Total Active Investment * Level Percentage / 100) / Days in Month
@@ -143,7 +132,7 @@ export async function calculateDailyReturnsLevelIncome(forceDate?: string) {
 
             await User.updateOne(
               { _id: upline._id },
-              { $inc: { pendingReturnsLevelIncome: calculatedAmount } }
+              { $inc: { returnsWalletBalance: calculatedAmount, pendingReturnsLevelIncome: calculatedAmount } }
             );
 
           } catch (err: any) {

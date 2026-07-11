@@ -331,18 +331,6 @@ export async function POST(req: NextRequest) {
         const downlineStaged = stagedIncomeMap.get(dId);
         const downlineDoc = userDbMap.get(dId);
         if (downlineStaged && downlineStaged.monthlyReturns > 0 && downlineDoc) {
-          // Count active directs for recipient (si.memberId)
-          const activeDirectsCount = members.filter(m => m.sponsorId === si.memberId && m.isActive === true).length;
-          let maxUnlockedLevel = 0;
-          if (activeDirectsCount >= 5) maxUnlockedLevel = 10;
-          else if (activeDirectsCount === 4) maxUnlockedLevel = 4;
-          else if (activeDirectsCount === 3) maxUnlockedLevel = 3;
-          else if (activeDirectsCount === 2) maxUnlockedLevel = 2;
-          else if (activeDirectsCount === 1) maxUnlockedLevel = 1;
-
-          const isLevelUnlocked = Number(level) <= maxUnlockedLevel;
-          if (!isLevelUnlocked) continue; // Flash Income - ignore, do not credit
-
           const ruleKey = `returns_level${level}_pct`;
           const rate = ruleMap.has(ruleKey) ? ruleMap.get(ruleKey)! : (DEFAULT_RETURNS_LEVELS[Number(level) - 1] || 0);
           
