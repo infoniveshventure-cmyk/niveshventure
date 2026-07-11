@@ -8,16 +8,6 @@ import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-const LANDING_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "Markets", href: "/#markets" },
-  { label: "Predict & Earn", href: "/#prediction-arena" },
-  { label: "Stats", href: "/#stats" },
-  { label: "Opportunity", href: "/#opportunity" },
-  { label: "Rewards", href: "/#rewards" },
-  { label: "FAQs", href: "/#faqs" },
-];
-
 export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { profile } = useAuth();
   const { data: notifData } = useSWR("/api/notifications?limit=1", fetcher, {
@@ -41,18 +31,10 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
       </div>
  
-      {/* Center: Landing Page Links (scrollable on mobile, flex on desktop) */}
-      <nav className="flex items-center gap-4 lg:gap-6 overflow-x-auto max-w-[45%] md:max-w-none scrollbar-none whitespace-nowrap py-1 flex-shrink-0">
-        {LANDING_LINKS.map((link) => (
-          <Link
-            key={link.label}
-            href={link.href}
-            className="text-[10px] md:text-xs font-semibold text-white/70 hover:text-white transition-all uppercase tracking-wider flex-shrink-0"
-          >
-            {link.label}
-          </Link>
-        ))}
-      </nav>
+      {/* Center: welcome text on desktop */}
+      <div className="hidden lg:block text-sm text-ink-muted">
+        {profile ? `Welcome back, ${profile.fullName?.split(" ")[0]}` : ""}
+      </div>
  
       {/* Right: bell + avatar */}
       <div className="flex items-center gap-4">
