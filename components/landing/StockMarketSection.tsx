@@ -71,7 +71,7 @@ export default function StockMarketSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative py-12 md:py-24 bg-transparent overflow-hidden">
+    <section ref={sectionRef} id="markets" className="relative py-12 md:py-24 bg-transparent overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/40 to-transparent" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-neon-cyan/5 blur-[120px] pointer-events-none" />
 

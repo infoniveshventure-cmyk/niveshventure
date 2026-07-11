@@ -70,7 +70,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
     }
 
     toast.success("Logged out");
-    router.push("/login");
+    router.push("/");
   }
 
   return (
@@ -80,10 +80,10 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         className={`fixed lg:sticky top-0 left-0 h-dvh lg:h-full w-64 bg-base-soft border-r border-white/10 z-50
         transition-transform duration-300 flex flex-col ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
       >
-        <div className="flex items-center justify-between px-5 py-5 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-3 md:py-3.5 border-b border-white/10">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/logo1.png" alt="Nivesh Ventures" width={36} height={36} className="rounded-lg" />
-            <span className="font-display font-bold tracking-wide">Nivesh Ventures</span>
+            <Image src="/logo1.png" alt="Nivesh Ventures" width={28} height={28} className="rounded-lg" />
+            <span className="font-display font-bold tracking-wide text-sm">Nivesh Ventures</span>
           </Link>
           <button onClick={onClose} className="lg:hidden text-ink-muted">
             <X size={20} />

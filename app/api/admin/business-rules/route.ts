@@ -11,11 +11,11 @@ export const dynamic = "force-dynamic";
 
 // Default rules to seed if none exist
 const DEFAULT_RULES = [
-  { key: "referral_level1_pct", category: "referral", label: "Referral Level 1 Commission %", value: 5, type: "percentage", min: 0, max: 20, unit: "%" },
-  { key: "referral_level2_pct", category: "referral", label: "Referral Level 2 Commission %", value: 3, type: "percentage", min: 0, max: 10, unit: "%" },
-  { key: "referral_level3_pct", category: "referral", label: "Referral Level 3 Commission %", value: 2, type: "percentage", min: 0, max: 10, unit: "%" },
-  { key: "referral_level4_pct", category: "referral", label: "Referral Level 4 Commission %", value: 1, type: "percentage", min: 0, max: 5, unit: "%" },
-  { key: "referral_level5_pct", category: "referral", label: "Referral Level 5 Commission %", value: 1, type: "percentage", min: 0, max: 5, unit: "%" },
+  { key: "referral_level1_amt", category: "referral", label: "Referral Level 1 Commission ($)", value: 5, type: "number", min: 0, max: 100, unit: "$" },
+  { key: "referral_level2_amt", category: "referral", label: "Referral Level 2 Commission ($)", value: 2, type: "number", min: 0, max: 50, unit: "$" },
+  { key: "referral_level3_amt", category: "referral", label: "Referral Level 3 Commission ($)", value: 1.25, type: "number", min: 0, max: 50, unit: "$" },
+  { key: "referral_level4_amt", category: "referral", label: "Referral Level 4 Commission ($)", value: 1, type: "number", min: 0, max: 50, unit: "$" },
+  { key: "referral_level5_amt", category: "referral", label: "Referral Level 5 Commission ($)", value: 0.75, type: "number", min: 0, max: 50, unit: "$" },
   { key: "matching_income_pct", category: "matching", label: "Binary Matching Income %", value: 10, type: "percentage", min: 0, max: 30, unit: "%" },
   { key: "monthly_returns_min_pct", category: "returns", label: "Monthly Returns Min %", value: 5, type: "percentage", min: 1, max: 15, unit: "%" },
   { key: "monthly_returns_max_pct", category: "returns", label: "Monthly Returns Max %", value: 7, type: "percentage", min: 1, max: 15, unit: "%" },
@@ -77,11 +77,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ logs });
   }
 
-  // Check count to see if we need to seed or cleanup (avoids 62 write queries on every GET)
-  const currentCount = await BusinessRule.countDocuments();
-  if (currentCount !== DEFAULT_RULES.length) {
+  // Seed only if the new rules are missing (avoids heavy write queries on every GET)
+  const hasNewRule = await BusinessRule.findOne({ key: "referral_level1_amt" }).select("_id").lean();
+  if (!hasNewRule) {
     // Cleanup obsolete rules if they exist
-    await BusinessRule.deleteMany({ key: { $in: ["reward_rank_star", "reward_rank_gold", "reward_rank_diamond"] } });
+    await BusinessRule.deleteMany({ key: { $in: ["reward_rank_star", "reward_rank_gold", "reward_rank_diamond", "referral_level1_pct", "referral_level2_pct", "referral_level3_pct", "referral_level4_pct", "referral_level5_pct"] } });
 
     // ── Deduplicate: remove extras if any key has more than one document ──
     const dupKeys = await BusinessRule.aggregate([
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const cacheKey = "business_rules_all";
+  const cacheKey = "business_rules_admin_list";
   const cached = appCache.get(cacheKey);
   if (cached) return NextResponse.json(cached);
 

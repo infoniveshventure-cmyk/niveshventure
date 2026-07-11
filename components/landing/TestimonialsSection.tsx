@@ -57,118 +57,89 @@ const TESTIMONIALS = [
 ];
 
 export default function TestimonialsSection() {
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused] = useState(false);
-  
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
-
-  const next = useCallback(() => setCurrent((c) => (c + 1) % TESTIMONIALS.length), []);
-  const prev = () => setCurrent((c) => (c - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
-
-  useEffect(() => {
-    if (paused) return;
-    const t = setInterval(next, 5000);
-    return () => clearInterval(t);
-  }, [next, paused]);
-
-  const visibleIndices = [
-    (current) % TESTIMONIALS.length,
-    (current + 1) % TESTIMONIALS.length,
-    (current + 2) % TESTIMONIALS.length,
-  ];
 
   return (
     <section ref={sectionRef} className="relative py-12 md:py-28 bg-transparent overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-violet/30 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-neon-violet/3 to-transparent pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-8 lg:px-12">
+      {/* Marquee CSS Keyframes */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes testimonials-marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .testimonials-marquee-track {
+          display: flex;
+          gap: 1.5rem;
+          width: max-content;
+          animation: testimonials-marquee 45s linear infinite;
+        }
+        .testimonials-marquee-track:hover {
+          animation-play-state: paused;
+        }
+      `}} />
+
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Header */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-12 md:mb-16">
           <p className="text-sm font-medium text-neon-cyan tracking-widest uppercase mb-3">
             Community Voice
           </p>
-          <h2 className="text-4xl xl:text-5xl font-display font-bold text-white">
+          <h2 className="text-3xl md:text-5xl font-display font-bold text-white">
             What Our <span className="gradient-text">Members Say</span>
           </h2>
         </div>
 
-        {/* Carousel */}
-        <div
-          className="relative"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-        >
-          <div className="grid lg:grid-cols-3 gap-6 overflow-hidden">
-            <AnimatePresence mode="popLayout">
-              {visibleIndices.map((idx, pos) => {
-                const t = TESTIMONIALS[idx];
-                return (
-                  <ScrollMouseInteractive key={`${idx}-${pos}`} isInView={isInView} depth={pos === 1 ? "front" : "middle"} maxTranslateY={35} maxTilt={15}>
-                    <div className="landing-card p-8 flex flex-col gap-5 h-full">
-                      {/* Stars */}
-                      <div className="flex gap-1">
-                        {Array.from({ length: t.rating }).map((_, i) => (
-                          <Star key={i} size={14} className="text-[#FFD700] fill-[#FFD700]" />
-                        ))}
-                      </div>
+        {/* Marquee Track Container */}
+        <div className="relative overflow-hidden w-full py-4">
+          {/* Shadow overlays for smooth edge fading */}
+          <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#0D0D1A] to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#0D0D1A] to-transparent z-10 pointer-events-none" />
 
-                      {/* Quote */}
-                      <p className="text-white text-sm leading-relaxed flex-1 italic">
-                        "{t.quote}"
-                      </p>
+          <div className="testimonials-marquee-track">
+            {/* Loop testimonials twice for seamless scroll */}
+            {[...TESTIMONIALS, ...TESTIMONIALS].map((t, idx) => (
+              <div 
+                key={idx} 
+                className="landing-card p-6 md:p-8 flex flex-col gap-5 w-[290px] md:w-[360px] flex-shrink-0"
+                style={{
+                  background: "rgba(18, 14, 38, 0.6)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.3)"
+                }}
+              >
+                {/* Stars */}
+                <div className="flex gap-1">
+                  {Array.from({ length: t.rating }).map((_, i) => (
+                    <Star key={i} size={13} className="text-[#FFD700] fill-[#FFD700]" />
+                  ))}
+                </div>
 
-                      {/* Author */}
-                      <div className="flex items-center gap-3 pt-2 border-t border-white/5">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                          style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}88)` }}
-                        >
-                          {t.initials}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-white text-sm">{t.name}</p>
-                          <p className="text-[11px] text-white">{t.role}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </ScrollMouseInteractive>
-                );
-              })}
-            </AnimatePresence>
-          </div>
+                {/* Quote */}
+                <p className="text-white text-xs md:text-sm leading-relaxed flex-1 italic opacity-90">
+                  "{t.quote}"
+                </p>
 
-          {/* Controls */}
-          <div className="flex items-center justify-center gap-4 mt-10">
-            <button
-              onClick={prev}
-              className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white hover:text-white hover:border-neon-violet/50 transition-all duration-200"
-            >
-              <ChevronLeft size={18} />
-            </button>
-
-            {/* Dots */}
-            <div className="flex gap-2">
-              {TESTIMONIALS.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrent(i)}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === current ? "w-6 bg-neon-violet" : "w-1.5 bg-white/20"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <button
-              onClick={next}
-              className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white hover:text-white hover:border-neon-violet/50 transition-all duration-200"
-            >
-              <ChevronRight size={18} />
-            </button>
+                {/* Author */}
+                <div className="flex items-center gap-3 pt-2 border-t border-white/5">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                    style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}88)` }}
+                  >
+                    {t.initials}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white text-xs md:text-sm">{t.name}</p>
+                    <p className="text-[10px] text-white/50">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+        
       </div>
     </section>
   );

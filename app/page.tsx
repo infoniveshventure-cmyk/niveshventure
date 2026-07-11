@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
 import StockMarketSection from "@/components/landing/StockMarketSection";
+import PredictionSection from "@/components/landing/PredictionSection";
 import StatsSection from "@/components/landing/StatsSection";
 import BusinessSection from "@/components/landing/BusinessSection";
 import DataVizSection from "@/components/landing/DataVizSection";
@@ -29,6 +30,7 @@ export default function Home() {
       <LandingHeader />
       <HeroSection />
       <StockMarketSection />
+      <PredictionSection />
       <StatsSection />
       <BusinessSection />
       <DataVizSection />

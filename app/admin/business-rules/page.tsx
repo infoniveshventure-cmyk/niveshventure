@@ -295,7 +295,14 @@ export default function BusinessRulesPage() {
                   <label className="block text-xs font-semibold text-white mb-1">Rule Category/Type</label>
                   <select
                     value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
+                    onChange={(e) => {
+                      const cat = e.target.value;
+                      setFormCategory(cat);
+                      if (cat === "referral") {
+                        setFormType("number");
+                        setFormUnit("$");
+                      }
+                    }}
                     className="input-field w-full py-2 px-3 text-sm focus:border-neon-magenta bg-[#121214]"
                   >
                     <option value="rewards">Reward</option>
@@ -315,7 +322,9 @@ export default function BusinessRulesPage() {
                     className="input-field w-full py-2 px-3 text-sm focus:border-neon-magenta bg-[#121214]"
                   >
                     <option value="number">Number</option>
-                    <option value="percentage">Percentage</option>
+                    {formCategory !== "referral" && (
+                      <option value="percentage">Percentage</option>
+                    )}
                     <option value="string">String</option>
                     <option value="boolean">Boolean</option>
                   </select>

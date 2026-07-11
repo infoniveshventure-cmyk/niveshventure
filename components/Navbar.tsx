@@ -8,6 +8,16 @@ import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+const LANDING_LINKS = [
+  { label: "Home", href: "/" },
+  { label: "Markets", href: "/#markets" },
+  { label: "Predict & Earn", href: "/#prediction-arena" },
+  { label: "Stats", href: "/#stats" },
+  { label: "Opportunity", href: "/#opportunity" },
+  { label: "Rewards", href: "/#rewards" },
+  { label: "FAQs", href: "/#faqs" },
+];
+
 export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { profile } = useAuth();
   const { data: notifData } = useSWR("/api/notifications?limit=1", fetcher, {
@@ -17,7 +27,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
   const unreadCount = notifData?.unread || 0;
 
   return (
-    <header className="sticky top-0 z-30 bg-base/80 backdrop-blur-xl border-b border-white/10 px-4 lg:px-8 py-3 flex items-center justify-between">
+    <header className="sticky top-0 z-30 bg-white/[0.06] backdrop-blur-xl border-b border-white/15 px-4 lg:px-8 py-2 md:py-2.5 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.08)]">
       {/* Left: hamburger + logo+name on mobile */}
       <div className="flex items-center gap-3 lg:gap-0">
         <button onClick={onMenuClick} className="lg:hidden text-ink-muted">
@@ -26,15 +36,23 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
  
         {/* Logo + brand name — only visible on mobile (hidden on lg where sidebar shows) */}
         <div className="flex items-center gap-2 lg:hidden">
-          <Image src="/logo1.png" alt="Nivesh Ventures" width={32} height={32} className="rounded-lg object-contain" />
-          <span className="font-display font-bold text-sm tracking-wide text-ink">NIVESH VENTURES</span>
+          <Image src="/logo1.png" alt="Nivesh Ventures" width={28} height={28} className="rounded-lg object-contain" />
+          <span className="font-display font-bold text-xs tracking-wide text-ink">NIVESH VENTURES</span>
         </div>
       </div>
  
-      {/* Center: welcome text on desktop */}
-      <div className="hidden lg:block text-sm text-ink-muted">
-        {profile ? `Welcome back, ${profile.fullName?.split(" ")[0]}` : ""}
-      </div>
+      {/* Center: Landing Page Links (scrollable on mobile, flex on desktop) */}
+      <nav className="flex items-center gap-4 lg:gap-6 overflow-x-auto max-w-[45%] md:max-w-none scrollbar-none whitespace-nowrap py-1 flex-shrink-0">
+        {LANDING_LINKS.map((link) => (
+          <Link
+            key={link.label}
+            href={link.href}
+            className="text-[10px] md:text-xs font-semibold text-white/70 hover:text-white transition-all uppercase tracking-wider flex-shrink-0"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </nav>
  
       {/* Right: bell + avatar */}
       <div className="flex items-center gap-4">

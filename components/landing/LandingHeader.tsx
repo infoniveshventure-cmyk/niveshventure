@@ -9,10 +9,12 @@ import { useChatbot } from "@/lib/ChatbotContext";
 
 const navLinks = [
   { label: "Home", href: "#hero" },
-  { label: "About", href: "#about" },
-  { label: "Business", href: "#business" },
-  { label: "FAQ", href: "#faq" },
-  { label: "Contact", href: "#contact" },
+  { label: "Markets", href: "#markets" },
+  { label: "Predict & Earn", href: "#prediction-arena" },
+  { label: "Stats", href: "#stats" },
+  { label: "Opportunity", href: "#opportunity" },
+  { label: "Rewards", href: "#rewards" },
+  { label: "FAQs", href: "#faq" },
 ];
 
 export default function LandingHeader() {
@@ -139,7 +141,7 @@ export default function LandingHeader() {
           </button>
           <Link
             href="/login"
-            className="hidden md:inline-flex items-center text-xs md:text-sm font-medium text-white/80 hover:text-white px-3 md:px-4 py-1.5 rounded-full hover:bg-white/5 transition-all"
+            className="hidden lg:inline-flex items-center text-xs md:text-sm font-medium text-white/80 hover:text-white px-3 md:px-4 py-1.5 rounded-full hover:bg-white/5 transition-all flex-shrink-0"
           >
             Login
           </Link>

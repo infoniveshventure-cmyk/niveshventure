@@ -30,42 +30,63 @@ export async function processActivationIncomes(targetMemberId: string, customPri
   const settings = await getCachedSettings();
   const activationPrice = user.activatedByFreePin ? 0 : (customPrice || settings?.pricing?.unlockAccessPrice || 30);
 
-  // 2. Release Referral Income
+  // 2. Release Referral Income (5 Levels of Fixed Amounts)
   if (user.sponsorId) {
     try {
-      const rule = await getCachedBusinessRule("referral_level1_pct");
-      const level1Pct = rule ? Number(rule.value) : 5;
-      
-      const referralIncomeAmount = activationPrice * (level1Pct / 100);
-      
-      if (referralIncomeAmount > 0) {
-        const sponsor = await User.findOne({ memberId: user.sponsorId });
-        if (sponsor) {
-          sponsor.walletBalance = (sponsor.walletBalance || 0) + referralIncomeAmount;
-          sponsor.totalReferralIncome = (sponsor.totalReferralIncome || 0) + referralIncomeAmount;
-          await sponsor.save();
+      const [ruleL1, ruleL2, ruleL3, ruleL4, ruleL5] = await Promise.all([
+        getCachedBusinessRule("referral_level1_amt"),
+        getCachedBusinessRule("referral_level2_amt"),
+        getCachedBusinessRule("referral_level3_amt"),
+        getCachedBusinessRule("referral_level4_amt"),
+        getCachedBusinessRule("referral_level5_amt"),
+      ]);
+      const levelAmounts = [
+        ruleL1 ? Number(ruleL1.value) : 5.00,
+        ruleL2 ? Number(ruleL2.value) : 2.00,
+        ruleL3 ? Number(ruleL3.value) : 1.25,
+        ruleL4 ? Number(ruleL4.value) : 1.00,
+        ruleL5 ? Number(ruleL5.value) : 0.75,
+      ];
 
-          await Transaction.create({
-            memberId: sponsor.memberId,
-            type: "referral_income",
-            direction: "credit",
-            amount: referralIncomeAmount,
-            currency: "USDT",
-            status: "completed",
-            note: `Referral income — member ${user.memberId} activated account`,
-            description: `Referral reward from member ${user.memberId} activation (${level1Pct}%)`,
-          });
+      let currentSponsorId = user.sponsorId;
+      let level = 1;
+      while (currentSponsorId && level <= 5) {
+        const sponsor = await User.findOne({ memberId: currentSponsorId });
+        if (!sponsor) break;
 
-          notifyMember(
-            sponsor.memberId,
-            "Referral Income Credited 💸",
-            `You received a referral bonus of $${referralIncomeAmount.toFixed(2)} because your direct referral ${user.fullName} (${user.memberId}) activated their account.`,
-            "referral_income"
-          ).catch(() => {});
+        // Direct sponsor must be active to receive referral commissions
+        if (sponsor.isActive) {
+          const amount = levelAmounts[level - 1];
+          if (amount > 0) {
+            sponsor.walletBalance = (sponsor.walletBalance || 0) + amount;
+            sponsor.totalReferralIncome = (sponsor.totalReferralIncome || 0) + amount;
+            await sponsor.save();
+
+            await Transaction.create({
+              memberId: sponsor.memberId,
+              type: "referral_income",
+              direction: "credit",
+              amount: amount,
+              currency: "USDT",
+              status: "completed",
+              note: `Level ${level} Referral Income — member ${user.memberId} activated account`,
+              description: `Level ${level} referral reward from member ${user.memberId} activation ($${amount.toFixed(2)})`,
+            });
+
+            notifyMember(
+              sponsor.memberId,
+              "Referral Income Credited 💸",
+              `You received a Level ${level} referral bonus of $${amount.toFixed(2)} because your downline referral ${user.fullName} (${user.memberId}) activated their account.`,
+              "referral_income"
+            ).catch(() => {});
+          }
         }
+
+        currentSponsorId = sponsor.sponsorId;
+        level++;
       }
     } catch (refErr) {
-      console.error("Failed to credit automatic referral reward:", refErr);
+      console.error("Failed to credit automatic 5-level referral reward:", refErr);
     }
   }
 

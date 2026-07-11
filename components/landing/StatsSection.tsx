@@ -22,7 +22,7 @@ export default function StatsSection() {
   const isInView = useInView(sectionRef, { margin: "-10% 0px -10% 0px" });
 
   return (
-    <section ref={sectionRef} id="about" className="relative py-8 md:py-20 bg-transparent">
+    <section ref={sectionRef} id="stats" className="relative py-8 md:py-20 bg-transparent">
       {/* Divider glow */}
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-violet/40 to-transparent" />
 

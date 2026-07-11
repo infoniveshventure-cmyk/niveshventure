@@ -147,9 +147,9 @@ export default function HeroSection() {
               className="flex items-center gap-4 md:gap-8 pt-2"
             >
               {[
-                { label: "Members", value: "50K+" },
-                { label: "Volume", value: "$5M+" },
-                { label: "Countries", value: "50+" },
+                { label: "Members", value: "10K+" },
+                { label: "Volume", value: "$2M+" },
+                { label: "Countries", value: "7+" },
               ].map((s) => (
                 <div key={s.label}>
                   <div className="text-xl md:text-2xl font-bold text-white">{s.value}</div>
