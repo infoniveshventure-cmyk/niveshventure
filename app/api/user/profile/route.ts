@@ -31,73 +31,25 @@ export async function PUT(req: NextRequest) {
       nameChanged = true;
     }
 
-    // ── 2. Validate & process Email Change (Requires OTP verification) ──
+    // ── 2. Validate & process Email Change (Direct change without OTP) ──
     const targetEmail = email ? email.trim().toLowerCase() : originalEmail;
     if (targetEmail !== originalEmail) {
-      if (!emailOtp) {
-        return NextResponse.json({ error: "Verification code is required to change email address" }, { status: 400 });
-      }
-
-      // Verify OTP
-      const otpDoc = await Otp.findOne({
-        email: targetEmail,
-        purpose: "change_email",
-        consumed: false,
-      }).sort({ createdAt: -1 });
-
-      if (!otpDoc || otpDoc.expiresAt < new Date()) {
-        return NextResponse.json({ error: "OTP expired or not found. Request a new one." }, { status: 400 });
-      }
-
-      const valid = await compareSecret(emailOtp, otpDoc.codeHash);
-      if (!valid) {
-        return NextResponse.json({ error: "Invalid email verification code" }, { status: 400 });
-      }
-
       // Check duplicate email
       const duplicateUser = await User.findOne({ email: targetEmail, memberId: { $ne: session.memberId } });
       if (duplicateUser) {
         return NextResponse.json({ error: "New email address is already in use by another account" }, { status: 400 });
       }
-
-      // Mark OTP as consumed
-      otpDoc.consumed = true;
-      await otpDoc.save();
       emailChanged = true;
     }
 
-    // ── 3. Validate & process Mobile Change (Requires OTP verification) ──
+    // ── 3. Validate & process Mobile Change (Direct change without OTP) ──
     const targetMobile = mobile ? mobile.trim() : originalMobile;
     if (targetMobile !== originalMobile) {
-      if (!mobileOtp) {
-        return NextResponse.json({ error: "Verification code is required to change phone number" }, { status: 400 });
-      }
-
-      // Verify OTP sent to user's CURRENT email address
-      const otpDoc = await Otp.findOne({
-        email: originalEmail,
-        purpose: "change_mobile",
-        consumed: false,
-      }).sort({ createdAt: -1 });
-
-      if (!otpDoc || otpDoc.expiresAt < new Date()) {
-        return NextResponse.json({ error: "OTP expired or not found. Request a new one." }, { status: 400 });
-      }
-
-      const valid = await compareSecret(mobileOtp, otpDoc.codeHash);
-      if (!valid) {
-        return NextResponse.json({ error: "Invalid phone verification code" }, { status: 400 });
-      }
-
       // Check duplicate mobile
       const duplicateUser = await User.findOne({ mobile: targetMobile, memberId: { $ne: session.memberId } });
       if (duplicateUser) {
         return NextResponse.json({ error: "New phone number is already in use by another account" }, { status: 400 });
       }
-
-      // Mark OTP as consumed
-      otpDoc.consumed = true;
-      await otpDoc.save();
       mobileChanged = true;
     }
 

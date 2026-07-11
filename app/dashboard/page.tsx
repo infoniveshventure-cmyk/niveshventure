@@ -170,21 +170,28 @@ export default function DashboardPage() {
   const pendingDailyAmt = (dailyReturnPending || user?.dailyReturnPending || 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayRoiYield : 0);
   const totalPendingReturnsAndLevel = pendingDailyAmt + (user?.pendingReturnsLevelIncome ?? 0);
 
+  const todayInvReturnYield = isPredictedToday ? ((totalActiveInvestment * 0.233) / 100) : 0;
+  let displayedTotalInvReturn = (user?.totalInvestmentReturn ?? profile?.totalInvestmentReturn ?? 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayInvReturnYield : 0);
+  if (displayedTotalInvReturn === 0 && isPredictedToday) {
+    displayedTotalInvReturn = todayInvReturnYield;
+  }
+
   const cards = [
     { label: "Main Wallet Balance", value: user?.walletBalance ?? profile?.walletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
-    { label: "Daily Returns Wallet Balance", value: user?.returnsWalletBalance ?? profile?.returnsWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    // { label: "Daily Returns Wallet Balance", value: user?.returnsWalletBalance ?? profile?.returnsWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
     { label: "Active Investment", value: totalActiveInvestment || user?.totalInvestment || 0, icon: Briefcase, prefix: "$", href: "/invest", color: "text-neon-green" },
-    {
-      label: "Total Earnings", value:
-        (user?.totalReferralIncome ?? profile?.totalReferralIncome ?? 0) +
-        (user?.totalMatchingIncome ?? profile?.totalMatchingIncome ?? 0) +
-        (user?.totalReturnsIncome ?? profile?.totalReturnsIncome ?? 0) +
-        (user?.totalLevelIncome ?? profile?.totalLevelIncome ?? 0) +
-        (user?.totalRewardIncome ?? profile?.totalRewardIncome ?? 0) +
-        (user?.totalReturnsLevelIncomeEarned ?? 0) +
-        (user?.totalBoosterIncome ?? 0),
-      icon: TrendingUp, prefix: "$", href: "/income", color: "text-neon-green"
-    },
+    { label: "Total Investment Return", value: displayedTotalInvReturn, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan", isTotalInvestmentReturn: true },
+    // {
+    //   label: "Total Earnings", value:
+    //     (user?.totalReferralIncome ?? profile?.totalReferralIncome ?? 0) +
+    //     (user?.totalMatchingIncome ?? profile?.totalMatchingIncome ?? 0) +
+    //     (user?.totalReturnsIncome ?? profile?.totalReturnsIncome ?? 0) +
+    //     (user?.totalLevelIncome ?? profile?.totalLevelIncome ?? 0) +
+    //     (user?.totalRewardIncome ?? profile?.totalRewardIncome ?? 0) +
+    //     (user?.totalReturnsLevelIncomeEarned ?? 0) +
+    //     (user?.totalBoosterIncome ?? 0),
+    //   icon: TrendingUp, prefix: "$", href: "/income", color: "text-neon-green"
+    // },
     { label: "Total Team", value: stats?.totalTeam ?? 0, icon: Users, prefix: "", href: "/team", color: "" },
     { label: "Total Withdrawn", value: user?.totalWithdrawn ?? profile?.totalWithdrawn ?? 0, icon: ArrowUpRight, prefix: "$", href: "/withdrawal", color: "" },
     { label: "Daily Return (Today)", value: todayRoiYield, icon: Clock, prefix: "$", href: "#", color: "text-yellow-400", isPending: true, onClick: () => setShowHistoryModal(true) },
@@ -263,11 +270,18 @@ export default function DashboardPage() {
         <div className="relative z-10 flex items-center gap-5 justify-between">
           <div className="flex items-center gap-5">
             <div className="relative shrink-0">
-              <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden ring-2 ring-white/20">
+              <div className="relative w-20 h-20 lg:w-24 lg:h-24 overflow-hidden rounded-full ring-2 ring-white/20">
                 {profile?.profilePhotoUrl ? (
-                  <Image src={profile.profilePhotoUrl} alt={profile.fullName} fill sizes="96px" unoptimized className="object-cover" />
+                  <Image
+                    src={profile.profilePhotoUrl}
+                    alt={profile.fullName}
+                    fill
+                    sizes="96px"
+                    unoptimized
+                    className="rounded-full object-cover"
+                  />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center text-2xl font-bold text-white">
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-neon-violet to-neon-cyan text-2xl font-bold text-white">
                     {profile?.fullName?.[0]?.toUpperCase() || "U"}
                   </div>
                 )}
@@ -535,6 +549,12 @@ export default function DashboardPage() {
                     <div>Today's Return Plan: <span className="text-yellow-400 font-semibold">{currentReturnPlan}% Return Plan</span></div>
                     {/* <div>Today's Yield: <span className="text-neon-green font-bold">${((totalActiveInvestment * currentReturnPlan) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div> */}
                     <div>Active Investment: <span className="text-white font-mono">${totalActiveInvestment.toLocaleString()}</span></div>
+                  </div>
+                ) : null}
+                {c.isTotalInvestmentReturn ? (
+                  <div className="mt-2 text-[10px] text-ink-muted space-y-0.5 border-t border-white/5 pt-1.5 leading-snug w-full">
+                    <div>Today's Yield (0.233%): <span className="text-neon-green font-bold">${((totalActiveInvestment * 0.233) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div>
+                    <div>Monthly Plan: <span className="text-yellow-400 font-semibold">7.00% Plan</span></div>
                   </div>
                 ) : null}
                 {c.isPendingReturnsLevel ? (

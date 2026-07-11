@@ -52,6 +52,7 @@ const UserSchema = new Schema(
     totalLevelIncome: { type: Number, default: 0 },
     totalRewardIncome: { type: Number, default: 0 },
     totalInvestment: { type: Number, default: 0 },
+    totalInvestmentReturn: { type: Number, default: 0 },
     totalWithdrawn: { type: Number, default: 0 },
     dailyReturnPending: { type: Number, default: 0 },       // accumulates each day, not withdrawable
     totalDailyReturnSettled: { type: Number, default: 0 },  // lifetime total settled to wallet
@@ -103,6 +104,10 @@ const UserSchema = new Schema(
   },
   { timestamps: true }
 );
+
+if (models.User) {
+  delete (models as any).User;
+}
 
 export default models.User || model("User", UserSchema);
 

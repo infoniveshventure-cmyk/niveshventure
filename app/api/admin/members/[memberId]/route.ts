@@ -277,6 +277,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
       balanceField = "walletBalance";
     } else if (walletType === "earnings") {
       balanceField = "earningsWalletBalance";
+    } else if (walletType === "total_investment_return") {
+      balanceField = "totalInvestmentReturn";
     } else if (walletType === "investment") {
       balanceField = "totalInvestment";
     } else if (walletType === "daily_pending") {
@@ -296,13 +298,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
     if (direction === "credit") {
       newBalance += amount;
     } else {
-      if (currentBalance < amount) {
-        return NextResponse.json({ error: `Insufficient ${walletType} balance for debit` }, { status: 400 });
-      }
-      if (isMainWalletLinked && (user.walletBalance || 0) < amount) {
-        return NextResponse.json({ error: "Insufficient Main Wallet balance for debit" }, { status: 400 });
-      }
-      newBalance -= amount;
+      newBalance = Math.max(0, currentBalance - amount);
     }
 
     const txId = "TX-" + Math.random().toString(36).substring(2, 11).toUpperCase();
@@ -338,7 +334,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
     // Update user balance
     (user as any)[balanceField] = newBalance;
     if (isMainWalletLinked) {
-      user.walletBalance = (user.walletBalance || 0) + (direction === "credit" ? amount : -amount);
+      user.walletBalance = Math.max(0, (user.walletBalance || 0) + (direction === "credit" ? amount : -amount));
     }
     
     // Dynamically update investmentCompleted status if totalInvestment is adjusted
@@ -360,6 +356,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
       walletType === "matching" ? "Matching Wallet" : 
       walletType === "rewards" ? "Rewards Wallet" : 
       walletType === "investment" ? "Total Investment" :
+      walletType === "total_investment_return" ? "Total Investment Return" :
       walletType === "daily_pending" ? "Pending Daily Return" :
       walletType === "level" ? "Level Income Wallet" :
       walletType === "level_pending" ? "Pending Level Income" :

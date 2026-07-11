@@ -122,16 +122,7 @@ export async function GET() {
     month: month,
   });
 
-  // Get active investments
-  const investments = await Investment.find({
-    memberId: session.memberId,
-    status: "active",
-  }).select("amount");
-
-  const totalActiveInvestment = investments.reduce(
-    (sum, inv) => sum + inv.amount,
-    0
-  );
+  const totalActiveInvestment = user.totalInvestment || 0;
 
   let effectiveRate = 0;
   if (user.predictionLocked || user.monthlyMissCount >= 3) {

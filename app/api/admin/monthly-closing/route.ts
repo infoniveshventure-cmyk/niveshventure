@@ -523,7 +523,7 @@ export async function POST(req: NextRequest) {
 
       if (incomeType === "returns_income" && calc.monthlyReturns > 0) {
         user.totalReturnsIncome = (user.totalReturnsIncome || 0) + calc.monthlyReturns;
-        user.walletBalance = (user.walletBalance || 0) + calc.monthlyReturns;
+        user.totalInvestmentReturn = (user.totalInvestmentReturn || 0) + calc.monthlyReturns;
         totalReleased += calc.monthlyReturns;
 
         await Transaction.create({

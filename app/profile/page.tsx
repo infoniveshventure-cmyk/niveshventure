@@ -112,18 +112,6 @@ export default function ProfilePage() {
       return;
     }
 
-    // Require OTP if email changed
-    if (email.trim().toLowerCase() !== profile?.email?.toLowerCase() && !emailOtp) {
-      toast.error("Please verify your new email address by requesting and entering an OTP");
-      return;
-    }
-
-    // Require OTP if mobile changed
-    if (mobile.trim() !== (profile?.mobile || "") && !mobileOtp) {
-      toast.error("Please verify your mobile number change by requesting and entering an OTP");
-      return;
-    }
-
     setUpdatingProfile(true);
     try {
       const res = await fetch("/api/user/profile", {
@@ -133,8 +121,8 @@ export default function ProfilePage() {
           fullName,
           email: email.trim().toLowerCase(),
           mobile: mobile.trim(),
-          emailOtp: emailOtp.trim(),
-          mobileOtp: mobileOtp.trim()
+          emailOtp: "",
+          mobileOtp: ""
         }),
       });
       const data = await res.json();
@@ -281,25 +269,7 @@ export default function ProfilePage() {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                       />
-                      {email.trim().toLowerCase() !== profile?.email?.toLowerCase() && (
-                        <button
-                          type="button"
-                          disabled={sendingEmailOtp}
-                          onClick={() => sendChangeOtp("email")}
-                          className="px-3 py-1.5 rounded-xl border border-neon-cyan/40 text-neon-cyan text-xs font-semibold hover:bg-neon-cyan/10 transition shrink-0"
-                        >
-                          {sendingEmailOtp ? "Sending..." : emailOtpSent ? "Resend" : "Send OTP"}
-                        </button>
-                      )}
                     </div>
-                    {emailOtpSent && email.trim().toLowerCase() !== profile?.email?.toLowerCase() && (
-                      <input
-                        className="input-field text-sm mt-2 border-yellow-400/40"
-                        placeholder="Enter verification code sent to new email"
-                        value={emailOtp}
-                        onChange={(e) => setEmailOtp(e.target.value)}
-                      />
-                    )}
                   </div>
                   <div>
                     <label className="text-xs text-ink-muted block mb-1">Mobile Number</label>
@@ -309,25 +279,7 @@ export default function ProfilePage() {
                         value={mobile}
                         onChange={(e) => setMobile(e.target.value)}
                       />
-                      {mobile.trim() !== (profile?.mobile || "") && (
-                        <button
-                          type="button"
-                          disabled={sendingMobileOtp}
-                          onClick={() => sendChangeOtp("mobile")}
-                          className="px-3 py-1.5 rounded-xl border border-neon-magenta/40 text-neon-magenta text-xs font-semibold hover:bg-neon-magenta/10 transition shrink-0"
-                        >
-                          {sendingMobileOtp ? "Sending..." : mobileOtpSent ? "Resend" : "Send OTP"}
-                        </button>
-                      )}
                     </div>
-                    {mobileOtpSent && mobile.trim() !== (profile?.mobile || "") && (
-                      <input
-                        className="input-field text-sm mt-2 border-yellow-400/40"
-                        placeholder="Enter verification code sent to current email"
-                        value={mobileOtp}
-                        onChange={(e) => setMobileOtp(e.target.value)}
-                      />
-                    )}
                   </div>
                   <div>
                     <label className="text-xs text-ink-muted block mb-1">Country</label>
