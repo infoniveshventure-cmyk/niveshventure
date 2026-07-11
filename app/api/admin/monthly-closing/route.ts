@@ -445,7 +445,7 @@ export async function POST(req: NextRequest) {
               rightCurrentBusiness: 0,
             },
             $inc: {
-              walletBalance: walletBalanceInc,
+              earningsWalletBalance: walletBalanceInc,
               totalReferralIncome: totalReferralIncomeInc,
               totalMatchingIncome: totalMatchingIncomeInc,
               totalRewardIncome: totalRewardIncomeInc,
@@ -563,7 +563,7 @@ export async function POST(req: NextRequest) {
             update: {
               $inc: {
                 totalRewardIncome: calc.rewardIncome,
-                walletBalance: calc.rewardIncome,
+                earningsWalletBalance: calc.rewardIncome,
               }
             }
           }
@@ -629,7 +629,7 @@ export async function POST(req: NextRequest) {
             update: {
               $inc: {
                 totalLevelIncome: calc.returnsLevelIncome,
-                walletBalance: calc.returnsLevelIncome,
+                returnsWalletBalance: calc.returnsLevelIncome,
               }
             }
           }

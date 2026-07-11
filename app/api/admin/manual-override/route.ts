@@ -176,6 +176,8 @@ export async function POST(req: NextRequest) {
       (user as any)[userField] = ((user as any)[userField] || 0) + amount;
       if (incomeType === "returns_income") {
         user.totalInvestmentReturn = (user.totalInvestmentReturn || 0) + amount;
+      } else if (incomeType === "level_income") {
+        user.returnsWalletBalance = (user.returnsWalletBalance || 0) + amount;
       } else {
         user.earningsWalletBalance = (user.earningsWalletBalance || 0) + amount;
       }
