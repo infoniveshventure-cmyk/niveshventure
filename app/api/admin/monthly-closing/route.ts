@@ -144,8 +144,11 @@ export async function POST(req: NextRequest) {
     const minReturn = minReturnRule ? Number(minReturnRule.value) : 5;
     const maxReturn = maxReturnRule ? Number(maxReturnRule.value) : 7;
 
-    if (returnPct < minReturn || returnPct > maxReturn) {
-      return NextResponse.json({ error: `Monthly return percentage must be between ${minReturn}% and ${maxReturn}%` }, { status: 400 });
+    const finalMin = Math.min(minReturn, 5);
+    const finalMax = Math.max(maxReturn, 10);
+
+    if (returnPct < finalMin || returnPct > finalMax) {
+      return NextResponse.json({ error: `Monthly return percentage must be between ${finalMin}% and ${finalMax}%` }, { status: 400 });
     }
 
     // Freeze calculations
