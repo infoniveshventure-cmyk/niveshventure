@@ -26,10 +26,12 @@ export async function POST(req: NextRequest) {
     if (!otpDoc || otpDoc.expiresAt < new Date()) {
       return NextResponse.json({ error: "OTP expired. Request a new one." }, { status: 400 });
     }
-    const otpValid = await compareSecret(otp, otpDoc.codeHash);
+    const sanitizedOtp = typeof otp === "string" ? otp.trim() : "";
+    const otpValid = await compareSecret(sanitizedOtp, otpDoc.codeHash);
     if (!otpValid) return NextResponse.json({ error: "Invalid OTP" }, { status: 400 });
 
-    const keyValid = await compareSecret(loginKey, user.loginKeyHash);
+    const sanitizedLoginKey = typeof loginKey === "string" ? loginKey.trim().toUpperCase() : "";
+    const keyValid = await compareSecret(sanitizedLoginKey, user.loginKeyHash);
     if (!keyValid) return NextResponse.json({ error: "Login Key is incorrect" }, { status: 401 });
 
     const newKey = generateKey("ACC");

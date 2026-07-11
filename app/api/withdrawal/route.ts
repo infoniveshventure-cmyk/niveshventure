@@ -73,7 +73,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Withdrawals are disabled for your account. Please contact support." }, { status: 403 });
     }
 
-    const validKey = await compareSecret(accessKey, user.accessKeyHash);
+    const sanitizedAccessKey = typeof accessKey === "string" ? accessKey.trim().toUpperCase() : "";
+    const validKey = await compareSecret(sanitizedAccessKey, user.accessKeyHash);
     if (!validKey) return NextResponse.json({ error: "Invalid Access Key" }, { status: 401 });
 
     if (walletType === "returns" && withdrawalKind !== "capital") {

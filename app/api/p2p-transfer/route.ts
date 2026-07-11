@@ -74,7 +74,8 @@ export async function POST(req: NextRequest) {
     if (!sender) return NextResponse.json({ error: "Sender not found" }, { status: 404 });
     if (!receiver) return NextResponse.json({ error: "Receiver ID not found" }, { status: 404 });
 
-    const keyValid = await compareSecret(accessKey, sender.accessKeyHash);
+    const sanitizedAccessKey = typeof accessKey === "string" ? accessKey.trim().toUpperCase() : "";
+    const keyValid = await compareSecret(sanitizedAccessKey, sender.accessKeyHash);
     if (!keyValid) return NextResponse.json({ error: "Invalid Access Key" }, { status: 401 });
 
     if (walletType === "returns") {
