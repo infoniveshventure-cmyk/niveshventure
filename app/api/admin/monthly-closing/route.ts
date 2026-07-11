@@ -195,6 +195,55 @@ export async function POST(req: NextRequest) {
       return levels;
     };
 
+    // Pre-fetch all business rules, investments, renewals, booster transactions, and pending rewards
+    const [allRules, allActiveInvestments, allMonthlyInvestments, allRenewals, allBoosterTxns, allPendingRewards] = await Promise.all([
+      BusinessRule.find({}),
+      Investment.find({ status: "active" }).lean(),
+      Investment.find({ createdAt: { $gte: startDate, $lte: endDate } }).lean(),
+      BusinessHistory.find({ kind: "renewal", createdAt: { $gte: startDate, $lte: endDate } }).lean(),
+      Transaction.find({
+        type: "reward_income",
+        createdAt: { $gte: startDate, $lte: endDate },
+        note: { $regex: "booster", $options: "i" },
+      }).lean(),
+      RewardHistory.find({
+        status: "pending",
+        createdAt: { $gte: startDate, $lte: endDate },
+      }).lean(),
+    ]);
+
+    const ruleMap = new Map(allRules.map((r) => [r.key, Number(r.value) || 0]));
+
+    const activeInvestmentsMap = new Map<string, any[]>();
+    for (const inv of allActiveInvestments) {
+      if (!activeInvestmentsMap.has(inv.memberId)) activeInvestmentsMap.set(inv.memberId, []);
+      activeInvestmentsMap.get(inv.memberId)!.push(inv);
+    }
+
+    const monthlyInvestmentsMap = new Map<string, any[]>();
+    for (const inv of allMonthlyInvestments) {
+      if (!monthlyInvestmentsMap.has(inv.memberId)) monthlyInvestmentsMap.set(inv.memberId, []);
+      monthlyInvestmentsMap.get(inv.memberId)!.push(inv);
+    }
+
+    const renewalsMap = new Map<string, any[]>();
+    for (const r of allRenewals) {
+      if (!renewalsMap.has(r.memberId)) renewalsMap.set(r.memberId, []);
+      renewalsMap.get(r.memberId)!.push(r);
+    }
+
+    const boosterTxnsMap = new Map<string, any[]>();
+    for (const tx of allBoosterTxns) {
+      if (!boosterTxnsMap.has(tx.memberId)) boosterTxnsMap.set(tx.memberId, []);
+      boosterTxnsMap.get(tx.memberId)!.push(tx);
+    }
+
+    const pendingRewardsMap = new Map<string, any[]>();
+    for (const r of allPendingRewards) {
+      if (!pendingRewardsMap.has(r.memberId)) pendingRewardsMap.set(r.memberId, []);
+      pendingRewardsMap.get(r.memberId)!.push(r);
+    }
+
     // Calculate business History for business totals
     const monthlyBusinessAgg = await Investment.aggregate([
       { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
@@ -207,86 +256,48 @@ export async function POST(req: NextRequest) {
       const memberId = member.memberId;
 
       // A. Investor Monthly Returns
-      // All active investments
-      const activeInvestments = await Investment.find({ memberId, status: "active" });
-      const totalInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+      const memberActiveInvestments = activeInvestmentsMap.get(memberId) || [];
+      const totalInvestmentAmount = memberActiveInvestments.reduce((sum, inv) => sum + inv.amount, 0);
       const rawMonthlyReturns = totalInvestmentAmount * (returnPct / 100);
       const stagedMonthlyReturns = rawMonthlyReturns * (distPct / 100);
 
       // B. Referral Income (Level 1 to 5 based on Commission Settings)
       let stagedReferralIncome = 0;
-      // Find all downline levels up to 5
       const downlineMapL5 = getDownlineLevels(memberId, 5);
       for (const [dId, level] of Object.entries(downlineMapL5)) {
-        // Calculate new investments & unlock access renewals of this downline in this month
-        const downlineInvestments = await Investment.find({
-          memberId: dId,
-          createdAt: { $gte: startDate, $lte: endDate },
-        });
+        const downlineInvestments = monthlyInvestmentsMap.get(dId) || [];
         const totalDownlineInvestAmount = downlineInvestments.reduce((sum, inv) => sum + inv.amount, 0);
 
-        const downlineRenewals = await BusinessHistory.find({
-          memberId: dId,
-          kind: "renewal",
-          createdAt: { $gte: startDate, $lte: endDate },
-        });
+        const downlineRenewals = renewalsMap.get(dId) || [];
         const totalRenewalAmount = downlineRenewals.reduce((sum, r) => sum + r.amount, 0);
 
         const totalDownlineBusiness = totalDownlineInvestAmount + totalRenewalAmount;
 
         const ruleKey = `referral_level${level}_pct`;
-        const rule = await BusinessRule.findOne({ key: ruleKey });
-        const commRate = rule ? Number(rule.value) : 0;
+        const commRate = ruleMap.get(ruleKey) || 0;
         stagedReferralIncome += totalDownlineBusiness * (commRate / 100);
       }
       stagedReferralIncome = stagedReferralIncome * (distPct / 100);
 
       // C. Matching Income (Binary Match)
-      // Matched Volume = min(leftCurrentBusiness + leftCarryForward, rightCurrentBusiness + rightCarryForward)
       const leftTotal = (member.leftCurrentBusiness || 0) + (member.leftCarryForward || 0);
       const rightTotal = (member.rightCurrentBusiness || 0) + (member.rightCarryForward || 0);
       const matchedVolume = Math.min(leftTotal, rightTotal);
-      const matchingRule = await BusinessRule.findOne({ key: "matching_income_pct" });
+      const matchingRate = ruleMap.get("matching_income_pct") || 10;
+      
       let stagedMatchingIncome = 0;
-      if (matchingRule) {
-        const matchingRate = Number(matchingRule.value) || 0;
-        const isPercentageMode = matchingRule.type === "percentage" || matchingRule.unit === "%";
-        if (isPercentageMode) {
-          stagedMatchingIncome = matchedVolume * (matchingRate / 100) * (distPct / 100);
-        } else {
-          // Dollar ($) mode
-          const activationPrice = member.activatedByFreePin ? 0 : (settings?.pricing?.unlockAccessPrice || 30);
-          stagedMatchingIncome = activationPrice > 0 ? (matchedVolume / activationPrice) * matchingRate * (distPct / 100) : 0;
-        }
-      } else {
-        stagedMatchingIncome = matchedVolume * 0.10 * (distPct / 100);
-      }
+      // Default to percentage calculation unless otherwise configured
+      stagedMatchingIncome = matchedVolume * (matchingRate / 100) * (distPct / 100);
 
       // D. Booster Income
-      // Check if they got any booster reward in this month
-      // Or if they qualified but didn't receive it yet.
-      // Let's scan for booster transactions in this month
-      const boosterTxns = await Transaction.find({
-        memberId,
-        type: "reward_income",
-        createdAt: { $gte: startDate, $lte: endDate },
-        note: { $regex: "booster", $options: "i" },
-      });
-      const stagedBoosterIncome = boosterTxns.reduce((sum, tx) => sum + tx.amount, 0) * (distPct / 100);
+      const memberBoosterTxns = boosterTxnsMap.get(memberId) || [];
+      const stagedBoosterIncome = memberBoosterTxns.reduce((sum, tx) => sum + tx.amount, 0) * (distPct / 100);
 
       // E. Reward Income
-      // Staged from pending RewardHistory entries
-      const pendingRewards = await RewardHistory.find({
-        memberId,
-        status: "pending",
-        createdAt: { $gte: startDate, $lte: endDate },
-      });
-      const stagedRewardIncome = pendingRewards.reduce((sum, r) => sum + r.amount, 0) * (distPct / 100);
+      const memberPendingRewards = pendingRewardsMap.get(memberId) || [];
+      const stagedRewardIncome = memberPendingRewards.reduce((sum, r) => sum + r.amount, 0) * (distPct / 100);
 
-      // F. Returns Level Income (10 levels based on monthly returns of downlines)
-      // We will calculate this after calculating everyone's monthlyReturns in a second pass or on-the-fly.
-      // Since we need the stagedMonthlyReturns of downlines, let's keep a record or calculate on-the-fly.
-      // Zero out all commission/business incomes for Free PIN users (Rule 4)
+      // Zero out all commission/business incomes for Free PIN users
       const isFreePinUser = member.activatedByFreePin === true;
 
       stagedIncomes.push({
@@ -309,8 +320,7 @@ export async function POST(req: NextRequest) {
         const downlineStaged = stagedIncomeMap.get(dId);
         if (downlineStaged && downlineStaged.monthlyReturns > 0) {
           const ruleKey = `returns_level${level}_pct`;
-          const rule = await BusinessRule.findOne({ key: ruleKey });
-          const rate = rule ? Number(rule.value) : (DEFAULT_RETURNS_LEVELS[level - 1] || 0);
+          const rate = ruleMap.has(ruleKey) ? ruleMap.get(ruleKey)! : (DEFAULT_RETURNS_LEVELS[Number(level) - 1] || 0);
           stagedReturnsLevelIncome += downlineStaged.monthlyReturns * (rate / 100);
         }
       }
