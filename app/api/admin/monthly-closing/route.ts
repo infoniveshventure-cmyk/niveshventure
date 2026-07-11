@@ -359,8 +359,15 @@ export async function POST(req: NextRequest) {
     const autoReleaseTypes = ["referral_income", "matching_income", "booster_income"];
     closing.releasedTypes = autoReleaseTypes;
 
+    const memberIds = closing.calculatedIncomes.map((c: any) => c.memberId);
+    const users = await User.find({ memberId: { $in: memberIds } });
+    const userMap = new Map(users.map((u) => [u.memberId, u]));
+    
+    const transactionsToCreate: any[] = [];
+    const bulkOps: any[] = [];
+
     for (const calc of closing.calculatedIncomes) {
-      const user = await User.findOne({ memberId: calc.memberId });
+      const user = userMap.get(calc.memberId);
       if (!user) continue;
 
       // Apply carry forward logic for binary tree matching
@@ -368,17 +375,20 @@ export async function POST(req: NextRequest) {
       const rightTotal = (user.rightCurrentBusiness || 0) + (user.rightCarryForward || 0);
       const matchedVolume = Math.min(leftTotal, rightTotal);
 
-      user.leftCarryForward = leftTotal - matchedVolume;
-      user.rightCarryForward = rightTotal - matchedVolume;
-      user.leftCurrentBusiness = 0;
-      user.rightCurrentBusiness = 0;
+      const leftCarryForward = leftTotal - matchedVolume;
+      const rightCarryForward = rightTotal - matchedVolume;
+
+      let walletBalanceInc = 0;
+      let totalReferralIncomeInc = 0;
+      let totalMatchingIncomeInc = 0;
+      let totalRewardIncomeInc = 0;
 
       // Credit Referral Income
       if (calc.referralIncome > 0) {
-        user.totalReferralIncome = (user.totalReferralIncome || 0) + calc.referralIncome;
-        user.walletBalance = (user.walletBalance || 0) + calc.referralIncome;
+        totalReferralIncomeInc = calc.referralIncome;
+        walletBalanceInc += calc.referralIncome;
 
-        await Transaction.create({
+        transactionsToCreate.push({
           memberId: user.memberId,
           type: "referral_income",
           direction: "credit",
@@ -392,10 +402,10 @@ export async function POST(req: NextRequest) {
 
       // Credit Matching Income
       if (calc.matchingIncome > 0) {
-        user.totalMatchingIncome = (user.totalMatchingIncome || 0) + calc.matchingIncome;
-        user.walletBalance = (user.walletBalance || 0) + calc.matchingIncome;
+        totalMatchingIncomeInc = calc.matchingIncome;
+        walletBalanceInc += calc.matchingIncome;
 
-        await Transaction.create({
+        transactionsToCreate.push({
           memberId: user.memberId,
           type: "matching_income",
           direction: "credit",
@@ -409,10 +419,10 @@ export async function POST(req: NextRequest) {
 
       // Credit Booster Income
       if (calc.boosterIncome > 0) {
-        user.totalRewardIncome = (user.totalRewardIncome || 0) + calc.boosterIncome;
-        user.walletBalance = (user.walletBalance || 0) + calc.boosterIncome;
+        totalRewardIncomeInc = calc.boosterIncome;
+        walletBalanceInc += calc.boosterIncome;
 
-        await Transaction.create({
+        transactionsToCreate.push({
           memberId: user.memberId,
           type: "reward_income",
           direction: "credit",
@@ -424,7 +434,25 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      await user.save();
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: user._id },
+          update: {
+            $set: {
+              leftCarryForward,
+              rightCarryForward,
+              leftCurrentBusiness: 0,
+              rightCurrentBusiness: 0,
+            },
+            $inc: {
+              walletBalance: walletBalanceInc,
+              totalReferralIncome: totalReferralIncomeInc,
+              totalMatchingIncome: totalMatchingIncomeInc,
+              totalRewardIncome: totalRewardIncomeInc,
+            }
+          }
+        }
+      });
 
       // Notify User
       if (calc.referralIncome > 0 || calc.matchingIncome > 0 || calc.boosterIncome > 0) {
@@ -435,6 +463,13 @@ export async function POST(req: NextRequest) {
           "income_released"
         ).catch(() => {});
       }
+    }
+
+    if (bulkOps.length > 0) {
+      await User.bulkWrite(bulkOps);
+    }
+    if (transactionsToCreate.length > 0) {
+      await Transaction.insertMany(transactionsToCreate);
     }
 
     // Add release logs
@@ -498,17 +533,20 @@ export async function POST(req: NextRequest) {
     }
 
     let totalReleased = 0;
+    const memberIds = closing.calculatedIncomes.map((c: any) => c.memberId);
+    const users = await User.find({ memberId: { $in: memberIds } });
+    const userMap = new Map(users.map((u) => [u.memberId, u]));
+
+    const transactionsToCreate: any[] = [];
+    const bulkOps: any[] = [];
 
     for (const calc of closing.calculatedIncomes) {
-      const user = await User.findOne({ memberId: calc.memberId });
+      const user = userMap.get(calc.memberId);
       if (!user) continue;
 
       if (incomeType === "reward_income" && calc.rewardIncome > 0) {
-        user.totalRewardIncome = (user.totalRewardIncome || 0) + calc.rewardIncome;
-        user.walletBalance = (user.walletBalance || 0) + calc.rewardIncome;
         totalReleased += calc.rewardIncome;
-
-        await Transaction.create({
+        transactionsToCreate.push({
           memberId: user.memberId,
           type: "reward_income",
           direction: "credit",
@@ -519,12 +557,17 @@ export async function POST(req: NextRequest) {
           referenceId: closing._id.toString(),
         });
 
-        // Also release pending RewardHistory statuses
-        const { startDate, endDate } = getMonthRange(month);
-        await RewardHistory.updateMany(
-          { memberId: user.memberId, status: "pending", createdAt: { $gte: startDate, $lte: endDate } },
-          { $set: { status: "released", adminRemarks: `Released in Monthly Closing ${month}` } }
-        );
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: user._id },
+            update: {
+              $inc: {
+                totalRewardIncome: calc.rewardIncome,
+                walletBalance: calc.rewardIncome,
+              }
+            }
+          }
+        });
 
         notifyMember(
           user.memberId,
@@ -535,11 +578,8 @@ export async function POST(req: NextRequest) {
       }
 
       if (incomeType === "returns_income" && calc.monthlyReturns > 0) {
-        user.totalReturnsIncome = (user.totalReturnsIncome || 0) + calc.monthlyReturns;
-        user.totalInvestmentReturn = (user.totalInvestmentReturn || 0) + calc.monthlyReturns;
         totalReleased += calc.monthlyReturns;
-
-        await Transaction.create({
+        transactionsToCreate.push({
           memberId: user.memberId,
           type: "returns_income",
           direction: "credit",
@@ -548,6 +588,18 @@ export async function POST(req: NextRequest) {
           status: "completed",
           note: `Monthly Investment Returns - ${month}`,
           referenceId: closing._id.toString(),
+        });
+
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: user._id },
+            update: {
+              $inc: {
+                totalReturnsIncome: calc.monthlyReturns,
+                totalInvestmentReturn: calc.monthlyReturns,
+              }
+            }
+          }
         });
 
         notifyMember(
@@ -559,11 +611,8 @@ export async function POST(req: NextRequest) {
       }
 
       if (incomeType === "level_income" && calc.returnsLevelIncome > 0) {
-        user.totalLevelIncome = (user.totalLevelIncome || 0) + calc.returnsLevelIncome;
-        user.walletBalance = (user.walletBalance || 0) + calc.returnsLevelIncome;
         totalReleased += calc.returnsLevelIncome;
-
-        await Transaction.create({
+        transactionsToCreate.push({
           memberId: user.memberId,
           type: "level_income",
           direction: "credit",
@@ -574,6 +623,18 @@ export async function POST(req: NextRequest) {
           referenceId: closing._id.toString(),
         });
 
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: user._id },
+            update: {
+              $inc: {
+                totalLevelIncome: calc.returnsLevelIncome,
+                walletBalance: calc.returnsLevelIncome,
+              }
+            }
+          }
+        });
+
         notifyMember(
           user.memberId,
           "Returns Level Income Released! 🔗",
@@ -581,8 +642,21 @@ export async function POST(req: NextRequest) {
           "level_income_released"
         ).catch(() => {});
       }
+    }
 
-      await user.save();
+    if (bulkOps.length > 0) {
+      await User.bulkWrite(bulkOps);
+    }
+    if (transactionsToCreate.length > 0) {
+      await Transaction.insertMany(transactionsToCreate);
+    }
+
+    if (incomeType === "reward_income" && totalReleased > 0) {
+      const { startDate, endDate } = getMonthRange(month);
+      await RewardHistory.updateMany(
+        { status: "pending", createdAt: { $gte: startDate, $lte: endDate } },
+        { $set: { status: "released", adminRemarks: `Released in Monthly Closing ${month}` } }
+      );
     }
 
     closing.releasedTypes.push(incomeType);
