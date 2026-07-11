@@ -59,6 +59,14 @@ export async function calculateDailyReturnsLevelIncome(forceDate?: string) {
     investmentMap.set(inv.memberId, (investmentMap.get(inv.memberId) || 0) + inv.amount);
   }
 
+  // Pre-calculate active direct counts for each member
+  const activeDirectsMap = new Map<string, number>();
+  for (const m of members) {
+    if (m.sponsorId && m.isActive === true) {
+      activeDirectsMap.set(m.sponsorId, (activeDirectsMap.get(m.sponsorId) || 0) + 1);
+    }
+  }
+
   let processedCount = 0;
   let skippedDuplicates = 0;
   let skippedNoInvestment = 0;
@@ -92,15 +100,25 @@ export async function calculateDailyReturnsLevelIncome(forceDate?: string) {
         upline.activatedByFreePin !== true;
 
       if (isUplineEligible) {
-        const percentage = percentageMap.get(depth) || 0;
-        
-        // Calculation Formula: (Total Active Investment * Level Percentage / 100) / Days in Month
-        const calculatedAmount = parseFloat(
-          ((totalActiveInvestment * (percentage / 100)) / daysInMonth).toFixed(6)
-        );
+        // Calculate max allowed level based on active directs
+        const activeDirects = activeDirectsMap.get(upline.memberId) || 0;
+        let maxAllowedLevel = 0;
+        if (activeDirects === 1) maxAllowedLevel = 1;
+        else if (activeDirects === 2) maxAllowedLevel = 2;
+        else if (activeDirects === 3) maxAllowedLevel = 3;
+        else if (activeDirects === 4) maxAllowedLevel = 4;
+        else if (activeDirects >= 5) maxAllowedLevel = 10;
 
-        if (calculatedAmount > 0) {
-          try {
+        if (depth <= maxAllowedLevel) {
+          const percentage = percentageMap.get(depth) || 0;
+          
+          // Calculation Formula: (Total Active Investment * Level Percentage / 100) / Days in Month
+          const calculatedAmount = parseFloat(
+            ((totalActiveInvestment * (percentage / 100)) / daysInMonth).toFixed(6)
+          );
+
+          if (calculatedAmount > 0) {
+            try {
             // Log entry into ReturnsLevelIncome
             await ReturnsLevelIncome.create({
               recipientMemberId: upline.memberId,
@@ -143,6 +161,7 @@ export async function calculateDailyReturnsLevelIncome(forceDate?: string) {
           }
         }
       }
+    }
 
       currentSponsorId = upline.sponsorId;
       depth++;

@@ -321,6 +321,14 @@ export async function POST(req: NextRequest) {
     // Clear any existing Pending level incomes for this closingMonth to avoid duplicates
     await ReturnsLevelIncome.deleteMany({ closingMonth: month, status: "Pending" });
 
+    // Pre-calculate active direct count for each member
+    const activeDirectsMap = new Map<string, number>();
+    for (const m of members) {
+      if (m.sponsorId && m.isActive === true) {
+        activeDirectsMap.set(m.sponsorId, (activeDirectsMap.get(m.sponsorId) || 0) + 1);
+      }
+    }
+
     for (const si of stagedIncomes) {
       let stagedReturnsLevelIncome = 0;
       const recipientDoc = userDbMap.get(si.memberId);
@@ -331,29 +339,40 @@ export async function POST(req: NextRequest) {
         const downlineStaged = stagedIncomeMap.get(dId);
         const downlineDoc = userDbMap.get(dId);
         if (downlineStaged && downlineStaged.monthlyReturns > 0 && downlineDoc) {
-          const ruleKey = `returns_level${level}_pct`;
-          const rate = ruleMap.has(ruleKey) ? ruleMap.get(ruleKey)! : (DEFAULT_RETURNS_LEVELS[Number(level) - 1] || 0);
-          
-          const amount = downlineStaged.monthlyReturns * (rate / 100);
-          stagedReturnsLevelIncome += amount;
+          // Check level unlock condition based on active direct count of recipient (si.memberId)
+          const activeDirects = activeDirectsMap.get(si.memberId) || 0;
+          let maxAllowedLevel = 0;
+          if (activeDirects === 1) maxAllowedLevel = 1;
+          else if (activeDirects === 2) maxAllowedLevel = 2;
+          else if (activeDirects === 3) maxAllowedLevel = 3;
+          else if (activeDirects === 4) maxAllowedLevel = 4;
+          else if (activeDirects >= 5) maxAllowedLevel = 10;
 
-          // Find downline active investment amount
-          const downlineActiveInvestments = activeInvestmentsMap.get(dId) || [];
-          const downlineInvestmentAmount = downlineActiveInvestments.reduce((sum, inv) => sum + inv.amount, 0) || downlineDoc.totalInvestment || 0;
+          if (Number(level) <= maxAllowedLevel) {
+            const ruleKey = `returns_level${level}_pct`;
+            const rate = ruleMap.has(ruleKey) ? ruleMap.get(ruleKey)! : (DEFAULT_RETURNS_LEVELS[Number(level) - 1] || 0);
+            
+            const amount = downlineStaged.monthlyReturns * (rate / 100);
+            stagedReturnsLevelIncome += amount;
 
-          returnsLevelIncomeDocsToCreate.push({
-            recipientMemberId: si.memberId,
-            recipientUserId: recipientDoc._id,
-            downlineMemberId: dId,
-            downlineUserId: downlineDoc._id,
-            level: Number(level),
-            percentage: rate,
-            investmentAmount: downlineInvestmentAmount,
-            calculatedAmount: Number((amount * (distPct / 100)).toFixed(6)),
-            calculationDate: today,
-            closingMonth: month,
-            status: "Pending",
-          });
+            // Find downline active investment amount
+            const downlineActiveInvestments = activeInvestmentsMap.get(dId) || [];
+            const downlineInvestmentAmount = downlineActiveInvestments.reduce((sum, inv) => sum + inv.amount, 0) || downlineDoc.totalInvestment || 0;
+
+            returnsLevelIncomeDocsToCreate.push({
+              recipientMemberId: si.memberId,
+              recipientUserId: recipientDoc._id,
+              downlineMemberId: dId,
+              downlineUserId: downlineDoc._id,
+              level: Number(level),
+              percentage: rate,
+              investmentAmount: downlineInvestmentAmount,
+              calculatedAmount: Number((amount * (distPct / 100)).toFixed(6)),
+              calculationDate: today,
+              closingMonth: month,
+              status: "Pending",
+            });
+          }
         }
       }
       
