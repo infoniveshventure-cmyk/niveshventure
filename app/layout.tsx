@@ -45,7 +45,7 @@ export const viewport: Viewport = {
   themeColor: "#0D0D1A",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  userScalable: true,
 };
 
 import { MotionProvider } from "@/components/motion/MotionProvider";
