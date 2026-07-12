@@ -211,19 +211,23 @@ export async function runDailyReturn(forceDate?: string) {
 
     let dailyPlanRate = completedRate;
 
-    // Step 2: Check Production Status / Prediction Lock
-    if (member.predictionLocked || member.monthlyMissCount >= maxMissAllowed) {
-      dailyPlanRate = 0;
+    // Step 2: Check if user is locked (misses >= 3)
+    if (member.predictionLocked || (member.monthlyMissCount || 0) >= 3) {
+      // User is locked from predictions, but still automatically gets 5% return plan every day
+      dailyPlanRate = 5;
+      member.currentReturnPlan = 5;
+      member.predictionLocked = true;
+      await member.save();
     } else {
       // Step 3: Check prediction submission
       const hasSubmission = submissionSet.has(member.memberId);
 
       if (hasSubmission) {
         // Prediction Completed
-        // Plan remains what it is based on past misses
+        // Plan is 5% if 2 misses, otherwise 7%
         if (member.monthlyMissCount === 2) {
-          dailyPlanRate = returnAfterOneMiss;
-          member.currentReturnPlan = returnAfterOneMiss;
+          dailyPlanRate = 5;
+          member.currentReturnPlan = 5;
         } else {
           dailyPlanRate = completedRate;
           member.currentReturnPlan = completedRate;
@@ -237,19 +241,67 @@ export async function runDailyReturn(forceDate?: string) {
         predictionMisses++;
         dailyPlanRate = 0;
 
-        if (member.monthlyMissCount >= maxMissAllowed) {
-          // Max misses reached -> Locked, 0% Plan
-          member.currentReturnPlan = 0;
+        if (member.monthlyMissCount === 2) {
+          // 2nd Miss -> 5% Plan, remains active, retroactively adjust previous returns in current month to 5%
+          member.currentReturnPlan = 5;
+          await member.save();
+
+          // Fetch all daily returns for the current month that are not settled yet
+          const dailyReturns = await DailyReturn.find({
+            memberId: member.memberId,
+            month: month,
+            settled: false,
+          });
+
+          let totalDifference = 0;
+          const daysInMonth = getDaysInMonth(today);
+
+          for (const dr of dailyReturns) {
+            const originalProfit = dr.profit || 0;
+            const newDailyPct = 5 / daysInMonth;
+            const newProfit = parseFloat(
+              ((dr.investmentAmount * newDailyPct) / 100).toFixed(6)
+            );
+            const diff = parseFloat((originalProfit - newProfit).toFixed(6));
+            if (diff > 0) {
+              totalDifference += diff;
+              dr.dailyPct = newDailyPct;
+              dr.profit = newProfit;
+              await dr.save();
+            }
+          }
+
+          if (totalDifference > 0) {
+            member.dailyReturnsWallet = Math.max(
+              0,
+              parseFloat(((member.dailyReturnsWallet || 0) - totalDifference).toFixed(6))
+            );
+            await member.save();
+
+            // Create a debit transaction to adjust user balance
+            await Transaction.create({
+              memberId: member.memberId,
+              type: "returns_income",
+              direction: "debit",
+              amount: parseFloat(totalDifference.toFixed(6)),
+              currency: "USDT",
+              status: "completed",
+              note: `Retroactive adjustment to 5% plan (2nd miss)`,
+              description: `Deducted $${totalDifference.toFixed(6)} due to retroactive shift from 7% to 5% plan on 2nd miss.`,
+              walletType: "returns",
+            });
+          }
+        } else if (member.monthlyMissCount >= 3) {
+          // 3rd Miss -> Lock prediction questions, but they will automatically receive 5% from tomorrow
+          member.currentReturnPlan = 5;
           member.predictionLocked = true;
           member.productionStatus = "closed";
-        } else if (member.monthlyMissCount === 2) {
-          // 2nd Miss -> 5% Plan, remains active
-          member.currentReturnPlan = returnAfterOneMiss;
+          await member.save();
         } else {
           // 1st Miss -> remains on 7% Plan, remains active
           member.currentReturnPlan = completedRate;
+          await member.save();
         }
-        await member.save();
       }
     }
 
