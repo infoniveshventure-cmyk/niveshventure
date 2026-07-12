@@ -50,7 +50,7 @@ export default function DashboardPage() {
   const loadHistory = async () => {
     setHistoryLoading(true);
     try {
-      const res = await fetch("/api/user/predictions/history");
+      const res = await fetch("/api/user/predictions/history", { cache: "no-store" });
       if (res.ok) {
         const json = await res.json();
         setHistoryData(json.history || []);
