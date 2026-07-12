@@ -11,7 +11,7 @@ export default function WithdrawalPage() {
   const { profile } = useAuth();
   const [mode, setMode] = useState<"USDT" | "INR">("USDT");
   const [kind, setKind] = useState<"earning" | "capital">("earning");
-  const [walletType, setWalletType] = useState<"main" | "returns">("main");
+  const [walletType, setWalletType] = useState<"earnings" | "returns">("earnings");
   const [amount, setAmount] = useState("");
   const [accessKey, setAccessKey] = useState("");
   const [bank, setBank] = useState({ bankName: "", accountNumber: "", ifsc: "", accountHolder: "" });
@@ -133,13 +133,13 @@ export default function WithdrawalPage() {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => setWalletType("main")}
+                    onClick={() => setWalletType("earnings")}
                     className={`flex-1 py-2 px-3 rounded-xl text-xs border text-left transition ${
-                      walletType === "main" ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
+                      walletType === "earnings" ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
                     }`}
                   >
-                    <div className="font-semibold text-white">Main Wallet</div>
-                    <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.walletBalance ?? 0).toLocaleString()} (Withdraw anytime)</div>
+                    <div className="font-semibold text-white">All Earnings Wallet</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.earningsWalletBalance ?? 0).toLocaleString()} (Withdraw anytime)</div>
                   </button>
                   <button
                     type="button"

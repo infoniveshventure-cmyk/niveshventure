@@ -77,9 +77,9 @@ export async function POST(req: NextRequest) {
     const validKey = await compareSecret(sanitizedAccessKey, user.accessKeyHash);
     if (!validKey) return NextResponse.json({ error: "Invalid Access Key" }, { status: 401 });
 
-    const balanceField = walletType === "returns" ? "withdrawalReturnsWallet" : "walletBalance";
+    const balanceField = walletType === "returns" ? "withdrawalReturnsWallet" : "earningsWalletBalance";
     if ((user as any)[balanceField] < amount) {
-      return NextResponse.json({ error: `Insufficient ${walletType === "returns" ? "Withdrawal Returns Wallet" : "wallet"} balance` }, { status: 400 });
+      return NextResponse.json({ error: `Insufficient ${walletType === "returns" ? "Withdrawal Returns Wallet" : "All Earnings Wallet"} balance` }, { status: 400 });
     }
 
     const processingCharge = Number((amount * feeRate).toFixed(2));
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
       amount,
       currency: mode,
       status: "pending",
-      note: `Withdrawal request submitted from ${walletType === "returns" ? "Daily Returns & Level Wallet" : "Main Wallet"}`,
+      note: `Withdrawal request submitted from ${walletType === "returns" ? "Withdrawal Returns Wallet" : "All Earnings Wallet"}`,
       referenceId: withdrawal._id.toString(),
       walletType,
     });
