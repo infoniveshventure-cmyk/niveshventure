@@ -84,17 +84,17 @@ export default function RegisterPage() {
         setLoading(false);
         return;
       }
-      if (!form.fullName || !form.mobile || !form.email || form.password.length < 6) {
-        toast.error("Fill all fields — password needs 6+ characters");
+      if (!form.fullName || !form.mobile || !form.email || form.password.length < 6 || !form.sponsorId) {
+        toast.error("Fill all fields — password needs 6+ characters and Referral Code is required");
         setLoading(false);
         return;
       }
-      if (form.sponsorId && sponsorError) {
-        toast.error("Please enter a valid referral code or clear the field");
+      if (sponsorError || !form.sponsorId) {
+        toast.error(sponsorError || "Please enter a valid Referral Code (Sponsor ID)");
         setLoading(false);
         return;
       }
-      if (form.sponsorId && validatingSponsor) {
+      if (validatingSponsor) {
         toast.error("Validating referral code... please wait.");
         setLoading(false);
         return;
@@ -287,7 +287,7 @@ export default function RegisterPage() {
               {/* Referral Code */}
               <div className="space-y-1">
                 <div className="auth-input-wrapper">
-                  <input className="auth-input" placeholder="Referral Code (optional)" value={form.sponsorId}
+                  <input className="auth-input" placeholder="Referral Code (Sponsor ID - Required)" value={form.sponsorId}
                     onChange={(e) => update("sponsorId", e.target.value)} />
                   <span className="auth-input-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

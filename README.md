@@ -11,8 +11,8 @@ cp .env.example .env
 
 ## github repo repush  :
 ``` 
-git add .
-git commit -m "withdrawal issue fix" 
+git add . 
+git commit -m "sponsor id mendetory" 
 git push -u origin main
 ```
 

@@ -182,7 +182,7 @@ export default function DashboardPage() {
     { label: "Withdrawal Returns Wallet", value: user?.withdrawalReturnsWallet ?? profile?.withdrawalReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-green" },
     { label: "Active Investment", value: totalActiveInvestment || user?.totalInvestment || 0, icon: Briefcase, prefix: "$", href: "/invest", color: "text-neon-green" },
     { label: "Total Investment Return", value: displayedTotalInvReturn, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan", isTotalInvestmentReturn: true },
-    { label: "Total Team", value: stats?.totalTeam ?? 0, icon: Users, prefix: "", href: "/team", color: "" },
+    // { label: "Total Team", value: stats?.totalTeam ?? 0, icon: Users, prefix: "", href: "/team", color: "" },
     { label: "Total Withdrawn", value: user?.totalWithdrawn ?? profile?.totalWithdrawn ?? 0, icon: ArrowUpRight, prefix: "$", href: "/withdrawal", color: "" },
     { label: "Daily Return (Today)", value: todayRoiYield, icon: Clock, prefix: "$", href: "#", color: "text-yellow-400", isPending: true, onClick: () => setShowHistoryModal(true) },
     { label: "Total daily return Income", value: totalPendingReturnsAndLevel, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", isPendingReturnsLevel: true, onClick: () => setShowHistoryModal(true) },
@@ -334,7 +334,7 @@ export default function DashboardPage() {
 
       {/* ── Daily Market Prediction Card ── */}
       <div className="mb-6 rounded-2xl py-4 px-5 md:py-5 md:px-6 border border-neon-violet/30 bg-gradient-to-br from-[#0c0827] via-[#09051b] to-[#04020c] shadow-[0_0_40px_rgba(123,92,255,0.12)] relative overflow-hidden text-center flex flex-col items-center">
-        
+
         {/* Top Header Badge */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#00E5FF]/40 bg-gradient-to-r from-[#00E5FF]/10 to-[#7B5CFF]/5 shadow-[0_0_10px_rgba(0,229,255,0.08)] mb-3 shrink-0">
           <div className="w-4 h-4 rounded-full bg-[#00E5FF]/20 flex items-center justify-center border border-[#00E5FF]/40 text-[#00E5FF]">

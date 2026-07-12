@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { fullName, mobile, email, country, otp, sponsorId, position, password } = body;
 
-    if (!fullName || !mobile || !email || !country || !otp || !password) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!fullName || !mobile || !email || !country || !otp || !password || !sponsorId) {
+      return NextResponse.json({ error: "Missing required fields (including Sponsor ID)" }, { status: 400 });
     }
 
     if (password.length < 6) {
@@ -70,14 +70,14 @@ export async function POST(req: NextRequest) {
     await otpDoc.save();
 
     // 4. Resolve sponsor placement.
-    let parentId: string | null = null;
-    if (sponsorId) {
-      const sponsor = await User.findOne({ memberId: sponsorId });
-      if (!sponsor) {
-        return NextResponse.json({ error: "Referral code not found" }, { status: 400 });
-      }
-      parentId = sponsor.memberId;
+    if (!sponsorId) {
+      return NextResponse.json({ error: "Sponsor ID is required" }, { status: 400 });
     }
+    const sponsor = await User.findOne({ memberId: sponsorId });
+    if (!sponsor) {
+      return NextResponse.json({ error: "Referral code (Sponsor ID) not found" }, { status: 400 });
+    }
+    let parentId = sponsor.memberId;
 
     // 5. Create the Firebase Auth account server-side (only now, after OTP verified).
     //    If this fails (e.g. email already in Firebase from an old abandoned attempt),
