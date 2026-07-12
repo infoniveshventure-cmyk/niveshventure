@@ -184,7 +184,13 @@ export default function WalletPage() {
         </Link>
 
         {/* Daily Return Wallet */}
-        <Link href="/transfer" className="stat-card group">
+        <button
+          onClick={() => {
+            setTxFilter("returns_income");
+            document.getElementById("tx-history")?.scrollIntoView({ behavior: "smooth" });
+          }}
+          className="stat-card group text-left w-full block"
+        >
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-cyan to-neon-violet flex items-center justify-center mb-3">
             <Coins size={18} className="text-base" />
           </div>
@@ -193,9 +199,9 @@ export default function WalletPage() {
             {sym}{(w?.dailyReturnsWallet ?? 0).toLocaleString()}
           </p>
           <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
-            Daily ROI &amp; level returns (P2P Transfer only)
+            Daily ROI &amp; level returns (Click to view history)
           </p>
-        </Link>
+        </button>
 
         {/* Withdrawal Returns Wallet */}
         <Link href="/withdrawal" className="stat-card group">
@@ -385,7 +391,7 @@ export default function WalletPage() {
       </div>
 
       {/* ── Section 4: Transaction History ── */}
-      <div className="glass-card p-5">
+      <div id="tx-history" className="glass-card p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h2 className="font-display font-semibold">Transaction History</h2>
 
