@@ -165,19 +165,19 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [countdownEndTime, accountState]);
 
+  const currentDate = new Date();
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const activeDailyYield = (totalActiveInvestment * 0.233) / 100;
   const isPredictedToday = !!predSubmission;
-  const currentMonthDays = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-  const activeInvAmount = totalActiveInvestment || user?.totalInvestment || 0;
-  const dailyPredictionYield = isPredictedToday ? ((activeInvAmount * (currentReturnPlan / currentMonthDays)) / 100) : 0;
-  const dailyInvReturnYield = ((activeInvAmount * (7 / currentMonthDays)) / 100);
-  const todayRoiYield = dailyPredictionYield + dailyInvReturnYield;
-
+  const todayRoiYield = isPredictedToday ? ((totalActiveInvestment * currentReturnPlan) / 100) : 0;
+  const todayRoiDailyYield = isPredictedToday ? ((totalActiveInvestment * (currentReturnPlan / daysInMonth)) / 100) : 0;
+  
   const pendingDailyAmt = (dailyReturnPending || user?.dailyReturnPending || 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayRoiYield : 0);
   const totalPendingReturnsAndLevel = pendingDailyAmt + (user?.pendingReturnsLevelIncome ?? 0);
 
-  const todayInvReturnYield = dailyInvReturnYield;
+  const todayInvReturnYield = isPredictedToday ? activeDailyYield : 0;
   let displayedTotalInvReturn = (user?.totalInvestmentReturn ?? profile?.totalInvestmentReturn ?? 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayInvReturnYield : 0);
-  if (displayedTotalInvReturn === 0) {
+  if (displayedTotalInvReturn === 0 && isPredictedToday) {
     displayedTotalInvReturn = todayInvReturnYield;
   }
 
@@ -211,7 +211,7 @@ export default function DashboardPage() {
     { label: "Active Investment", value: totalActiveInvestment || user?.totalInvestment || 0, icon: Briefcase, prefix: "$", href: "/invest", color: "text-neon-green" },
     { label: "Daily Returns", value: todayRoiYield, icon: Clock, prefix: "$", href: "#", color: "text-yellow-400", isPending: true, onClick: () => setShowHistoryModal(true) },
     { label: "Total Investment Return", value: displayedTotalInvReturn, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan", isTotalInvestmentReturn: true },
-    { label: "Daily Returns Today", value: user?.dailyReturnsWallet ?? profile?.dailyReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Daily Returns Today", value: activeDailyYield + todayRoiDailyYield, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
     { label: "Total Daily Returns", value: totalPendingReturnsAndLevel, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", isPendingReturnsLevel: true, onClick: () => setShowHistoryModal(true) },
     { label: "Total Withdrawal Returns", value: user?.withdrawalReturnsWallet ?? profile?.withdrawalReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-green" },
   ];

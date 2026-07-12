@@ -13,7 +13,7 @@ export async function GET() {
   const user = await User.findOne({ memberId: session.memberId }).select(
     "walletBalance dailyReturnsWallet withdrawalReturnsWallet returnsWalletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance usdtWalletAddress " +
     "totalReferralIncome totalMatchingIncome totalReturnsIncome totalLevelIncome totalRewardIncome " +
-    "totalInvestment totalWithdrawn"
+    "totalInvestment totalWithdrawn currentReturnPlan lastPredictionDate predictionSubmitted"
   );
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
@@ -50,6 +50,30 @@ export async function GET() {
     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 200);
 
+  // Calculate live daily returns wallet
+  const { getISTDateString } = await import("@/lib/dailyReturn");
+  const DailyReturn = (await import("@/models/DailyReturn")).default;
+  const PredictionSubmission = (await import("@/models/PredictionSubmission")).default;
+  
+  const today = getISTDateString();
+  const hasDailyReturnRecordToday = await DailyReturn.exists({ memberId: session.memberId, date: today });
+  const hasPredictionToday = await PredictionSubmission.exists({ memberId: session.memberId, date: today });
+
+  const totalActiveInvestment = user.totalInvestment || 0;
+  const activeDailyYield = (totalActiveInvestment * 0.233) / 100;
+  
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const currentReturnPlan = user.currentReturnPlan || 7;
+  const todayRoiDailyYield = hasPredictionToday ? ((totalActiveInvestment * currentReturnPlan) / 100) : 0;
+
+  const todayYield = activeDailyYield + todayRoiDailyYield;
+
+  let liveDailyReturnsWallet = user.dailyReturnsWallet || 0;
+  if (!hasDailyReturnRecordToday) {
+    liveDailyReturnsWallet = parseFloat((liveDailyReturnsWallet + todayYield).toFixed(6));
+  }
+
   const totalEarnings =
     (user.totalReferralIncome || 0) +
     (user.totalMatchingIncome || 0) +
@@ -61,7 +85,7 @@ export async function GET() {
     wallet: {
       walletBalance: user.walletBalance || 0,
       returnsWalletBalance: user.returnsWalletBalance || 0,
-      dailyReturnsWallet: (user as any).dailyReturnsWallet || 0,
+      dailyReturnsWallet: liveDailyReturnsWallet,
       withdrawalReturnsWallet: (user as any).withdrawalReturnsWallet || 0,
       boosterWalletBalance: user.boosterWalletBalance || 0,
       nivshWalletBalance: user.nivshWalletBalance || 0,

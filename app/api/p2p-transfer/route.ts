@@ -18,7 +18,8 @@ export async function GET() {
 
   await connectDB();
   const user = await User.findOne({ memberId: session.memberId }).select(
-    "walletBalance dailyReturnsWallet withdrawalReturnsWallet earningsWalletBalance dailyReturnPending pendingReturnsLevelIncome boosterWalletBalance nivshWalletBalance usdtWalletBalance fullName"
+    "walletBalance dailyReturnsWallet withdrawalReturnsWallet earningsWalletBalance dailyReturnPending pendingReturnsLevelIncome boosterWalletBalance nivshWalletBalance usdtWalletBalance fullName " +
+    "currentReturnPlan lastPredictionDate predictionSubmitted totalInvestment"
   );
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
@@ -31,10 +32,34 @@ export async function GET() {
     .limit(50)
     .lean();
 
+  // Calculate live daily returns wallet
+  const { getISTDateString } = await import("@/lib/dailyReturn");
+  const DailyReturn = (await import("@/models/DailyReturn")).default;
+  const PredictionSubmission = (await import("@/models/PredictionSubmission")).default;
+  
+  const today = getISTDateString();
+  const hasDailyReturnRecordToday = await DailyReturn.exists({ memberId: session.memberId, date: today });
+  const hasPredictionToday = await PredictionSubmission.exists({ memberId: session.memberId, date: today });
+
+  const totalActiveInvestment = user.totalInvestment || 0;
+  const activeDailyYield = (totalActiveInvestment * 0.233) / 100;
+  
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const currentReturnPlan = user.currentReturnPlan || 7;
+  const todayRoiDailyYield = hasPredictionToday ? ((totalActiveInvestment * currentReturnPlan) / 100) : 0;
+
+  const todayYield = activeDailyYield + todayRoiDailyYield;
+
+  let liveDailyReturnsWallet = user.dailyReturnsWallet || 0;
+  if (!hasDailyReturnRecordToday) {
+    liveDailyReturnsWallet = parseFloat((liveDailyReturnsWallet + todayYield).toFixed(6));
+  }
+
   const wallets = [
     { key: "main", label: "Main Wallet", balance: user.walletBalance ?? 0 },
     { key: "earnings", label: "All Earnings Wallet", balance: user.earningsWalletBalance ?? 0 },
-    { key: "daily_returns", label: "Daily Return Wallet", balance: user.dailyReturnsWallet ?? 0 },
+    { key: "daily_returns", label: "Daily Return Wallet", balance: liveDailyReturnsWallet },
     { key: "withdrawal_returns", label: "Withdrawal Returns Wallet", balance: user.withdrawalReturnsWallet ?? 0 },
   ];
 
@@ -78,13 +103,41 @@ export async function POST(req: NextRequest) {
     const keyValid = await compareSecret(sanitizedAccessKey, sender.accessKeyHash);
     if (!keyValid) return NextResponse.json({ error: "Invalid Access Key" }, { status: 401 });
 
-    const senderBalance = (sender as any)[senderWalletInfo.senderField] ?? 0;
+    let senderBalance = (sender as any)[senderWalletInfo.senderField] ?? 0;
+    if (walletType === "daily_returns") {
+      const { getISTDateString } = await import("@/lib/dailyReturn");
+      const DailyReturn = (await import("@/models/DailyReturn")).default;
+      const PredictionSubmission = (await import("@/models/PredictionSubmission")).default;
+      
+      const today = getISTDateString();
+      const hasDailyReturnRecordToday = await DailyReturn.exists({ memberId: sender.memberId, date: today });
+      const hasPredictionToday = await PredictionSubmission.exists({ memberId: sender.memberId, date: today });
+
+      const totalActiveInvestment = sender.totalInvestment || 0;
+      const activeDailyYield = (totalActiveInvestment * 0.233) / 100;
+      
+      const now = new Date();
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const currentReturnPlan = sender.currentReturnPlan || 7;
+      const todayRoiDailyYield = hasPredictionToday ? ((totalActiveInvestment * currentReturnPlan) / 100) : 0;
+
+      const todayYield = activeDailyYield + todayRoiDailyYield;
+
+      if (!hasDailyReturnRecordToday) {
+        senderBalance = parseFloat((senderBalance + todayYield).toFixed(6));
+      }
+    }
+
     if (senderBalance < amount) {
       return NextResponse.json({ error: `Insufficient ${senderWalletInfo.label} balance` }, { status: 400 });
     }
 
     (sender as any)[senderWalletInfo.senderField] = senderBalance - amount;
     (receiver as any)[receiverWalletInfo.receiverField] = ((receiver as any)[receiverWalletInfo.receiverField] ?? 0) + amount;
+
+    if (walletType === "daily_returns") {
+      sender.totalReturnsIncome = Math.max(0, (sender.totalReturnsIncome || 0) - amount);
+    }
 
     await sender.save();
     await receiver.save();

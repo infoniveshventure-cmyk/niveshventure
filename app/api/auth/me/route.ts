@@ -20,7 +20,7 @@ export async function GET() {
     }
 
     const user = await User.findOne({ memberId: session.memberId }).select(
-      "memberId fullName email role rank isActive walletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance totalReferralIncome totalMatchingIncome totalReturnsIncome totalLevelIncome totalRewardIncome totalInvestment totalInvestmentReturn totalWithdrawn firstDepositRewarded"
+      "memberId fullName email role rank isActive walletBalance dailyReturnsWallet withdrawalReturnsWallet boosterWalletBalance nivshWalletBalance usdtWalletBalance totalReferralIncome totalMatchingIncome totalReturnsIncome totalLevelIncome totalRewardIncome totalInvestment totalInvestmentReturn totalWithdrawn firstDepositRewarded"
     ).lean();
 
     if (!user) {

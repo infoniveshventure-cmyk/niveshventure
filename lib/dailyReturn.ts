@@ -347,7 +347,7 @@ export async function runDailyReturn(forceDate?: string) {
       const dailyInvReturn = parseFloat(((totalActiveInvestment * 0.233) / 100).toFixed(6));
       member.dailyReturnPending = runningTotal;
       member.returnsDailyEarnings = runningTotal;
-      member.dailyReturnsWallet = (member.dailyReturnsWallet || 0) + profit;
+      member.dailyReturnsWallet = (member.dailyReturnsWallet || 0) + profit + dailyInvReturn;
       member.totalInvestmentReturn = (member.totalInvestmentReturn || 0) + dailyInvReturn;
       await member.save();
       processed++;
