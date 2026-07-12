@@ -52,6 +52,12 @@ export default function WithdrawalPage() {
       .finally(() => setCheckingStatus(false));
   }, []);
 
+  useEffect(() => {
+    if (profile?.usdtWalletAddress) {
+      setUsdtAddress(profile.usdtWalletAddress);
+    }
+  }, [profile]);
+
   const numAmount = parseFloat(amount) || 0;
   const charge = Number((numAmount * (feeRate / 100)).toFixed(2));
   const net = Number((numAmount - charge).toFixed(2));
@@ -167,8 +173,21 @@ export default function WithdrawalPage() {
               onChange={(e) => setAmount(e.target.value)} />
 
             {mode === "USDT" ? (
-              <input className="input-field" placeholder="USDT wallet address (BEP-20)" value={usdtAddress}
-                onChange={(e) => setUsdtAddress(e.target.value)} />
+              <div className="space-y-1">
+                <input
+                  className="input-field disabled:opacity-75 disabled:cursor-not-allowed"
+                  placeholder="USDT wallet address (BEP-20)"
+                  value={usdtAddress}
+                  onChange={(e) => setUsdtAddress(e.target.value)}
+                  readOnly={!!profile?.usdtWalletAddress}
+                  disabled={!!profile?.usdtWalletAddress}
+                />
+                {profile?.usdtWalletAddress && (
+                  <p className="text-[10px] text-neon-cyan px-1">
+                    Locked to profile address. Update via settings page.
+                  </p>
+                )}
+              </div>
             ) : (
               <>
                 <input className="input-field" placeholder="Bank name" value={bank.bankName}

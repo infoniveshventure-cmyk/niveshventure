@@ -98,6 +98,10 @@ export default function TeamPage() {
   const [selectedNode, setSelectedNode] = useState<{ node: TreeNode; stats: any } | null>(null);
   const [breadcrumb, setBreadcrumb] = useState<{ id: string; name: string }[]>([]);
   const [directTeam, setDirectTeam] = useState<any[]>([]);
+  const [explorerNode, setExplorerNode] = useState<any>(null);
+  const [explorerChildren, setExplorerChildren] = useState<any[]>([]);
+  const [explorerLimit, setExplorerLimit] = useState(5);
+  const [explorerHistory, setExplorerHistory] = useState<any[]>([]);
 
   // Canvas Panning and Zooming State
   const [pan, setPan] = useState({ x: 0, y: 50 });
@@ -195,7 +199,10 @@ export default function TeamPage() {
     initTree();
     fetch("/api/team", { cache: "no-store" })
       .then((r) => r.json())
-      .then((d) => setDirectTeam(d.directTeam || []))
+      .then((d) => {
+        setDirectTeam(d.directTeam || []);
+        setExplorerChildren(d.directTeam || []);
+      })
       .catch(() => { });
   }, [initTree]);
 
@@ -804,6 +811,205 @@ export default function TeamPage() {
     );
   };
 
+  const inspectNodeReferrals = async (memberId: string) => {
+    try {
+      const res = await fetch(`/api/team/tree?rootId=${memberId}`, { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (explorerNode) {
+          setExplorerHistory((prev) => [...prev, { node: explorerNode, children: explorerChildren }]);
+        } else {
+          setExplorerHistory((prev) => [...prev, { node: { fullName: "My Network", memberId: sessionRootId || "Root" }, children: directTeam }]);
+        }
+        setExplorerNode(data.node);
+        setExplorerChildren(data.children || []);
+        setExplorerLimit(5);
+      }
+    } catch {
+      toast.error("Failed to load node details");
+    }
+  };
+
+  const handleExplorerBack = () => {
+    if (explorerHistory.length > 0) {
+      const prev = explorerHistory[explorerHistory.length - 1];
+      setExplorerHistory((h) => h.slice(0, -1));
+      setExplorerNode(prev.node.memberId === sessionRootId || prev.node.fullName === "My Network" ? null : prev.node);
+      setExplorerChildren(prev.children);
+      setExplorerLimit(5);
+    }
+  };
+
+  const renderDirectReferralsAndDetails = () => {
+    const visibleChildren = explorerChildren.slice(0, explorerLimit);
+    const hasMore = explorerChildren.length > explorerLimit;
+
+    return (
+      <div className="glass-card p-6 mb-6 border-neon-cyan/20">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-3 border-b border-white/5">
+          <div>
+            <h2 className="font-display font-semibold text-lg flex items-center gap-2">
+              <Users size={20} className="text-neon-cyan" /> Direct Referrals &amp; Team Explorer
+            </h2>
+            <p className="text-xs text-ink-muted mt-0.5">
+              Inspect details of any member node and view their sponsor downlines.
+            </p>
+          </div>
+          {explorerHistory.length > 0 && (
+            <button
+              onClick={handleExplorerBack}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:text-neon-cyan transition flex items-center gap-1.5 self-start md:self-auto"
+            >
+              ← Back
+            </button>
+          )}
+        </div>
+
+        {/* Path Breadcrumbs */}
+        <div className="flex items-center gap-1 text-[11px] text-ink-muted mb-4 bg-white/3 py-1.5 px-3 rounded-lg overflow-x-auto whitespace-nowrap">
+          <span className="font-semibold">Path:</span>
+          <span className="hover:text-neon-cyan cursor-pointer" onClick={() => {
+            setExplorerNode(null);
+            setExplorerChildren(directTeam);
+            setExplorerHistory([]);
+            setExplorerLimit(5);
+          }}>Root</span>
+          {explorerHistory.map((h, idx) => (
+            <span key={idx} className="flex items-center gap-1">
+              <span className="opacity-50">/</span>
+              <span 
+                className="hover:text-neon-cyan cursor-pointer"
+                onClick={() => {
+                  const targetHistory = explorerHistory[idx];
+                  setExplorerHistory(explorerHistory.slice(0, idx));
+                  setExplorerNode(targetHistory.node.fullName === "My Network" ? null : targetHistory.node);
+                  setExplorerChildren(targetHistory.children);
+                  setExplorerLimit(5);
+                }}
+              >
+                {h.node.fullName}
+              </span>
+            </span>
+          ))}
+          {explorerNode && (
+            <span className="flex items-center gap-1">
+              <span className="opacity-50">/</span>
+              <span className="text-neon-cyan font-bold">{explorerNode.fullName}</span>
+            </span>
+          )}
+        </div>
+
+        {/* Inspected Node Card details */}
+        {explorerNode && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-white/5 p-4 rounded-xl border border-white/5 text-sm">
+            <div>
+              <p className="text-xs text-ink-muted uppercase tracking-wider font-semibold">Node Name</p>
+              <p className="font-bold text-white mt-0.5">{explorerNode.fullName}</p>
+              <p className="text-xs text-ink-muted mt-0.5">ID: {explorerNode.memberId}</p>
+            </div>
+            <div>
+              <p className="text-xs text-ink-muted uppercase tracking-wider font-semibold">Rank &amp; Status</p>
+              <p className="font-medium text-white mt-0.5 flex items-center gap-1.5">
+                <span className="px-1.5 py-0.5 text-[10px] bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30 rounded font-semibold">{explorerNode.rank || "Unranked"}</span>
+                <span className="flex items-center gap-1">
+                  <span className={`w-2 h-2 rounded-full ${explorerNode.isActive ? "bg-neon-green animate-pulse" : "bg-zinc-500"}`}></span>
+                  <span className="text-xs">{explorerNode.isActive ? "Active" : "Inactive"}</span>
+                </span>
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-ink-muted uppercase tracking-wider font-semibold">Details &amp; Position</p>
+              <p className="text-white mt-0.5">
+                Position: <span className="capitalize font-semibold">{explorerNode.position || "Root"}</span>
+              </p>
+              <p className="text-[11px] text-ink-muted mt-0.5">Joined: {explorerNode.createdAt ? new Date(explorerNode.createdAt).toLocaleString("en-IN") : "—"}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Referral List */}
+        <div>
+          <h3 className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">
+            {explorerNode ? `Direct Referrals of ${explorerNode.fullName}` : "My Direct Referrals"} ({explorerChildren.length})
+          </h3>
+
+          {explorerChildren.length === 0 ? (
+            <p className="text-xs text-ink-muted py-6 text-center bg-white/3 rounded-xl border border-white/5">No referrals found under this node.</p>
+          ) : (
+            <div className="space-y-2">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 text-ink-muted font-semibold">
+                      <th className="py-2 pr-4">Member ID</th>
+                      <th className="py-2 pr-4">Name</th>
+                      <th className="py-2 pr-4">Position</th>
+                      <th className="py-2 pr-4">Rank</th>
+                      <th className="py-2 pr-4">Status</th>
+                      <th className="py-2 pr-4">Registration Date</th>
+                      <th className="py-2 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleChildren.map((child) => (
+                      <tr key={child.memberId} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+                        <td className="py-2.5 pr-4 font-mono font-semibold text-white">{child.memberId}</td>
+                        <td className="py-2.5 pr-4 text-white font-medium">{child.fullName}</td>
+                        <td className="py-2.5 pr-4 capitalize">{child.position || "—"}</td>
+                        <td className="py-2.5 pr-4">
+                          <span className="px-1.5 py-0.5 text-[9px] bg-white/10 text-white border border-white/15 rounded font-mono uppercase">
+                            {child.rank || "Unranked"}
+                          </span>
+                        </td>
+                        <td className="py-2.5 pr-4">
+                          <span className="inline-flex items-center gap-1">
+                            <span className={`w-1.5 h-1.5 rounded-full ${child.isActive ? "bg-neon-green" : "bg-zinc-500"}`}></span>
+                            <span>{child.isActive ? "Active" : "Inactive"}</span>
+                          </span>
+                        </td>
+                        <td className="py-2.5 pr-4 text-ink-muted">
+                          {child.createdAt ? new Date(child.createdAt).toLocaleString("en-IN") : "—"}
+                        </td>
+                        <td className="py-2.5 text-right">
+                          <button
+                            onClick={() => inspectNodeReferrals(child.memberId)}
+                            className="text-[10px] font-bold text-neon-cyan hover:underline hover:text-neon-cyan/85 transition"
+                          >
+                            Inspect Node
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Show More / Show Less Controls */}
+              <div className="flex justify-center pt-2 border-t border-white/5">
+                {hasMore && (
+                  <button
+                    onClick={() => setExplorerLimit((prev) => prev + 5)}
+                    className="text-xs text-neon-cyan hover:underline font-semibold flex items-center gap-1"
+                  >
+                    Show More ({explorerChildren.length - explorerLimit} remaining) <ChevronDown size={12} />
+                  </button>
+                )}
+                {!hasMore && explorerChildren.length > 5 && (
+                  <button
+                    onClick={() => setExplorerLimit(5)}
+                    className="text-xs text-neon-cyan hover:underline font-semibold flex items-center gap-1"
+                  >
+                    Show Less <ChevronUp size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <DashboardShell>
       <div className="flex items-center justify-between mb-4">
@@ -834,6 +1040,8 @@ export default function TeamPage() {
           </button>
         </div>
       </div>
+
+      {renderDirectReferralsAndDetails()}
 
       {/* Search Header */}
       <div className="glass-card p-4 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">

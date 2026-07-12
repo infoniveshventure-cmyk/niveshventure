@@ -333,29 +333,84 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Daily Market Prediction Card ── */}
-      <div className="mb-6 rounded-2xl py-4 px-5 md:py-5 md:px-6 border border-neon-violet/30 bg-gradient-to-br from-[#0c0827] via-[#09051b] to-[#04020c] shadow-[0_0_40px_rgba(123,92,255,0.12)] relative overflow-hidden text-center flex flex-col items-center">
+      <div className="mb-6 rounded-3xl py-2.5 px-4 md:py-3 md:px-6 border border-[#d4af37]/35 bg-[#070810] shadow-[0_0_40px_rgba(212,175,55,0.08)] relative overflow-hidden flex flex-col items-start w-full text-left">
+        {/* Glow overlays */}
+        <div className="absolute top-[-20%] right-[-10%] w-60 h-60 rounded-full bg-[#d4af37]/5 blur-[80px] pointer-events-none" />
+        <div className="absolute bottom-[-25%] left-[-15%] w-72 h-72 rounded-full bg-indigo-500/5 blur-[90px] pointer-events-none" />
 
-        {/* Top Header Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#00E5FF]/40 bg-gradient-to-r from-[#00E5FF]/10 to-[#7B5CFF]/5 shadow-[0_0_10px_rgba(0,229,255,0.08)] mb-3 shrink-0">
-          <div className="w-4 h-4 rounded-full bg-[#00E5FF]/20 flex items-center justify-center border border-[#00E5FF]/40 text-[#00E5FF]">
-            <TrendingUp size={10} />
+        {/* Decorative Golden Bars & Candles SVG Graphic (Right Aligned) */}
+        <div className="absolute right-0 bottom-0 top-0 w-1/2 pointer-events-none hidden md:block select-none opacity-80 z-0">
+          <svg className="w-full h-full" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FFF2B2" />
+                <stop offset="30%" stopColor="#D4AF37" />
+                <stop offset="70%" stopColor="#AA7C11" />
+                <stop offset="100%" stopColor="#5F4507" />
+              </linearGradient>
+            </defs>
+            {/* Candle Bars in Background */}
+            <g opacity="0.12">
+              <rect x="90" y="80" width="3" height="60" fill="#D4AF37" />
+              <rect x="87" y="95" width="8" height="30" fill="#D4AF37" />
+              <rect x="110" y="60" width="3" height="80" fill="#D4AF37" />
+              <rect x="107" y="75" width="8" height="50" fill="#D4AF37" />
+              <rect x="130" y="40" width="3" height="100" fill="#D4AF37" />
+              <rect x="127" y="55" width="8" height="70" fill="#D4AF37" />
+              <rect x="150" y="30" width="3" height="120" fill="#D4AF37" />
+              <rect x="147" y="45" width="8" height="80" fill="#D4AF37" />
+            </g>
+            {/* Gold Bullions stacked */}
+            {/* Bottom Bar */}
+            <path d="M100 140 L155 112 L195 130 L140 162 Z" fill="url(#goldGrad)" />
+            <path d="M100 140 L140 162 L140 154 L100 133 Z" fill="#AA7C11" />
+            <path d="M140 162 L195 130 L195 123 L140 154 Z" fill="#5F4507" />
+
+            {/* Top Bar (skewed and stacked on bottom bar) */}
+            <path d="M115 125 L170 97 L200 112 L150 143 Z" fill="url(#goldGrad)" />
+            <path d="M115 125 L150 143 L150 135 L115 118 Z" fill="#AA7C11" />
+            <path d="M150 143 L200 112 L200 105 L150 135 Z" fill="#5F4507" />
+          </svg>
+        </div>
+
+        {/* Crown Badge Container (Top-Right Curved Tab) */}
+        <div className="absolute top-0 right-0 w-14 h-11 flex items-center justify-center bg-[#070810] border-l border-b border-[#d4af37]/35 rounded-bl-2xl z-10 shadow-[inset_0_-5px_15px_rgba(212,175,55,0.05)]">
+          <svg className="w-5.5 h-5.5 text-[#d4af37] drop-shadow-[0_0_6px_rgba(212,175,55,0.4)]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2 4l3 5 7-6 7 6 3-5-2 15H4L2 4z" />
+          </svg>
+        </div>
+
+        {/* Title row */}
+        <div className="flex flex-col items-start mb-3.5 relative z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-full border border-[#d4af37]/65 bg-[#d4af37]/15 flex items-center justify-center text-[#d4af37] shadow-[0_0_10px_rgba(212,175,55,0.2)]">
+              <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 7L13.5 15.5L8.5 10.5L2 17" />
+                <polyline points="16 7 22 7 22 13" />
+                <line x1="6" y1="20" x2="6" y2="16" />
+                <line x1="10" y1="20" x2="10" y2="14" />
+                <line x1="14" y1="20" x2="14" y2="12" />
+                <line x1="18" y1="20" x2="18" y2="10" />
+              </svg>
+            </div>
+            <span className="text-[10px] md:text-xs font-medium tracking-[0.25em] text-[#d4af37] Poppins SemiBold">
+              DAILY PREDICTION
+            </span>
           </div>
-          <span className="text-[9px] md:text-[10px] font-semibold tracking-wider text-white uppercase font-display">
-            Daily Prediction - Daily Returns
-          </span>
+          <div className="w-20 h-[1px] bg-gradient-to-r from-[#d4af37] to-transparent mt-1.5" />
         </div>
 
         {accountState === "inactive" && (
-          <div className="flex flex-col items-center gap-2.5 w-full max-w-xl py-2">
-            <h3 className="text-base font-display font-bold text-white">
+          <div className="flex flex-col items-start text-left w-full relative z-10 py-1">
+            <h2 className="text-sm md:text-lg font-medium text-white font-serif mb-2 max-w-xl">
               🔒 Your Prediction Window is Locked
-            </h3>
-            <p className="text-[11px] text-ink-muted max-w-md leading-relaxed">
+            </h2>
+            <p className="text-[11px] text-ink-muted leading-relaxed max-w-md mb-3">
               Activate your account to unlock Daily Predictions and become eligible for monthly Return Plans.
             </p>
             <Link
               href="/unlock-access"
-              className="px-5 py-2 text-xs font-bold rounded-lg bg-neon-cyan text-black hover:bg-neon-cyan/80 transition duration-300 shadow-[0_0_12px_rgba(0,229,255,0.25)]"
+              className="px-4 py-1.5 text-[10px] font-bold rounded-lg bg-neon-cyan text-black hover:bg-neon-cyan/80 transition duration-300 shadow-[0_0_8px_rgba(0,229,255,0.2)]"
             >
               Activate Account
             </Link>
@@ -363,16 +418,16 @@ export default function DashboardPage() {
         )}
 
         {accountState === "investment_pending" && (
-          <div className="flex flex-col items-center gap-2.5 w-full max-w-xl py-2">
-            <h3 className="text-base font-display font-bold text-white">
+          <div className="flex flex-col items-start text-left w-full relative z-10 py-1">
+            <h2 className="text-sm md:text-lg font-medium text-white font-serif mb-2 max-w-xl">
               💰 Investment Required
-            </h3>
-            <p className="text-[11px] text-ink-muted max-w-md leading-relaxed">
+            </h2>
+            <p className="text-[11px] text-ink-muted leading-relaxed max-w-md mb-3">
               Your account is active, but Daily Predictions become available only after completing the minimum investment amount configured by the Admin.
             </p>
             <Link
               href="/invest"
-              className="px-5 py-2 text-xs font-bold rounded-lg bg-neon-cyan text-black hover:bg-neon-cyan/80 transition duration-300 shadow-[0_0_12px_rgba(0,229,255,0.25)]"
+              className="px-4 py-1.5 text-[10px] font-bold rounded-lg bg-[#d4af37] text-black hover:bg-[#d4af37]/80 transition duration-300 shadow-[0_0_8px_rgba(212,175,55,0.2)]"
             >
               Invest Now
             </Link>
@@ -380,142 +435,131 @@ export default function DashboardPage() {
         )}
 
         {accountState === "prediction_locked" && (
-          <div className="flex flex-col items-center gap-4 w-full max-w-xl py-2">
-            <div className="flex flex-col items-center">
-              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neon-magenta/25 text-neon-magenta mb-2">
+          <div className="flex flex-col items-start text-left w-full relative z-10 py-1">
+            <div className="mb-3">
+              <span className="text-[8px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neon-magenta/25 text-neon-magenta mb-1.5 inline-block">
                 Today's Return: 0% Return
               </span>
-              <h3 className="text-base font-display font-bold text-white mb-1">
+              <h2 className="text-sm md:text-lg font-medium text-white font-serif mb-1 max-w-xl">
                 🤣 Oops! You missed Daily Predictions three times this month.
-              </h3>
+              </h2>
               <p className="text-[11px] text-ink-muted leading-relaxed max-w-md">
                 Your Prediction Window has been locked for the rest of this month. Don't worry—everything will unlock on the 1st. 🚀
               </p>
             </div>
-            <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-xl p-3 text-center min-w-[220px]">
-              <span className="text-[9px] text-ink-muted uppercase tracking-wider font-semibold mb-1 block">
+            <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-xl p-2.5 text-center min-w-[200px]">
+              <span className="text-[8px] text-ink-muted uppercase tracking-wider font-semibold mb-0.5 block">
                 Next Prediction Window Opens In
               </span>
-              <div className="grid grid-cols-4 gap-2 text-white font-mono">
+              <div className="grid grid-cols-4 gap-1.5 text-white font-mono text-xs">
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold text-neon-cyan">{timeLeft.days}</span>
-                  <span className="text-[8px] text-ink-muted uppercase">Days</span>
+                  <span className="text-sm font-bold text-neon-cyan">{timeLeft.days}</span>
+                  <span className="text-[7px] text-ink-muted uppercase">Days</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold text-neon-cyan">{String(timeLeft.hours).padStart(2, "0")}</span>
-                  <span className="text-[8px] text-ink-muted uppercase">Hours</span>
+                  <span className="text-sm font-bold text-neon-cyan">{String(timeLeft.hours).padStart(2, "0")}</span>
+                  <span className="text-[7px] text-ink-muted uppercase">Hours</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold text-neon-cyan">{String(timeLeft.minutes).padStart(2, "0")}</span>
-                  <span className="text-[8px] text-ink-muted uppercase">Min</span>
+                  <span className="text-sm font-bold text-neon-cyan">{String(timeLeft.minutes).padStart(2, "0")}</span>
+                  <span className="text-[7px] text-ink-muted uppercase">Min</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold text-neon-cyan">{String(timeLeft.seconds).padStart(2, "0")}</span>
-                  <span className="text-[8px] text-ink-muted uppercase">Sec</span>
+                  <span className="text-sm font-bold text-neon-cyan">{String(timeLeft.seconds).padStart(2, "0")}</span>
+                  <span className="text-[7px] text-ink-muted uppercase">Sec</span>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {accountState === "already_submitted" && (
-          <div className="flex flex-col items-center w-full">
+        {(accountState === "already_submitted" || accountState === "prediction_available") && (
+          <div className="flex flex-col w-full relative z-10">
             {/* Question Text */}
-            <h2 className="text-base md:text-lg font-medium text-white tracking-wide max-w-2xl leading-relaxed font-serif mb-2">
-              {predQuestion ? `"${predQuestion.questionText}"` : `"Today's Prediction Question"`}
+            <h2 className="text-sm md:text-lg font-medium text-white font-serif mb-2 w-full text-left leading-relaxed max-w-xl">
+              {predQuestion ? `${predQuestion.questionText}` : "Gold closes above the opening price?"}
             </h2>
 
-            {/* Stats Row */}
-            <div className="flex items-center justify-center gap-2 md:gap-6 my-2 text-center w-full">
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Monthly Misses</span>
-                <span className="text-sm md:text-base font-bold text-white mt-0.5">{monthlyMissCount}</span>
-              </div>
-              <span className="text-zinc-600 text-xs">•</span>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Predictions Submitted</span>
-                <span className="text-sm md:text-base font-bold text-[#00E5FF] mt-0.5">
-                  {predictionDaysCount} <span className="text-[#00FFA3] text-[10px] font-medium">Days</span>
-                </span>
-              </div>
-              <span className="text-zinc-600 text-xs">•</span>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Remaining Free Misses</span>
-                <span className="text-sm md:text-base font-bold text-yellow-400 mt-0.5">{remainingFreeMisses}</span>
-              </div>
-            </div>
-
-            {/* Bottom Status Pill */}
-            <div className="w-full max-w-xl rounded-xl border border-emerald-500/40 bg-gradient-to-b from-emerald-500/10 to-transparent p-3 flex flex-col items-center justify-center gap-0.5 mt-2.5 shadow-[0_0_15px_rgba(16,185,129,0.03)] shrink-0">
-              <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px] md:text-xs">
-                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Prediction Submitted Successfully</span>
-              </div>
-              {predSubmission && (
-                <span className="text-[9px] md:text-[10px] text-zinc-300 font-medium">
-                  You predicted: <span className="text-[#00E5FF] font-bold uppercase">{predSubmission.answer}</span>
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {accountState === "prediction_available" && (
-          <div className="flex flex-col items-center w-full">
-            {/* Question Text */}
-            <h2 className="text-base md:text-lg font-medium text-white tracking-wide max-w-2xl leading-relaxed font-serif mb-2">
-              {predQuestion ? `"${predQuestion.questionText}"` : `"Today's Prediction Question"`}
-            </h2>
-
-            {monthlyMissCount === 2 && (
-              <div className="mb-2 text-[10px] text-yellow-400 font-semibold px-3 py-1 border border-yellow-400/20 bg-yellow-400/5 rounded-lg max-w-md">
+            {accountState === "prediction_available" && monthlyMissCount === 2 && (
+              <div className="mb-2 text-[9px] md:text-[10px] text-yellow-400 font-semibold px-3 py-1 border border-yellow-400/20 bg-yellow-400/5 rounded-lg w-full text-left">
                 ⚠️ You missed two predictions. Yield rate adjusted to 5% Plan for this month.
               </div>
             )}
 
             {/* Stats Row */}
-            <div className="flex items-center justify-center gap-2 md:gap-6 my-2 text-center w-full">
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Monthly Misses</span>
-                <span className="text-sm md:text-base font-bold text-white mt-0.5">{monthlyMissCount}</span>
+            <div className="w-full max-w-3xl bg-[#090b16]/75 border border-white/5 rounded-2xl py-1.5 grid grid-cols-3 divide-x divide-white/5 text-center mb-2 shadow-inner">
+              {/* Col 1 */}
+              <div className="flex flex-col items-center justify-center px-1">
+                <div className="w-6 h-6 rounded-full border border-purple-500/30 bg-purple-500/10 flex items-center justify-center text-purple-400 mb-1">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <p className="text-[8px] md:text-[9px] text-zinc-400 font-medium">Monthly Misses</p>
+                <p className="text-xs md:text-sm font-bold text-white mt-0.5">{monthlyMissCount}</p>
               </div>
-              <span className="text-zinc-600 text-xs">•</span>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Predictions Submitted</span>
-                <span className="text-sm md:text-base font-bold text-[#00E5FF] mt-0.5">
-                  {predictionDaysCount} <span className="text-[#00FFA3] text-[10px] font-medium">Days</span>
-                </span>
+
+              {/* Col 2 */}
+              <div className="flex flex-col items-center justify-center px-1">
+                <div className="w-6 h-6 rounded-full border border-teal-500/30 bg-teal-500/10 flex items-center justify-center text-teal-400 mb-1">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-[8px] md:text-[9px] text-zinc-400 font-medium">Predictions Submitted</p>
+                <p className="text-xs md:text-sm font-bold text-teal-400 mt-0.5">{predictionDaysCount} Days</p>
               </div>
-              <span className="text-zinc-600 text-xs">•</span>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] md:text-[10px] text-zinc-400 font-medium">Remaining Free Misses</span>
-                <span className="text-sm md:text-base font-bold text-yellow-400 mt-0.5">{remainingFreeMisses}</span>
+
+              {/* Col 3 */}
+              <div className="flex flex-col items-center justify-center px-1">
+                <div className="w-6 h-6 rounded-full border border-purple-500/30 bg-purple-500/10 flex items-center justify-center text-[#9333EA] mb-1">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <p className="text-[8px] md:text-[9px] text-zinc-400 font-medium">Remaining Free Misses</p>
+                <p className="text-xs md:text-sm font-bold text-yellow-500 mt-0.5">{remainingFreeMisses}</p>
               </div>
             </div>
 
-            {/* Bottom Actions Container */}
-            <div className="w-full max-w-xl rounded-xl border border-[#7B5CFF]/30 bg-gradient-to-b from-[#7B5CFF]/10 to-transparent p-3 flex flex-col items-center justify-center gap-3 mt-2.5 shrink-0">
-              {predQuestion ? (
+            {/* Bottom Actions / Status Container */}
+            <div className="w-full max-w-3xl">
+              {accountState === "already_submitted" ? (
+                <div className="w-full rounded-full border border-emerald-500/30 bg-emerald-950/20 px-4 py-2 flex items-center justify-between text-[10px] md:text-xs text-emerald-400 font-semibold shadow-[0_0_15px_rgba(16,185,129,0.03)]">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-4.5 h-4.5 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 text-emerald-400">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span>Prediction Submitted Successfully</span>
+                  </div>
+                  <div className="h-3 w-[1px] bg-white/10" />
+                  {predSubmission && (
+                    <span className="text-[10px] text-zinc-300">
+                      You predicted: <span className="text-neon-cyan font-bold uppercase">{predSubmission.answer}</span>
+                    </span>
+                  )}
+                </div>
+              ) : predQuestion ? (
                 <div className="flex gap-3 w-full">
                   <button
                     disabled={submittingPrediction}
                     onClick={() => handlePredict("yes")}
-                    className="flex-1 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-emerald-500 to-[#00FFA3] text-black shadow-[0_0_12px_rgba(0,255,163,0.25)] hover:shadow-[0_0_20px_rgba(0,255,163,0.4)] transition duration-300 disabled:opacity-50 uppercase tracking-wider"
+                    className="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-[#00E5FF] text-black shadow-[0_0_10px_rgba(0,229,255,0.1)] hover:shadow-[0_0_20px_rgba(0,229,255,0.2)] transition duration-300 disabled:opacity-50 uppercase tracking-wider font-semibold"
                   >
                     YES
                   </button>
                   <button
                     disabled={submittingPrediction}
                     onClick={() => handlePredict("no")}
-                    className="flex-1 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-rose-500 to-[#FF3CAC] text-white shadow-[0_0_12px_rgba(255,60,172,0.25)] hover:shadow-[0_0_20px_rgba(255,60,172,0.4)] transition duration-300 disabled:opacity-50 uppercase tracking-wider"
+                    className="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-xl bg-gradient-to-r from-rose-500 to-[#FF3CAC] text-white shadow-[0_0_10px_rgba(255,60,172,0.1)] hover:shadow-[0_0_20px_rgba(255,60,172,0.2)] transition duration-300 disabled:opacity-50 uppercase tracking-wider font-semibold"
                   >
                     NO
                   </button>
                 </div>
               ) : (
-                <span className="text-xs text-ink-muted italic py-1">Waiting for daily generation...</span>
+                <span className="text-[10px] text-ink-muted italic py-1 block text-center">Waiting for daily generation...</span>
               )}
             </div>
           </div>
