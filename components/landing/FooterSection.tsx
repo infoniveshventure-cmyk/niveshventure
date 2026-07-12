@@ -81,13 +81,13 @@ export default function FooterSection() {
             </div>
 
             <p className="text-white text-xs md:text-sm leading-relaxed max-w-xs">
-              Building the future of financial freedom through transparent investments, 
+              Building the future of financial freedom through transparent investments,
               community growth, and multiple income streams for everyone.
             </p>
 
             <div className="text-white/60 text-xs leading-relaxed space-y-1 bg-white/5 p-3.5 rounded-xl border border-white/5">
               <p className="font-semibold text-white">Office Address:</p>
-              <p>209 Victoria Street, Te Aro, Wellington 6011, New Zealand</p>
+              <p>Vero Centre 48 Shortland Street, Auckland CBD, Auckland 1010, New Zealand</p>
             </div>
 
             {/* Social icons */}
