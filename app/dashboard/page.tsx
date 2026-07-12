@@ -176,17 +176,39 @@ export default function DashboardPage() {
     displayedTotalInvReturn = todayInvReturnYield;
   }
 
-  const cards = [
-    { label: "Main Wallet Balance", value: user?.walletBalance ?? profile?.walletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
-    { label: "Daily Return Wallet", value: user?.dailyReturnsWallet ?? profile?.dailyReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
-    { label: "Withdrawal Returns Wallet", value: user?.withdrawalReturnsWallet ?? profile?.withdrawalReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-green" },
+  const totalEarningVal =
+    (user?.totalReferralIncome ?? profile?.totalReferralIncome ?? 0) +
+    (user?.totalMatchingIncome ?? profile?.totalMatchingIncome ?? 0) +
+    (user?.totalReturnsIncome ?? profile?.totalReturnsIncome ?? 0) +
+    (user?.totalLevelIncome ?? profile?.totalLevelIncome ?? 0) +
+    (user?.totalRewardIncome ?? profile?.totalRewardIncome ?? 0) +
+    (user?.totalReturnsLevelIncomeEarned ?? 0) +
+    (user?.totalBoosterIncome ?? 0);
+
+  interface DashboardCard {
+    label: string;
+    value: string | number;
+    icon: any;
+    prefix?: string;
+    href?: string;
+    color?: string;
+    isPending?: boolean;
+    isTotalInvestmentReturn?: boolean;
+    isPendingReturnsLevel?: boolean;
+    isBooster?: boolean;
+    onClick?: () => void;
+  }
+
+  const cards: DashboardCard[] = [
+    { label: "Main Balance", value: user?.walletBalance ?? profile?.walletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Total Earning", value: totalEarningVal, icon: TrendingUp, prefix: "$", href: "/income", color: "text-neon-green" },
+    { label: "Total Withdrawal", value: user?.totalWithdrawn ?? profile?.totalWithdrawn ?? 0, icon: ArrowUpRight, prefix: "$", href: "/withdrawal", color: "" },
     { label: "Active Investment", value: totalActiveInvestment || user?.totalInvestment || 0, icon: Briefcase, prefix: "$", href: "/invest", color: "text-neon-green" },
+    { label: "Daily Returns", value: todayRoiYield, icon: Clock, prefix: "$", href: "#", color: "text-yellow-400", isPending: true, onClick: () => setShowHistoryModal(true) },
     { label: "Total Investment Return", value: displayedTotalInvReturn, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan", isTotalInvestmentReturn: true },
-    // { label: "Total Team", value: stats?.totalTeam ?? 0, icon: Users, prefix: "", href: "/team", color: "" },
-    { label: "Total Withdrawn", value: user?.totalWithdrawn ?? profile?.totalWithdrawn ?? 0, icon: ArrowUpRight, prefix: "$", href: "/withdrawal", color: "" },
-    { label: "Daily Return (Today)", value: todayRoiYield, icon: Clock, prefix: "$", href: "#", color: "text-yellow-400", isPending: true, onClick: () => setShowHistoryModal(true) },
-    { label: "Total daily return Income", value: totalPendingReturnsAndLevel, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", isPendingReturnsLevel: true, onClick: () => setShowHistoryModal(true) },
-    { label: "Booster Wallet Balance", value: user?.boosterWalletBalance ?? profile?.boosterWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/booster-wallet", color: "text-amber-400", isBooster: true },
+    { label: "Daily Returns Today", value: user?.dailyReturnsWallet ?? profile?.dailyReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Total Daily Returns", value: totalPendingReturnsAndLevel, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", isPendingReturnsLevel: true, onClick: () => setShowHistoryModal(true) },
+    { label: "Total Withdrawal Returns", value: user?.withdrawalReturnsWallet ?? profile?.withdrawalReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-green" },
   ];
 
   async function handlePredict(answer: "yes" | "no") {
@@ -333,7 +355,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Daily Market Prediction Card ── */}
-      <div className="mb-6 rounded-2xl py-4 px-5 md:py-5 md:px-6 border border-neon-violet/30 bg-gradient-to-br from-[#0c0827] via-[#09051b] to-[#04020c] shadow-[0_0_40px_rgba(123,92,255,0.12)] relative overflow-hidden text-center flex flex-col items-center">
+      <div className="glass-card mb-6 py-4 px-5 md:py-5 md:px-6 relative overflow-hidden text-center flex flex-col items-center">
 
         {/* Top Header Badge */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#00E5FF]/40 bg-gradient-to-r from-[#00E5FF]/10 to-[#7B5CFF]/5 shadow-[0_0_10px_rgba(0,229,255,0.08)] mb-3 shrink-0">
@@ -566,7 +588,6 @@ export default function DashboardPage() {
                 {c.isPending ? (
                   <div className="mt-2 text-[10px] text-ink-muted space-y-0.5 border-t border-white/5 pt-1.5 leading-snug w-full">
                     <div>Today's Return Plan: <span className="text-yellow-400 font-semibold">{currentReturnPlan}% Return Plan</span></div>
-                    {/* <div>Today's Yield: <span className="text-neon-green font-bold">${((totalActiveInvestment * currentReturnPlan) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span></div> */}
                     <div>Active Investment: <span className="text-white font-mono">${totalActiveInvestment.toLocaleString()}</span></div>
                   </div>
                 ) : null}
@@ -601,7 +622,7 @@ export default function DashboardPage() {
           }
 
           return (
-            <Link key={c.label} href={c.href} className="stat-card group py-4 px-5">
+            <Link key={c.label} href={c.href || "#"} className="stat-card group py-4 px-5">
               {CardContent}
             </Link>
           );
