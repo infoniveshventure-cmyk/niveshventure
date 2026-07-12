@@ -167,8 +167,9 @@ export default function DashboardPage() {
 
   const isPredictedToday = !!predSubmission;
   const currentMonthDays = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-  const dailyPredictionYield = isPredictedToday ? ((totalActiveInvestment * (currentReturnPlan / currentMonthDays)) / 100) : 0;
-  const dailyInvReturnYield = ((totalActiveInvestment * (7 / currentMonthDays)) / 100);
+  const activeInvAmount = totalActiveInvestment || user?.totalInvestment || 0;
+  const dailyPredictionYield = isPredictedToday ? ((activeInvAmount * (currentReturnPlan / currentMonthDays)) / 100) : 0;
+  const dailyInvReturnYield = ((activeInvAmount * (7 / currentMonthDays)) / 100);
   const todayRoiYield = dailyPredictionYield + dailyInvReturnYield;
 
   const pendingDailyAmt = (dailyReturnPending || user?.dailyReturnPending || 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayRoiYield : 0);
