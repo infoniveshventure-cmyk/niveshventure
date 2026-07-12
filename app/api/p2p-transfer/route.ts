@@ -8,7 +8,8 @@ import { compareSecret, getSessionFromCookies } from "@/lib/auth-server";
 const WALLET_FIELD_MAP: Record<string, { senderField: string; receiverField: string; label: string }> = {
   main: { senderField: "walletBalance", receiverField: "walletBalance", label: "Main Wallet" },
   earnings: { senderField: "earningsWalletBalance", receiverField: "earningsWalletBalance", label: "All Earnings Wallet" },
-  returns: { senderField: "returnsWalletBalance", receiverField: "returnsWalletBalance", label: "Daily Returns & Level Wallet" },
+  daily_returns: { senderField: "dailyReturnsWallet", receiverField: "dailyReturnsWallet", label: "Daily Return Wallet" },
+  withdrawal_returns: { senderField: "withdrawalReturnsWallet", receiverField: "withdrawalReturnsWallet", label: "Withdrawal Returns Wallet" },
 };
 
 export async function GET() {
@@ -17,7 +18,7 @@ export async function GET() {
 
   await connectDB();
   const user = await User.findOne({ memberId: session.memberId }).select(
-    "walletBalance returnsWalletBalance earningsWalletBalance dailyReturnPending pendingReturnsLevelIncome boosterWalletBalance nivshWalletBalance usdtWalletBalance fullName"
+    "walletBalance dailyReturnsWallet withdrawalReturnsWallet earningsWalletBalance dailyReturnPending pendingReturnsLevelIncome boosterWalletBalance nivshWalletBalance usdtWalletBalance fullName"
   );
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
@@ -30,12 +31,11 @@ export async function GET() {
     .limit(50)
     .lean();
 
-  const totalReturns = (user.returnsWalletBalance ?? 0) + (user.dailyReturnPending ?? 0) + (user.pendingReturnsLevelIncome ?? 0);
-
   const wallets = [
     { key: "main", label: "Main Wallet", balance: user.walletBalance ?? 0 },
     { key: "earnings", label: "All Earnings Wallet", balance: user.earningsWalletBalance ?? 0 },
-    { key: "returns", label: "Daily Returns & Level Wallet", balance: totalReturns },
+    { key: "daily_returns", label: "Daily Return Wallet", balance: user.dailyReturnsWallet ?? 0 },
+    { key: "withdrawal_returns", label: "Withdrawal Returns Wallet", balance: user.withdrawalReturnsWallet ?? 0 },
   ];
 
   const settings = await WebsiteSettings.findOne({ key: "singleton" });
@@ -78,44 +78,13 @@ export async function POST(req: NextRequest) {
     const keyValid = await compareSecret(sanitizedAccessKey, sender.accessKeyHash);
     if (!keyValid) return NextResponse.json({ error: "Invalid Access Key" }, { status: 401 });
 
-    if (walletType === "returns") {
-      const totalReturns = (sender.returnsWalletBalance ?? 0) + (sender.dailyReturnPending ?? 0) + (sender.pendingReturnsLevelIncome ?? 0);
-      if (totalReturns < amount) {
-        return NextResponse.json({ error: "Insufficient Daily Returns & Level Wallet balance" }, { status: 400 });
-      }
-
-      let remaining = amount;
-      if (sender.returnsWalletBalance >= remaining) {
-        sender.returnsWalletBalance -= remaining;
-        remaining = 0;
-      } else {
-        remaining -= sender.returnsWalletBalance;
-        sender.returnsWalletBalance = 0;
-      }
-
-      if (remaining > 0) {
-        if (sender.dailyReturnPending >= remaining) {
-          sender.dailyReturnPending -= remaining;
-          remaining = 0;
-        } else {
-          remaining -= sender.dailyReturnPending;
-          sender.dailyReturnPending = 0;
-        }
-      }
-
-      if (remaining > 0) {
-        sender.pendingReturnsLevelIncome = Math.max(0, sender.pendingReturnsLevelIncome - remaining);
-      }
-
-      receiver.returnsWalletBalance = (receiver.returnsWalletBalance ?? 0) + amount;
-    } else {
-      const senderBalance = (sender as any)[senderWalletInfo.senderField] ?? 0;
-      if (senderBalance < amount) {
-        return NextResponse.json({ error: `Insufficient ${senderWalletInfo.label} balance` }, { status: 400 });
-      }
-      (sender as any)[senderWalletInfo.senderField] = senderBalance - amount;
-      (receiver as any)[receiverWalletInfo.receiverField] = ((receiver as any)[receiverWalletInfo.receiverField] ?? 0) + amount;
+    const senderBalance = (sender as any)[senderWalletInfo.senderField] ?? 0;
+    if (senderBalance < amount) {
+      return NextResponse.json({ error: `Insufficient ${senderWalletInfo.label} balance` }, { status: 400 });
     }
+
+    (sender as any)[senderWalletInfo.senderField] = senderBalance - amount;
+    (receiver as any)[receiverWalletInfo.receiverField] = ((receiver as any)[receiverWalletInfo.receiverField] ?? 0) + amount;
 
     await sender.save();
     await receiver.save();

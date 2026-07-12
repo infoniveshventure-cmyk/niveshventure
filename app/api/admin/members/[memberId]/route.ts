@@ -264,6 +264,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { memberId: 
       balanceField = "usdtWalletBalance";
     } else if (walletType === "returns") {
       balanceField = "returnsWalletBalance";
+    } else if (walletType === "daily_returns") {
+      balanceField = "dailyReturnsWallet";
+    } else if (walletType === "withdrawal_returns") {
+      balanceField = "withdrawalReturnsWallet";
     } else if (walletType === "referral") {
       balanceField = "totalReferralIncome";
       isMainWalletLinked = true;

@@ -40,6 +40,8 @@ type Tx = {
 type WalletData = {
   wallet: {
     walletBalance: number;
+    dailyReturnsWallet?: number;
+    withdrawalReturnsWallet?: number;
     boosterWalletBalance: number;
     nivshWalletBalance: number;
     usdtWalletBalance: number;
@@ -166,7 +168,7 @@ export default function WalletPage() {
         </Link>
       </div>
 
-      {/* ── Booster Wallet ── */}
+      {/* ── Booster & Returns Wallets ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Link href="/booster-wallet" className="stat-card group">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mb-3">
@@ -178,6 +180,34 @@ export default function WalletPage() {
           </p>
           <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
             Admin-managed promotional &amp; bonus balance
+          </p>
+        </Link>
+
+        {/* Daily Return Wallet */}
+        <Link href="/transfer" className="stat-card group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-cyan to-neon-violet flex items-center justify-center mb-3">
+            <Coins size={18} className="text-base" />
+          </div>
+          <p className="text-xs text-ink-muted">Daily Return Wallet</p>
+          <p className="font-display text-xl font-bold mt-1 text-neon-cyan group-hover:text-neon-cyan/85 transition">
+            {sym}{(w?.dailyReturnsWallet ?? 0).toLocaleString()}
+          </p>
+          <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
+            Daily ROI &amp; level returns (P2P Transfer only)
+          </p>
+        </Link>
+
+        {/* Withdrawal Returns Wallet */}
+        <Link href="/withdrawal" className="stat-card group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-green to-neon-violet flex items-center justify-center mb-3">
+            <Wallet size={18} className="text-base" />
+          </div>
+          <p className="text-xs text-ink-muted">Withdrawal Returns Wallet</p>
+          <p className="font-display text-xl font-bold mt-1 text-neon-green group-hover:text-neon-green/85 transition">
+            {sym}{(w?.withdrawalReturnsWallet ?? 0).toLocaleString()}
+          </p>
+          <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
+            Settled returns ready for withdrawal &amp; P2P transfer
           </p>
         </Link>
       </div>

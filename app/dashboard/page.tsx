@@ -178,20 +178,10 @@ export default function DashboardPage() {
 
   const cards = [
     { label: "Main Wallet Balance", value: user?.walletBalance ?? profile?.walletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
-    // { label: "Daily Returns Wallet Balance", value: user?.returnsWalletBalance ?? profile?.returnsWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Daily Return Wallet", value: user?.dailyReturnsWallet ?? profile?.dailyReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Withdrawal Returns Wallet", value: user?.withdrawalReturnsWallet ?? profile?.withdrawalReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-green" },
     { label: "Active Investment", value: totalActiveInvestment || user?.totalInvestment || 0, icon: Briefcase, prefix: "$", href: "/invest", color: "text-neon-green" },
     { label: "Total Investment Return", value: displayedTotalInvReturn, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan", isTotalInvestmentReturn: true },
-    // {
-    //   label: "Total Earnings", value:
-    //     (user?.totalReferralIncome ?? profile?.totalReferralIncome ?? 0) +
-    //     (user?.totalMatchingIncome ?? profile?.totalMatchingIncome ?? 0) +
-    //     (user?.totalReturnsIncome ?? profile?.totalReturnsIncome ?? 0) +
-    //     (user?.totalLevelIncome ?? profile?.totalLevelIncome ?? 0) +
-    //     (user?.totalRewardIncome ?? profile?.totalRewardIncome ?? 0) +
-    //     (user?.totalReturnsLevelIncomeEarned ?? 0) +
-    //     (user?.totalBoosterIncome ?? 0),
-    //   icon: TrendingUp, prefix: "$", href: "/income", color: "text-neon-green"
-    // },
     { label: "Total Team", value: stats?.totalTeam ?? 0, icon: Users, prefix: "", href: "/team", color: "" },
     { label: "Total Withdrawn", value: user?.totalWithdrawn ?? profile?.totalWithdrawn ?? 0, icon: ArrowUpRight, prefix: "$", href: "/withdrawal", color: "" },
     { label: "Daily Return (Today)", value: todayRoiYield, icon: Clock, prefix: "$", href: "#", color: "text-yellow-400", isPending: true, onClick: () => setShowHistoryModal(true) },

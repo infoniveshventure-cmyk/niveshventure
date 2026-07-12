@@ -498,12 +498,14 @@ export async function POST(req: NextRequest) {
               rightCarryForward,
               leftCurrentBusiness: 0,
               rightCurrentBusiness: 0,
+              dailyReturnsWallet: 0,
             },
             $inc: {
               earningsWalletBalance: walletBalanceInc,
               totalReferralIncome: totalReferralIncomeInc,
               totalMatchingIncome: totalMatchingIncomeInc,
               totalRewardIncome: totalRewardIncomeInc,
+              withdrawalReturnsWallet: user.dailyReturnsWallet || 0,
             }
           }
         }
@@ -652,6 +654,7 @@ export async function POST(req: NextRequest) {
               $inc: {
                 totalReturnsIncome: calc.monthlyReturns,
                 totalInvestmentReturn: calc.monthlyReturns,
+                withdrawalReturnsWallet: calc.monthlyReturns,
               }
             }
           }
@@ -684,7 +687,7 @@ export async function POST(req: NextRequest) {
             update: {
               $inc: {
                 totalLevelIncome: calc.returnsLevelIncome,
-                returnsWalletBalance: calc.returnsLevelIncome,
+                withdrawalReturnsWallet: calc.returnsLevelIncome,
               }
             }
           }

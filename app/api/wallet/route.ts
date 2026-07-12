@@ -11,7 +11,7 @@ export async function GET() {
 
   await connectDB();
   const user = await User.findOne({ memberId: session.memberId }).select(
-    "walletBalance returnsWalletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance usdtWalletAddress " +
+    "walletBalance dailyReturnsWallet withdrawalReturnsWallet returnsWalletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance usdtWalletAddress " +
     "totalReferralIncome totalMatchingIncome totalReturnsIncome totalLevelIncome totalRewardIncome " +
     "totalInvestment totalWithdrawn"
   );
@@ -61,6 +61,8 @@ export async function GET() {
     wallet: {
       walletBalance: user.walletBalance || 0,
       returnsWalletBalance: user.returnsWalletBalance || 0,
+      dailyReturnsWallet: (user as any).dailyReturnsWallet || 0,
+      withdrawalReturnsWallet: (user as any).withdrawalReturnsWallet || 0,
       boosterWalletBalance: user.boosterWalletBalance || 0,
       nivshWalletBalance: user.nivshWalletBalance || 0,
       usdtWalletBalance: user.usdtWalletBalance || 0,

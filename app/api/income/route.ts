@@ -11,7 +11,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   await connectDB();
-  const user = await User.findOne({ memberId: session.memberId }).select("walletBalance");
+  const user = await User.findOne({ memberId: session.memberId }).select("walletBalance dailyReturnsWallet withdrawalReturnsWallet");
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const incomeTypes = [
@@ -71,6 +71,8 @@ export async function GET() {
 
   return NextResponse.json({
     availableBalance: user.walletBalance || 0,
+    dailyReturnsWallet: (user as any).dailyReturnsWallet || 0,
+    withdrawalReturnsWallet: (user as any).withdrawalReturnsWallet || 0,
     totalEarnings: totalCredit,
     totalCredit,
     totalDebit,

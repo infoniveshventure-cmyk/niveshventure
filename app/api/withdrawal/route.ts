@@ -77,19 +77,9 @@ export async function POST(req: NextRequest) {
     const validKey = await compareSecret(sanitizedAccessKey, user.accessKeyHash);
     if (!validKey) return NextResponse.json({ error: "Invalid Access Key" }, { status: 401 });
 
-    if (walletType === "returns" && withdrawalKind !== "capital") {
-      const istDate = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-      if (istDate.getDate() !== 1) {
-        return NextResponse.json(
-          { error: "Daily Returns & Level Income Wallet cash withdrawals are only allowed on the 1st of the month." },
-          { status: 400 }
-        );
-      }
-    }
-
-    const balanceField = walletType === "returns" ? "returnsWalletBalance" : "walletBalance";
+    const balanceField = walletType === "returns" ? "withdrawalReturnsWallet" : "walletBalance";
     if ((user as any)[balanceField] < amount) {
-      return NextResponse.json({ error: `Insufficient ${walletType === "returns" ? "Daily Returns & Level Wallet" : "wallet"} balance` }, { status: 400 });
+      return NextResponse.json({ error: `Insufficient ${walletType === "returns" ? "Withdrawal Returns Wallet" : "wallet"} balance` }, { status: 400 });
     }
 
     const processingCharge = Number((amount * feeRate).toFixed(2));

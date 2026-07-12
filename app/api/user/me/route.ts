@@ -29,7 +29,7 @@ export async function GET() {
 
   // Single query to fetch all members for in-memory downline computation
   const allUsers = await User.find({ role: "member" })
-    .select("memberId parentId sponsorId fullName isActive walletBalance returnsWalletBalance totalInvestment boosterWalletBalance nivshWalletBalance usdtWalletBalance position accessExpiresAt")
+    .select("memberId parentId sponsorId fullName isActive walletBalance dailyReturnsWallet withdrawalReturnsWallet returnsWalletBalance totalInvestment boosterWalletBalance nivshWalletBalance usdtWalletBalance position accessExpiresAt")
     .lean();
 
   const parentMap = new Map<string, any[]>();

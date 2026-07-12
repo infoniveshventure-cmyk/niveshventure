@@ -35,6 +35,11 @@ export function getISTMonthString(date = new Date()): string {
   return `${yyyy}-${mm}`;
 }
 
+export function getDaysInMonth(dateStr: string): number {
+  const [year, month] = dateStr.split("-").map(Number);
+  return new Date(year, month, 0).getDate();
+}
+
 // ────────────────────────────────────────────────────────────
 // DAILY QUESTION GENERATION
 // ────────────────────────────────────────────────────────────
@@ -249,7 +254,8 @@ export async function runDailyReturn(forceDate?: string) {
     }
 
     // Compute effective daily percentage
-    const dailyPct = mode === "auto" ? dailyPlanRate : manualDailyPct;
+    const daysInMonth = getDaysInMonth(today);
+    const dailyPct = mode === "auto" ? (dailyPlanRate / daysInMonth) : manualDailyPct;
 
     // C. Calculate profit
     const profit = parseFloat(
@@ -281,7 +287,7 @@ export async function runDailyReturn(forceDate?: string) {
           currency: "USDT",
           status: "completed",
           note: `Daily ROI return for ${today}`,
-          description: `Daily ROI yield of ${dailyPct.toFixed(4)}% on active investment $${totalActiveInvestment.toLocaleString()}`,
+          description: `Daily ROI yield of ${dailyPct.toFixed(6)}% on active investment $${totalActiveInvestment.toLocaleString()}`,
           walletType: "returns",
         });
       }
@@ -289,7 +295,7 @@ export async function runDailyReturn(forceDate?: string) {
       const dailyInvReturn = parseFloat(((totalActiveInvestment * 0.233) / 100).toFixed(6));
       member.dailyReturnPending = runningTotal;
       member.returnsDailyEarnings = runningTotal;
-      member.returnsWalletBalance = (member.returnsWalletBalance || 0) + profit;
+      member.dailyReturnsWallet = (member.dailyReturnsWallet || 0) + profit;
       member.totalInvestmentReturn = (member.totalInvestmentReturn || 0) + dailyInvReturn;
       await member.save();
       processed++;

@@ -148,8 +148,8 @@ export default function WithdrawalPage() {
                       walletType === "returns" ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
                     }`}
                   >
-                    <div className="font-semibold text-white">Daily Returns & Level Wallet</div>
-                    <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.returnsWalletBalance ?? 0).toLocaleString()} (Withdraw on 1st only)</div>
+                    <div className="font-semibold text-white">Withdrawal Returns Wallet</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.withdrawalReturnsWallet ?? 0).toLocaleString()} (Withdraw anytime)</div>
                   </button>
                 </div>
               </div>

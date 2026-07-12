@@ -10,9 +10,9 @@ cp .env.example .env
 ```
 
 ## github repo repush  :
-```
+``` 
 git add .
-git commit -m "lebel income fix" 
+git commit -m "fix daily return issue" 
 git push -u origin main
 ```
 

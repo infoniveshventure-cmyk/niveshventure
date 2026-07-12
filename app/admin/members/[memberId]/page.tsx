@@ -278,6 +278,8 @@ export default function AdminMemberDetailsPage() {
     { label: "Booster Wallet", key: "booster", balance: m.boosterWalletBalance || 0 },
     { label: "Nivesh Wallet", key: "nivesh", balance: m.nivshWalletBalance || 0 },
     { label: "Returns Wallet", key: "returns", balance: m.returnsWalletBalance || 0 },
+    { label: "Daily Return Wallet", key: "daily_returns", balance: m.dailyReturnsWallet || 0 },
+    { label: "Withdrawal Returns Wallet", key: "withdrawal_returns", balance: m.withdrawalReturnsWallet || 0 },
     { label: "Rewards Wallet", key: "rewards", balance: m.totalRewardIncome || 0 },
     { label: "Main Wallet Balance", key: "main", balance: m.walletBalance || 0 },
     { label: "All Earnings Wallet", key: "earnings", balance: m.earningsWalletBalance || 0 },
