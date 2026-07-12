@@ -166,13 +166,17 @@ export default function DashboardPage() {
   }, [countdownEndTime, accountState]);
 
   const isPredictedToday = !!predSubmission;
-  const todayRoiYield = isPredictedToday ? ((totalActiveInvestment * currentReturnPlan) / 100) : 0;
+  const currentMonthDays = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+  const dailyPredictionYield = isPredictedToday ? ((totalActiveInvestment * (currentReturnPlan / currentMonthDays)) / 100) : 0;
+  const dailyInvReturnYield = ((totalActiveInvestment * (7 / currentMonthDays)) / 100);
+  const todayRoiYield = dailyPredictionYield + dailyInvReturnYield;
+
   const pendingDailyAmt = (dailyReturnPending || user?.dailyReturnPending || 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayRoiYield : 0);
   const totalPendingReturnsAndLevel = pendingDailyAmt + (user?.pendingReturnsLevelIncome ?? 0);
 
-  const todayInvReturnYield = isPredictedToday ? ((totalActiveInvestment * 0.233) / 100) : 0;
+  const todayInvReturnYield = dailyInvReturnYield;
   let displayedTotalInvReturn = (user?.totalInvestmentReturn ?? profile?.totalInvestmentReturn ?? 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayInvReturnYield : 0);
-  if (displayedTotalInvReturn === 0 && isPredictedToday) {
+  if (displayedTotalInvReturn === 0) {
     displayedTotalInvReturn = todayInvReturnYield;
   }
 
