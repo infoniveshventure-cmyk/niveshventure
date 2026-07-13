@@ -65,7 +65,7 @@ export async function GET() {
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const currentReturnPlan = user.currentReturnPlan || 7;
-  const todayRoiDailyYield = hasPredictionToday ? ((totalActiveInvestment * currentReturnPlan) / 100) : 0;
+  const todayRoiDailyYield = hasPredictionToday ? ((totalActiveInvestment * (currentReturnPlan / daysInMonth)) / 100) : 0;
 
   const todayYield = activeDailyYield + todayRoiDailyYield;
 
