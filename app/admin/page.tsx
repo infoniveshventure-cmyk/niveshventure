@@ -100,29 +100,121 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="stat-card bg-gradient-to-br from-neon-green/10 to-transparent border border-neon-green/20">
+        {/* Company Main Balance Card */}
+        <Link href="/admin/company-wallet" className="stat-card bg-gradient-to-br from-neon-green/10 to-transparent border border-neon-green/20 hover:border-neon-green/40 transition block">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs text-ink-muted">Total Wallet Balance</p>
-              <p className="font-display text-2xl font-bold mt-1 text-white">${data.totalWalletBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+              <p className="text-xs text-ink-muted font-bold text-neon-green">Company Main Balance</p>
+              <p className="font-display text-2xl font-bold mt-1 text-white">${(data.companyMainBalance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
             </div>
             <DollarSign className="text-neon-green" size={20} />
           </div>
-          <div className="text-[10px] text-ink-muted mt-2">
-            Today's yield business: <span className="text-neon-green font-bold">${data.todayBusiness.toLocaleString()}</span>
+          <div className="text-[10px] text-neon-green/80 mt-2 font-medium">
+            Click to view full Ledger History →
           </div>
-        </div>
+        </Link>
 
-        <div className="stat-card bg-gradient-to-br from-neon-magenta/10 to-transparent border border-neon-magenta/20">
+        {/* Company Revenue Balance Card */}
+        <Link href="/admin/company-wallet" className="stat-card bg-gradient-to-br from-neon-magenta/10 to-transparent border border-neon-magenta/20 hover:border-neon-magenta/40 transition block">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs text-ink-muted">Pending Payouts</p>
-              <p className="font-display text-2xl font-bold mt-1 text-neon-magenta">${data.pendingPayouts.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+              <p className="text-xs text-ink-muted font-bold text-neon-magenta">Company Revenue</p>
+              <p className="font-display text-2xl font-bold mt-1 text-white">${(data.companyRevenue ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
             </div>
             <Clock className="text-neon-magenta" size={20} />
           </div>
-          <div className="text-[10px] text-ink-muted mt-2">
-            Closing Month Status: <span className="text-white font-semibold capitalize">{data.monthlyClosingStatus}</span>
+          <div className="text-[10px] text-neon-magenta/80 mt-2 font-medium">
+            Click to view Revenue Logs →
+          </div>
+        </Link>
+      </div>
+
+      {/* --- Investment Statistics Section --- */}
+      <div className="glass-card p-5 mb-6">
+        <h2 className="font-display font-semibold mb-4 text-white flex items-center gap-2">
+          <TrendingUp size={18} className="text-neon-cyan" />
+          Investment Summary (Nivesh Statistics)
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-4 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-xs text-ink-muted block font-semibold">Total Investment (Total Nivesh)</span>
+            <span className="text-2xl font-extrabold text-white mt-1 block">
+              ${(data.totalNivesh ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-4 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-xs text-ink-muted block font-semibold">Active Investment Today</span>
+            <span className="text-2xl font-extrabold text-neon-green mt-1 block">
+              ${(data.todayActiveInvestment ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* --- Payouts & Income Paid Section --- */}
+      <div className="glass-card p-5 mb-6">
+        <h2 className="font-display font-semibold mb-4 text-white flex items-center gap-2">
+          <DollarSign size={18} className="text-neon-violet" />
+          Distributed Payouts Statistics
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="p-3 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-[10px] text-ink-muted block font-semibold uppercase">Referral Paid</span>
+            <span className="text-lg font-bold text-white mt-1 block">
+              ${(data.totalReferralPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-3 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-[10px] text-ink-muted block font-semibold uppercase">Matching Paid</span>
+            <span className="text-lg font-bold text-white mt-1 block">
+              ${(data.totalMatchingPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-3 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-[10px] text-ink-muted block font-semibold uppercase">Daily Returns Paid</span>
+            <span className="text-lg font-bold text-white mt-1 block">
+              ${(data.totalDailyReturnsPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-3 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-[10px] text-ink-muted block font-semibold uppercase">Level Return Paid</span>
+            <span className="text-lg font-bold text-white mt-1 block">
+              ${(data.totalReturnLevelPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-3 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-[10px] text-ink-muted block font-semibold uppercase">Booster Income Paid</span>
+            <span className="text-lg font-bold text-white mt-1 block">
+              ${(data.totalBoosterPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-3 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-[10px] text-ink-muted block font-semibold uppercase">Rank Reward Paid</span>
+            <span className="text-lg font-bold text-white mt-1 block">
+              ${(data.totalRankRewardPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* --- Withdrawals Section --- */}
+      <div className="glass-card p-5 mb-6">
+        <h2 className="font-display font-semibold mb-4 text-white flex items-center gap-2">
+          <Clock size={18} className="text-neon-magenta" />
+          Withdrawal Control Summary
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-4 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-xs text-ink-muted block font-semibold">Total Withdrawal Paid (Completed)</span>
+            <span className="text-xl font-bold text-neon-green mt-1 block">
+              ${(data.totalWithdrawalsPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="p-4 border border-white/5 bg-white/5 rounded-xl">
+            <span className="text-xs text-ink-muted block font-semibold">Total Withdrawal Pending</span>
+            <span className="text-xl font-bold text-neon-magenta mt-1 block">
+              ${(data.totalWithdrawalsPending ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
           </div>
         </div>
       </div>

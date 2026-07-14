@@ -76,6 +76,20 @@ export async function POST(req: Request) {
   (payer as any)[walletInfo.field] = currentBalance - RENEWAL_AMOUNT;
   await payer.save();
 
+  // Log unlock access fee to Company Revenue Wallet
+  if (!payer.activatedByFreePin) {
+    const CompanyWalletTransaction = (await import("@/models/CompanyWalletTransaction")).default;
+    await CompanyWalletTransaction.create({
+      memberId: payer.memberId,
+      userName: payer.fullName,
+      walletType: "revenue",
+      type: "credit",
+      transactionType: "unlock_access",
+      amount: RENEWAL_AMOUNT,
+      description: `Unlock Access activation fee from member ${payer.memberId} for ${targetUser.memberId === payer.memberId ? "self-activation" : "activation of member " + targetUser.memberId}`,
+    });
+  }
+
   // Activate target and trigger referral & binary matching automation
   const { accessExpiresAt: newExpiry } = await processActivationIncomes(targetUser.memberId, RENEWAL_AMOUNT);
 

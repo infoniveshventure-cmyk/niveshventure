@@ -5,6 +5,7 @@ import User from "@/models/User";
 import Transaction from "@/models/Transaction";
 import WebsiteSettings from "@/models/WebsiteSettings";
 import Notice from "@/models/Notice";
+import CompanyWalletTransaction from "@/models/CompanyWalletTransaction";
 import { requireAdmin } from "@/lib/require-admin";
 import { notifyMember } from "@/lib/notification";
 
@@ -12,9 +13,23 @@ export async function GET(req: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
   await connectDB();
-  const status = req.nextUrl.searchParams.get("status") || "pending";
-  const deposits = await Deposit.find({ status }).sort({ createdAt: -1 }).limit(200);
-  return NextResponse.json({ deposits });
+  const status = req.nextUrl.searchParams.get("status");
+  const query: any = {};
+  if (status && status !== "all") {
+    query.status = status;
+  }
+  const deposits = await Deposit.find(query).sort({ createdAt: -1 }).limit(200).lean();
+
+  const memberIds = deposits.map((d: any) => d.memberId);
+  const users = await User.find({ memberId: { $in: memberIds } }).select("memberId fullName").lean();
+  const userMap = new Map(users.map((u: any) => [u.memberId, u.fullName]));
+
+  const depositsWithUser = deposits.map((d: any) => ({
+    ...d,
+    userName: userMap.get(d.memberId) || "Unknown User"
+  }));
+
+  return NextResponse.json({ deposits: depositsWithUser });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -40,6 +55,17 @@ export async function PATCH(req: NextRequest) {
       { $inc: { walletBalance: creditAmount } },
       { new: true }
     );
+
+    await CompanyWalletTransaction.create({
+      memberId: deposit.memberId,
+      userName: depositor ? depositor.fullName : "Unknown User",
+      walletType: "main",
+      type: "credit",
+      transactionType: "deposit",
+      amount: creditAmount,
+      description: `Deposit verified by admin for user ${deposit.memberId}`,
+    });
+
     await Transaction.create({
       memberId: deposit.memberId,
       type: "deposit",

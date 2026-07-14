@@ -83,11 +83,37 @@ export async function PATCH(req: NextRequest) {
 
   if (action === "approve") {
     withdrawal.status = "completed";
+    const userObj = await User.findOne({ memberId: withdrawal.memberId }).select("fullName");
+    const userName = userObj ? userObj.fullName : "Unknown User";
+
     await User.updateOne({ memberId: withdrawal.memberId }, { $inc: { totalWithdrawn: withdrawal.amount } });
     await Transaction.updateOne(
       { referenceId: withdrawal._id.toString(), type: "withdrawal" },
       { status: "completed" }
     );
+
+    const CompanyWalletTransaction = (await import("@/models/CompanyWalletTransaction")).default;
+    await CompanyWalletTransaction.create({
+      memberId: withdrawal.memberId,
+      userName: userName,
+      walletType: "main",
+      type: "debit",
+      transactionType: "withdrawal",
+      amount: withdrawal.amount,
+      description: `Approved withdrawal request of ${withdrawal.amount} USDT (net payable: ${withdrawal.netPayable} USDT) for member ${withdrawal.memberId}`,
+    });
+
+    if (withdrawal.processingCharge > 0) {
+      await CompanyWalletTransaction.create({
+        memberId: withdrawal.memberId,
+        userName: userName,
+        walletType: "revenue",
+        type: "credit",
+        transactionType: "withdrawal_fee",
+        amount: withdrawal.processingCharge,
+        description: `3% processing fee of ${withdrawal.processingCharge} USDT on withdrawal request for member ${withdrawal.memberId}`,
+      });
+    }
   } else {
     withdrawal.status = "rejected";
     // Refund the wallet since request is denied.

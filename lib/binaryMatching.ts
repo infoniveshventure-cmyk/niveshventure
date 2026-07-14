@@ -58,27 +58,52 @@ export async function processActivationIncomes(targetMemberId: string, customPri
         if (sponsor.isActive) {
           const amount = levelAmounts[level - 1];
           if (amount > 0) {
-            sponsor.earningsWalletBalance = (sponsor.earningsWalletBalance || 0) + amount;
-            sponsor.totalReferralIncome = (sponsor.totalReferralIncome || 0) + amount;
-            await sponsor.save();
+            // Check sponsor's active directs count
+            const activeDirectsCount = await User.countDocuments({ sponsorId: sponsor.memberId, isActive: true });
+            const requiredDirects = [0, 2, 3, 4, 5][level - 1];
 
-            await Transaction.create({
-              memberId: sponsor.memberId,
-              type: "referral_income",
-              direction: "credit",
-              amount: amount,
-              currency: "USDT",
-              status: "completed",
-              note: `Level ${level} Referral Income — member ${user.memberId} activated account`,
-              description: `Level ${level} referral reward from member ${user.memberId} activation ($${amount.toFixed(2)})`,
-            });
+            if (activeDirectsCount >= requiredDirects) {
+              sponsor.earningsWalletBalance = (sponsor.earningsWalletBalance || 0) + amount;
+              sponsor.totalReferralIncome = (sponsor.totalReferralIncome || 0) + amount;
+              await sponsor.save();
 
-            notifyMember(
-              sponsor.memberId,
-              "Referral Income Credited 💸",
-              `You received a Level ${level} referral bonus of $${amount.toFixed(2)} because your downline referral ${user.fullName} (${user.memberId}) activated their account.`,
-              "referral_income"
-            ).catch(() => {});
+              await Transaction.create({
+                memberId: sponsor.memberId,
+                type: "referral_income",
+                direction: "credit",
+                amount: amount,
+                currency: "USDT",
+                status: "completed",
+                note: `Level ${level} Referral Income — member ${user.memberId} activated account`,
+                description: `Level ${level} referral reward from member ${user.memberId} activation ($${amount.toFixed(2)})`,
+              });
+
+              notifyMember(
+                sponsor.memberId,
+                "Referral Income Credited 💸",
+                `You received a Level ${level} referral bonus of $${amount.toFixed(2)} because your downline referral ${user.fullName} (${user.memberId}) activated their account.`,
+                "referral_income"
+              ).catch(() => {});
+            } else {
+              // Log forfeited/lapse transaction for transparency (wallet balance is NOT credited)
+              await Transaction.create({
+                memberId: sponsor.memberId,
+                type: "referral_income",
+                direction: "credit",
+                amount: amount,
+                currency: "USDT",
+                status: "failed",
+                note: `Level ${level} Referral Income forfeited — Insufficient active directs`,
+                description: `Forfeited: Level ${level} referral income of $${amount.toFixed(2)} from ${user.memberId}. Sponsor has only ${activeDirectsCount} active directs (requires ${requiredDirects}).`,
+              });
+
+              notifyMember(
+                sponsor.memberId,
+                "Referral Income Forfeited ⚠️",
+                `Level ${level} referral income of $${amount.toFixed(2)} from ${user.fullName} (${user.memberId}) was forfeited because you only have ${activeDirectsCount} active directs (requires ${requiredDirects}).`,
+                "referral_income"
+              ).catch(() => {});
+            }
           }
         }
 
