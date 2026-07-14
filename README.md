@@ -12,7 +12,7 @@ cp .env.example .env
 ## github repo repush  :
 ``` 
 git add . 
-git commit -m "admin dashboad fixes" 
+git commit -m "admin dashboad fixed" 
 git push -u origin main
 ```
 
