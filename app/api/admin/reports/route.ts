@@ -207,14 +207,14 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(totalRows / limit),
     },
     analytics: {
-      totalCredits,
-      totalDebits,
-      totalIncome,
-      totalWithdrawals,
-      totalDeposits,
-      netProfit,
-      walletDistribution,
-      growthTrends,
+      totalCredits: 0,
+      totalDebits: 0,
+      totalIncome: 0,
+      totalWithdrawals: 0,
+      totalDeposits: 0,
+      netProfit: 0,
+      walletDistribution: [],
+      growthTrends: [],
     },
   });
 }

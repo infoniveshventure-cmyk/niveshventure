@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bannerUrl, setBannerUrl] = useState("");
+  const [notices, setNotices] = useState<any[]>([]);
 
   // Prediction system state
   const [predQuestion, setPredQuestion] = useState<any>(null);
@@ -109,6 +110,11 @@ export default function DashboardPage() {
           if (pred.dailyReturnPending !== undefined) {
             setDailyReturnPending(pred.dailyReturnPending);
           }
+        }
+        const noticesRes = await fetch("/api/notices", { cache: "no-store" });
+        if (noticesRes.ok) {
+          const nData = await noticesRes.json();
+          setNotices(nData.notices || []);
         }
       } finally {
         setLoading(false);
@@ -272,6 +278,20 @@ export default function DashboardPage() {
 
   return (
     <DashboardShell>
+      {/* ── Notices / Good News Marquee ── */}
+      {notices.length > 0 && (
+        <div className="mb-6 overflow-hidden rounded-xl border border-neon-cyan/20 bg-neon-cyan/5 py-2.5 px-4 shadow-[0_0_15px_rgba(0,229,255,0.05)]">
+          <div className="flex items-center gap-3">
+            <span className="shrink-0 bg-neon-cyan text-black text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">
+              Good News
+            </span>
+            <marquee className="text-xs text-ink font-medium whitespace-nowrap" scrollamount="4">
+              {notices.map((n) => `🔥 ${n.title}: ${n.message}`).join("      |      ")}
+            </marquee>
+          </div>
+        </div>
+      )}
+
       {/* ── Welcome Hero Card ── */}
       <div
         className="mb-6 relative overflow-hidden rounded-2xl p-5 lg:p-7"
