@@ -86,7 +86,7 @@ export default function HeroSection() {
               style={{ color: '#00E5FF' }}
             >
               <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-              Trusted by 50,000+ Investors Worldwide
+              Trusted by 10K+ Members
             </motion.div>
 
             {/* Headline */}

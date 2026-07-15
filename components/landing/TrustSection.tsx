@@ -33,7 +33,7 @@ const TRUST_PILLARS = [
     icon: Users,
     title: "Community Growth",
     description: "Strength in numbers. Our binary tree structure rewards community builders, making every member's success tied to the collective growth.",
-    points: ["50,000+ active members", "Global community support", "Collaborative income model"],
+    points: ["10K+ active members", "Global community support", "Collaborative income model"],
     color: "#FF3CAC",
   },
 ];
