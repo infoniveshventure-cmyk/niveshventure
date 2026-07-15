@@ -179,7 +179,7 @@ export default function DashboardPage() {
   const isPredictedToday = !!predSubmission;
   const todayRoiYield = isPredictedToday ? ((totalActiveInvestment * currentReturnPlan) / 100) : 0;
   const todayRoiDailyYield = isPredictedToday ? ((totalActiveInvestment * (currentReturnPlan / daysInMonth)) / 100) : 0;
-  
+
   const pendingDailyAmt = (dailyReturnPending || user?.dailyReturnPending || 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayRoiYield : 0);
   const totalPendingReturnsAndLevel = pendingDailyAmt + (user?.pendingReturnsLevelIncome ?? 0);
 
@@ -284,7 +284,7 @@ export default function DashboardPage() {
       {notices.length > 0 && (
         <div className="mb-6 overflow-hidden rounded-xl border border-neon-cyan/20 bg-neon-cyan/5 py-2.5 px-4 shadow-[0_0_15px_rgba(0,229,255,0.05)] flex items-center gap-3 relative">
           <span className="shrink-0 bg-neon-cyan text-black text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider animate-pulse z-10">
-            Good News
+            Nivesh News
           </span>
           <div className="relative flex-1 overflow-hidden h-5 flex items-center">
             <style>{`
@@ -588,16 +588,31 @@ export default function DashboardPage() {
       </div>
 
       {offers.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto mb-6 pb-1">
-          {offers.map((o) => (
-            <div key={o._id} className="shrink-0 glass-card border-neon-magenta/40 p-4 min-w-[220px]">
-              <p className="text-sm font-semibold text-neon-magenta">{o.title}</p>
-              <p className="text-xs text-ink-muted mt-1">{o.message}</p>
-              {o.price > 0 && (
-                <p className="text-sm font-bold text-neon-cyan mt-2">${o.price.toLocaleString()}</p>
-              )}
+        <div className="mb-6 overflow-hidden rounded-xl border border-neon-magenta/20 bg-neon-magenta/5 py-2.5 px-4 shadow-[0_0_15px_rgba(255,60,172,0.05)] flex items-center gap-3 relative">
+          <span className="shrink-0 bg-neon-magenta text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider animate-pulse z-10">
+            Good News
+          </span>
+          <div className="relative flex-1 overflow-hidden h-5 flex items-center">
+            <style>{`
+              @keyframes marqueeOffers {
+                0% { transform: translateX(100%); }
+                100% { transform: translateX(-100%); }
+              }
+              .animate-marquee-offers {
+                animation: marqueeOffers 25s linear infinite;
+              }
+              .animate-marquee-offers:hover {
+                animation-play-state: paused;
+              }
+            `}</style>
+            <div className="animate-marquee-offers whitespace-nowrap flex gap-8 absolute left-0">
+              {offers.map((o, idx) => (
+                <span key={idx} className="text-xs text-ink font-medium">
+                  📢 <span className="text-neon-magenta font-bold">{o.title}</span>: {o.message} {o.price > 0 ? `($${o.price.toLocaleString()})` : ""}
+                </span>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       )}
 
