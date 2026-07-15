@@ -5,11 +5,32 @@ export const dynamic = "force-dynamic";
 
 // Called by system cron at 12:00 PM daily
 // Header: x-cron-secret: <CRON_SECRET env var>
-export async function POST(req: NextRequest) {
-  const secret = req.headers.get("x-cron-secret");
-  if (secret !== process.env.CRON_SECRET) {
+function verifySecret(req: NextRequest): boolean {
+  const customSecret = req.headers.get("x-cron-secret");
+  const authHeader = req.headers.get("Authorization");
+  const bearerSecret = authHeader ? authHeader.replace("Bearer ", "").trim() : null;
+
+  return (
+    customSecret === process.env.CRON_SECRET ||
+    bearerSecret === process.env.CRON_SECRET
+  );
+}
+
+export async function GET(req: NextRequest) {
+  if (!verifySecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  return handleDailyReturn();
+}
+
+export async function POST(req: NextRequest) {
+  if (!verifySecret(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return handleDailyReturn();
+}
+
+async function handleDailyReturn() {
 
   try {
     const result = await runDailyReturn();
