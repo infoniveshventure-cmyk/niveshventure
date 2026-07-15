@@ -15,6 +15,8 @@ import { PremiumTiltGlow } from "@/components/motion/PremiumTiltGlow";
 
 type Tx = { _id: string; type: string; direction: "credit" | "debit"; amount: number; currency: string; createdAt: string; note: string };
 
+const Marquee = "marquee" as any;
+
 export default function DashboardPage() {
   const { profile } = useAuth();
   const [stats, setStats] = useState<any>(null);
@@ -280,14 +282,30 @@ export default function DashboardPage() {
     <DashboardShell>
       {/* ── Notices / Good News Marquee ── */}
       {notices.length > 0 && (
-        <div className="mb-6 overflow-hidden rounded-xl border border-neon-cyan/20 bg-neon-cyan/5 py-2.5 px-4 shadow-[0_0_15px_rgba(0,229,255,0.05)]">
-          <div className="flex items-center gap-3">
-            <span className="shrink-0 bg-neon-cyan text-black text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">
-              Good News
-            </span>
-            <marquee className="text-xs text-ink font-medium whitespace-nowrap" scrollamount="4">
-              {notices.map((n) => `🔥 ${n.title}: ${n.message}`).join("      |      ")}
-            </marquee>
+        <div className="mb-6 overflow-hidden rounded-xl border border-neon-cyan/20 bg-neon-cyan/5 py-2.5 px-4 shadow-[0_0_15px_rgba(0,229,255,0.05)] flex items-center gap-3 relative">
+          <span className="shrink-0 bg-neon-cyan text-black text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider animate-pulse z-10">
+            Good News
+          </span>
+          <div className="relative flex-1 overflow-hidden h-5 flex items-center">
+            <style>{`
+              @keyframes marquee {
+                0% { transform: translateX(100%); }
+                100% { transform: translateX(-100%); }
+              }
+              .animate-marquee-custom {
+                animation: marquee 25s linear infinite;
+              }
+              .animate-marquee-custom:hover {
+                animation-play-state: paused;
+              }
+            `}</style>
+            <div className="animate-marquee-custom whitespace-nowrap flex gap-8 absolute left-0">
+              {notices.map((n, idx) => (
+                <span key={idx} className="text-xs text-ink font-medium">
+                  🔥 {n.title}: {n.message}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       )}
