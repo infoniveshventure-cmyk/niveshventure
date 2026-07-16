@@ -34,6 +34,31 @@ export async function GET(req: NextRequest) {
   }
   const hasRange = Object.keys(dateFilter).length > 0;
 
+  const hasFilters = !!(from || to || q.trim() || walletType || status || transactionType);
+
+  if (!hasFilters) {
+    return NextResponse.json({
+      type,
+      rows: [],
+      pagination: {
+        page: 1,
+        limit,
+        totalRows: 0,
+        totalPages: 0,
+      },
+      analytics: {
+        totalCredits: 0,
+        totalDebits: 0,
+        totalIncome: 0,
+        totalWithdrawals: 0,
+        totalDeposits: 0,
+        netProfit: 0,
+        walletDistribution: [],
+        growthTrends: [],
+      },
+    });
+  }
+
   // Resolve user search filter
   let userMemberIds: string[] = [];
   let filterByUser = false;
@@ -207,14 +232,14 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(totalRows / limit),
     },
     analytics: {
-      totalCredits: 0,
-      totalDebits: 0,
-      totalIncome: 0,
-      totalWithdrawals: 0,
-      totalDeposits: 0,
-      netProfit: 0,
-      walletDistribution: [],
-      growthTrends: [],
+      totalCredits,
+      totalDebits,
+      totalIncome,
+      totalWithdrawals,
+      totalDeposits,
+      netProfit,
+      walletDistribution,
+      growthTrends,
     },
   });
 }
