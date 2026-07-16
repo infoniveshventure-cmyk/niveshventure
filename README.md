@@ -12,7 +12,7 @@ cp .env.example .env
 ## github repo repush  :
 ``` 
 git add . 
-git commit -m "good news sliding & nivesh news" 
+git commit -m "dashboard wallet or self p2p" 
 git push -u origin main
 ```
 
