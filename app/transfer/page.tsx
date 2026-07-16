@@ -5,6 +5,7 @@ import DashboardShell from "@/components/DashboardShell";
 import toast from "react-hot-toast";
 import PasswordInput from "@/components/ui/PasswordInput";
 import { Send, Clock, Share2, Copy, Wallet, ChevronDown } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
 type WalletOption = { key: string; label: string; balance: number };
 type TransferRecord = {
@@ -80,6 +81,8 @@ Nivesh Ventures`;
 }
 
 export default function TransferPage() {
+  const { profile } = useAuth();
+  const [isSelfTransfer, setIsSelfTransfer] = useState(false);
   const [wallets, setWallets] = useState<WalletOption[]>([]);
   const [selectedWallet, setSelectedWallet] = useState("main");
   const [receiverWallet, setReceiverWallet] = useState("main");
@@ -93,6 +96,17 @@ export default function TransferPage() {
   const [shareTarget, setShareTarget] = useState<TransferRecord | null>(null);
   const [p2pEnabled, setP2pEnabled] = useState(true);
   const [activeTab, setActiveTab] = useState<"sent" | "received">("sent");
+
+  // Handle self-transfer toggling
+  useEffect(() => {
+    if (isSelfTransfer) {
+      setReceiverId(profile?.memberId || "");
+      setReceiverName(profile?.fullName || "");
+    } else {
+      setReceiverId("");
+      setReceiverName("");
+    }
+  }, [isSelfTransfer, profile]);
 
   const loadData = useCallback(async () => {
     try {
@@ -108,8 +122,9 @@ export default function TransferPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Debounced receiver lookup
+  // Debounced receiver lookup (only if not self transfer)
   useEffect(() => {
+    if (isSelfTransfer) return;
     const term = receiverId.trim();
     if (term.length < 5) { setReceiverName(""); return; }
     const delay = setTimeout(async () => {
@@ -124,7 +139,7 @@ export default function TransferPage() {
       } catch { setReceiverName(""); }
     }, 500);
     return () => clearTimeout(delay);
-  }, [receiverId]);
+  }, [receiverId, isSelfTransfer]);
 
   const selectedWalletInfo = wallets.find((w) => w.key === selectedWallet);
 
@@ -175,6 +190,32 @@ export default function TransferPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <form onSubmit={submit} className="glass-card p-6 space-y-4">
           <h2 className="font-display font-semibold mb-2">Send Funds</h2>
+
+          {/* Transfer Mode Toggle */}
+          <div className="flex gap-2 mb-2 bg-white/5 p-1 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setIsSelfTransfer(false)}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                !isSelfTransfer
+                  ? "bg-neon-cyan/20 text-neon-cyan shadow-[0_0_10px_rgba(0,229,255,0.1)]"
+                  : "text-ink-muted hover:text-white"
+              }`}
+            >
+              To Another Member
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSelfTransfer(true)}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                isSelfTransfer
+                  ? "bg-neon-cyan/20 text-neon-cyan shadow-[0_0_10px_rgba(0,229,255,0.1)]"
+                  : "text-ink-muted hover:text-white"
+              }`}
+            >
+              Self Transfer (Own Wallets)
+            </button>
+          </div>
 
           {/* Wallet Selector */}
           <div>
@@ -237,10 +278,12 @@ export default function TransferPage() {
 
           {/* Receiver ID */}
           <div>
-            <label className="text-xs text-ink-muted block mb-1.5">Receiver Member ID</label>
+            <label className="text-xs text-ink-muted block mb-1.5">
+              {isSelfTransfer ? "Self Member ID" : "Receiver Member ID"}
+            </label>
             <input
-              disabled={!p2pEnabled}
-              className="input-field disabled:opacity-50"
+              disabled={!p2pEnabled || isSelfTransfer}
+              className="input-field disabled:opacity-75"
               placeholder="e.g. NV123456"
               value={receiverId}
               onChange={(e) => setReceiverId(e.target.value)}
@@ -250,7 +293,7 @@ export default function TransferPage() {
                 ✓ Receiver: <span className="font-bold">{receiverName}</span>
               </p>
             )}
-            {receiverId.length >= 5 && !receiverName && (
+            {!isSelfTransfer && receiverId.length >= 5 && !receiverName && (
               <p className="text-xs text-ink-muted mt-1">Looking up member...</p>
             )}
           </div>
@@ -270,10 +313,19 @@ export default function TransferPage() {
           <PasswordInput placeholder="Access Key" value={accessKey}
             onChange={(e) => setAccessKey(e.target.value)} />
 
-          <button disabled={busy || !receiverName || !p2pEnabled} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
+          {isSelfTransfer && selectedWallet === receiverWallet && (
+            <p className="text-xs text-neon-magenta text-center font-semibold">
+              Sender and receiver wallets must be different for self transfers.
+            </p>
+          )}
+
+          <button
+            disabled={busy || !receiverName || !p2pEnabled || (isSelfTransfer && selectedWallet === receiverWallet)}
+            className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
+          >
             <Send size={15} /> {!p2pEnabled ? "P2P Transfers Disabled" : busy ? "Sending..." : "Transfer Funds"}
           </button>
-          {!receiverName && receiverId.length >= 5 && p2pEnabled && (
+          {!receiverName && receiverId.length >= 5 && p2pEnabled && !isSelfTransfer && (
             <p className="text-xs text-neon-magenta text-center">Please wait for receiver verification</p>
           )}
         </form>

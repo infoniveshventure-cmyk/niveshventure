@@ -83,8 +83,8 @@ export async function POST(req: NextRequest) {
     if (!receiverId || !amount || !accessKey) {
       return NextResponse.json({ error: "Receiver ID, amount and Access Key are required" }, { status: 400 });
     }
-    if (receiverId === session.memberId) {
-      return NextResponse.json({ error: "Cannot transfer to yourself" }, { status: 400 });
+    if (receiverId === session.memberId && walletType === receiverWalletType) {
+      return NextResponse.json({ error: "Cannot transfer to the same wallet on your own account" }, { status: 400 });
     }
 
     const senderWalletInfo = WALLET_FIELD_MAP[walletType];
