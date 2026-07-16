@@ -119,14 +119,13 @@ export default function WalletPage() {
           Withdraw
         </Link>
       </div>
-
       {/* ── Section 1: Primary Wallets ── */}
       <p className="text-xs text-ink-muted uppercase tracking-widest font-semibold mb-3">
-        Primary Wallets
+        Main Balance Wallet
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="max-w-md mb-6">
         {/* 1. My Wallet */}
-        <Link href="/withdrawal" className="stat-card group">
+        <Link href="/withdrawal" className="stat-card group block">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center mb-3">
             <Wallet size={18} className="text-base" />
           </div>
@@ -135,89 +134,10 @@ export default function WalletPage() {
             {sym}{(w?.walletBalance ?? 0).toLocaleString()}
           </p>
           <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
-            Main balance for withdrawals &amp; transactions
-          </p>
-        </Link>
-
-        {/* 2. Nivesh Wallet */}
-        <Link href="/invest" className="stat-card group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-green to-neon-cyan flex items-center justify-center mb-3">
-            <PiggyBank size={18} className="text-base" />
-          </div>
-          <p className="text-xs text-ink-muted">Nivesh Wallet</p>
-          <p className="font-display text-xl font-bold mt-1 group-hover:text-neon-cyan transition">
-            {sym}{(w?.nivshWalletBalance ?? 0).toLocaleString()}
-          </p>
-          <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
-            Dedicated wallet for investment plans
-          </p>
-        </Link>
-
-        {/* 11. USDT Wallet */}
-        <Link href="/deposit" className="stat-card group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-magenta to-neon-violet flex items-center justify-center mb-3">
-            <Coins size={18} className="text-base" />
-          </div>
-          <p className="text-xs text-ink-muted">USDT Wallet</p>
-          <p className="font-display text-xl font-bold mt-1 group-hover:text-neon-cyan transition">
-            ${(w?.usdtWalletBalance ?? 0).toLocaleString()}
-          </p>
-          <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
-            BEP20 crypto balance for USDT transactions
+            Main balance for withdrawals, P2P transfers &amp; investments
           </p>
         </Link>
       </div>
-
-      {/* ── Booster & Returns Wallets ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Link href="/booster-wallet" className="stat-card group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mb-3">
-            <Zap size={18} className="text-white" />
-          </div>
-          <p className="text-xs text-ink-muted">Booster Wallet</p>
-          <p className="font-display text-xl font-bold mt-1 text-amber-400 group-hover:text-amber-300 transition">
-            {sym}{(w?.boosterWalletBalance ?? 0).toLocaleString()}
-          </p>
-          <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
-            Admin-managed promotional &amp; bonus balance
-          </p>
-        </Link>
-
-        {/* Daily Return Wallet */}
-        <button
-          onClick={() => {
-            setTxFilter("returns_income");
-            document.getElementById("tx-history")?.scrollIntoView({ behavior: "smooth" });
-          }}
-          className="stat-card group text-left w-full block"
-        >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-cyan to-neon-violet flex items-center justify-center mb-3">
-            <Coins size={18} className="text-base" />
-          </div>
-          <p className="text-xs text-ink-muted">Daily Return Wallet</p>
-          <p className="font-display text-xl font-bold mt-1 text-neon-cyan group-hover:text-neon-cyan/85 transition">
-            {sym}{(w?.dailyReturnsWallet ?? 0).toLocaleString()}
-          </p>
-          <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
-            Daily ROI &amp; level returns (Click to view history)
-          </p>
-        </button>
-
-        {/* Withdrawal Returns Wallet */}
-        <Link href="/withdrawal" className="stat-card group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-green to-neon-violet flex items-center justify-center mb-3">
-            <Wallet size={18} className="text-base" />
-          </div>
-          <p className="text-xs text-ink-muted">Withdrawal Returns Wallet</p>
-          <p className="font-display text-xl font-bold mt-1 text-neon-green group-hover:text-neon-green/85 transition">
-            {sym}{(w?.withdrawalReturnsWallet ?? 0).toLocaleString()}
-          </p>
-          <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
-            Settled returns ready for withdrawal &amp; P2P transfer
-          </p>
-        </Link>
-      </div>
-
       {/* ── Section 2: Investment Summary ── */}
       <p className="text-xs text-ink-muted uppercase tracking-widest font-semibold mb-3">
         Investment Summary

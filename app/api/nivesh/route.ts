@@ -12,9 +12,6 @@ const LOCK_IN_MONTHS = 11;
 
 const WALLET_FIELDS: Record<string, { field: string; label: string }> = {
   main: { field: "walletBalance", label: "Main Wallet" },
-  booster: { field: "boosterWalletBalance", label: "Booster Wallet" },
-  nivesh: { field: "nivshWalletBalance", label: "Nivesh Wallet" },
-  usdt: { field: "usdtWalletBalance", label: "USDT Wallet" },
 };
 
 export async function GET(req: NextRequest) {
@@ -45,7 +42,7 @@ export async function GET(req: NextRequest) {
 
   // Get user details to return current balances
   const user = await User.findOne({ memberId: session.memberId }).select(
-    "walletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance"
+    "walletBalance"
   );
 
   const BusinessRule = (await import("@/models/BusinessRule")).default;
@@ -57,9 +54,6 @@ export async function GET(req: NextRequest) {
     minInvestment,
     wallets: [
       { key: "main", label: "Main Wallet", balance: user?.walletBalance ?? 0 },
-      { key: "booster", label: "Booster Wallet", balance: user?.boosterWalletBalance ?? 0 },
-      { key: "nivesh", label: "Nivesh Wallet", balance: user?.nivshWalletBalance ?? 0 },
-      { key: "usdt", label: "USDT Wallet", balance: user?.usdtWalletBalance ?? 0 },
     ],
   });
 }

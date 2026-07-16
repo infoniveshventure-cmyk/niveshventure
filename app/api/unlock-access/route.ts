@@ -12,24 +12,18 @@ const VALIDITY_DAYS = 365;
 
 const WALLET_FIELDS: Record<string, { field: string; label: string }> = {
   main: { field: "walletBalance", label: "Main Wallet" },
-  booster: { field: "boosterWalletBalance", label: "Booster Wallet" },
-  nivesh: { field: "nivshWalletBalance", label: "Nivesh Wallet" },
-  usdt: { field: "usdtWalletBalance", label: "USDT Wallet" },
 };
 
 export async function GET() {
   const session = await getSessionFromCookies();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   await connectDB();
-  const user = await User.findOne({ memberId: session.memberId }).select("isActive accessExpiresAt walletBalance boosterWalletBalance nivshWalletBalance usdtWalletBalance");
+  const user = await User.findOne({ memberId: session.memberId }).select("isActive accessExpiresAt walletBalance");
   return NextResponse.json({
     isActive: user?.isActive,
     accessExpiresAt: user?.accessExpiresAt,
     wallets: [
       { key: "main", label: "Main Wallet", balance: user?.walletBalance ?? 0 },
-      { key: "booster", label: "Booster Wallet", balance: user?.boosterWalletBalance ?? 0 },
-      { key: "nivesh", label: "Nivesh Wallet", balance: user?.nivshWalletBalance ?? 0 },
-      { key: "usdt", label: "USDT Wallet", balance: user?.usdtWalletBalance ?? 0 },
     ]
   });
 }

@@ -134,8 +134,8 @@ export default function InvestPage() {
     setActiveFilters({ from: "", to: "" });
   };
 
-  const selectedWalletInfo = wallets.find((w) => w.key === selectedWallet);
-  const modalWalletInfo = wallets.find((w) => w.key === modalWallet);
+  const selectedWalletInfo = wallets.find((w) => w.key === "main");
+  const modalWalletInfo = wallets.find((w) => w.key === "main");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -219,31 +219,10 @@ export default function InvestPage() {
         <form onSubmit={submit} className="glass-card p-6 space-y-4 border-neon-cyan/20 h-fit">
           <h2 className="font-display font-semibold mb-1">New Investment</h2>
 
-          {/* Wallet Selection Dropdown */}
-          <div>
-            <label className="text-xs text-ink-muted block mb-1.5 flex items-center gap-1">
-              <Wallet size={12} className="text-neon-cyan" /> Select Wallet
-            </label>
-            <div className="relative">
-              <select
-                className="input-field w-full appearance-none pr-8 cursor-pointer"
-                value={selectedWallet}
-                onChange={(e) => setSelectedWallet(e.target.value)}
-              >
-                {wallets.map((w) => (
-                  <option key={w.key} value={w.key}>
-                    {w.label} — ${w.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Available Wallet Balance indicator */}
+          {/* Main Wallet Balance indicator */}
           {selectedWalletInfo && (
             <div className="bg-white/3 border border-white/5 rounded-xl p-3 flex justify-between items-center text-xs">
-              <span className="text-ink-muted">Available Balance:</span>
+              <span className="text-ink-muted">Main Wallet Balance:</span>
               <span className="font-bold text-neon-cyan">${selectedWalletInfo.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
             </div>
           )}
@@ -455,24 +434,13 @@ export default function InvestPage() {
                 </div>
               )}
 
-              {/* Wallet Selection */}
-              {wallets.length > 0 && (
-                <div>
-                  <label className="text-xs text-ink-muted block mb-1.5 font-medium">Select Wallet to Pay From</label>
-                  <div className="relative">
-                    <select
-                      className="input-field w-full appearance-none pr-8 text-sm cursor-pointer"
-                      value={modalWallet}
-                      onChange={(e) => setModalWallet(e.target.value)}
-                    >
-                      {wallets.map((w: any) => (
-                        <option key={w.key} value={w.key}>
-                          {w.label} (Balance: ${w.balance.toLocaleString()})
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none">▼</div>
-                  </div>
+              {/* Available Balance Display */}
+              {modalWalletInfo && (
+                <div className="text-xs text-ink-muted flex justify-between border-t border-white/5 pt-2">
+                  <span>Your Main Wallet Balance:</span>
+                  <span className="font-semibold text-white">
+                    ${modalWalletInfo.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
               )}
 

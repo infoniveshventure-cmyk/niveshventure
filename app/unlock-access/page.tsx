@@ -159,24 +159,13 @@ export default function UnlockAccessPage() {
           </div>
         </div>
 
-        {/* Wallet Selector for Account Activation */}
+        {/* Main Wallet Balance Display */}
         {!status?.isActive && status?.wallets && (
-          <div className="mb-6 text-left">
-            <label className="text-xs text-ink-muted block mb-1.5 font-medium">Select Wallet to Pay From</label>
-            <div className="relative">
-              <select
-                className="input-field w-full appearance-none pr-8 text-sm"
-                value={selectedWallet}
-                onChange={(e) => setSelectedWallet(e.target.value)}
-              >
-                {status.wallets.map((w: any) => (
-                  <option key={w.key} value={w.key}>
-                    {w.label} (Balance: ${w.balance.toLocaleString()})
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none">▼</div>
-            </div>
+          <div className="mb-6 text-left bg-white/5 border border-white/5 rounded-2xl p-4">
+            <p className="text-xs text-ink-muted">Available Main Wallet Balance</p>
+            <p className="text-sm font-bold text-white mt-1">
+              ${(status.wallets.find((w: any) => w.key === "main")?.balance ?? 0).toLocaleString()}
+            </p>
           </div>
         )}
 
@@ -260,24 +249,13 @@ export default function UnlockAccessPage() {
                 </div>
               )}
 
-              {/* Wallet Selection */}
+              {/* Payer Main Wallet Balance */}
               {status?.wallets && (
-                <div>
-                  <label className="text-xs text-ink-muted block mb-1.5 font-medium">Select Wallet to Pay From</label>
-                  <div className="relative">
-                    <select
-                      className="input-field w-full appearance-none pr-8 text-sm cursor-pointer"
-                      value={modalWallet}
-                      onChange={(e) => setModalWallet(e.target.value)}
-                    >
-                      {status.wallets.map((w: any) => (
-                        <option key={w.key} value={w.key}>
-                          {w.label} (Balance: ${w.balance.toLocaleString()})
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none">▼</div>
-                  </div>
+                <div className="text-xs text-ink-muted flex justify-between border-t border-white/5 pt-2">
+                  <span>Your Main Wallet Balance:</span>
+                  <span className="font-semibold text-white">
+                    ${(status.wallets.find((w: any) => w.key === "main")?.balance ?? 0).toLocaleString()}
+                  </span>
                 </div>
               )}
             </div>
