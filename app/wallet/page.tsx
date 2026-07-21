@@ -66,6 +66,7 @@ export default function WalletPage() {
   const [txFilter, setTxFilter] = useState<string>("all");
   const [userRank, setUserRank] = useState<string>("Unranked");
   const [dailyReturnPending, setDailyReturnPending] = useState(0);
+  const [pendingReturnsLevelIncome, setPendingReturnsLevelIncome] = useState(0);
   const [totalDailyReturnSettled, setTotalDailyReturnSettled] = useState(0);
 
   const sym = currencySymbol(profile?.country);
@@ -79,6 +80,7 @@ export default function WalletPage() {
         setData(walletData);
         setUserRank(meData?.user?.rank || meData?.stats?.rank || "Unranked");
         setDailyReturnPending(meData?.stats?.dailyReturnPending || 0);
+        setPendingReturnsLevelIncome(meData?.stats?.pendingReturnsLevelIncome || 0);
         setTotalDailyReturnSettled(meData?.stats?.totalDailyReturnSettled || 0);
       })
       .finally(() => setLoading(false));
@@ -286,19 +288,19 @@ export default function WalletPage() {
           </div>
         </Link>
 
-        {/* Daily Return Pending */}
+        {/* Returns Pending Wallet */}
         <div className="stat-card border border-yellow-400/20">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-yellow-400/15 flex items-center justify-center shrink-0">
               <Clock size={22} className="text-yellow-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-ink-muted font-semibold uppercase tracking-wide">Daily Return (Pending)</p>
+              <p className="text-xs text-ink-muted font-semibold uppercase tracking-wide">Returns Pending Wallet</p>
               <p className="font-display text-xl font-bold mt-0.5 text-yellow-400">
-                {loading ? "—" : `$${dailyReturnPending.toLocaleString(undefined, { maximumFractionDigits: 4 })}`}
+                {loading ? "—" : `$${(dailyReturnPending + pendingReturnsLevelIncome).toLocaleString(undefined, { maximumFractionDigits: 4 })}`}
               </p>
               <p className="text-[10px] text-yellow-400/60 mt-0.5 leading-snug">
-                Available for withdrawal after monthly settlement
+                Accumulates daily return + level income. Non-withdrawable, non-P2P.
               </p>
               {totalDailyReturnSettled > 0 && (
                 <p className="text-[10px] text-neon-green/70 mt-1">

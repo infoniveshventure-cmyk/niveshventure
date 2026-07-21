@@ -26,7 +26,7 @@ type TransferRecord = {
 const WALLET_LABELS: Record<string, string> = {
   main: "Main Wallet",
   earnings: "All Earnings Wallet",
-  returns: "Daily Returns & Level Wallet",
+  withdrawal_returns: "Level Return Wallet",
 };
 
 function ShareModal({ tx, onClose }: { tx: TransferRecord; onClose: () => void }) {
@@ -254,27 +254,6 @@ export default function TransferPage() {
             )}
           </div>
 
-          {/* Receiver Wallet Selector */}
-          <div>
-            <label className="text-xs text-ink-muted block mb-1.5 flex items-center gap-1">
-              <Wallet size={12} /> Select Receiver Wallet (Credited to)
-            </label>
-            <div className="relative">
-              <select
-                disabled={!p2pEnabled}
-                className="input-field w-full appearance-none pr-8 disabled:opacity-50"
-                value={receiverWallet}
-                onChange={(e) => setReceiverWallet(e.target.value)}
-              >
-                {wallets.map((w) => (
-                  <option key={w.key} value={w.key}>
-                    {w.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
-            </div>
-          </div>
 
           {/* Receiver ID */}
           <div>
@@ -352,7 +331,7 @@ export default function TransferPage() {
             <p className="font-semibold text-white mb-1">Transfer Rules</p>
             <ul className="space-y-1">
               <li>• Funds are deducted from your selected wallet instantly</li>
-              <li>• Receiver gets credited to the selected receiver wallet</li>
+              <li>• Receiver gets credited to their Main Wallet only</li>
               <li>• Access Key is required to authorize each transfer</li>
               <li>• All transfers are final and cannot be reversed</li>
             </ul>

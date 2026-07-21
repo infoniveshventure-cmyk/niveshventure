@@ -6,7 +6,7 @@ import PredictionSubmission from "@/models/PredictionSubmission";
 import User from "@/models/User";
 import WebsiteSettings from "@/models/WebsiteSettings";
 import Investment from "@/models/Investment";
-import { getISTDateString, recalculateDailyReturnForUser } from "@/lib/dailyReturn";
+import { getISTDateString, recalculateDailyReturnForUser, generateDailyReturnForUser } from "@/lib/dailyReturn";
 import ReturnsLevelIncome from "@/models/ReturnsLevelIncome";
 import DailyReturn from "@/models/DailyReturn";
 
@@ -235,8 +235,8 @@ export async function POST(req: NextRequest) {
     user.lastPredictionDate = today;
     await user.save();
 
-    // Retroactively calculate daily return if the daily ROI cron has already run today
-    await recalculateDailyReturnForUser(session.memberId, today);
+    // Instantly calculate and credit daily return upon prediction submission
+    await generateDailyReturnForUser(session.memberId, today);
 
     return NextResponse.json({ success: true, submission });
   } catch (err: any) {

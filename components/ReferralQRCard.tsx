@@ -21,7 +21,7 @@ export default function ReferralQRCard({ memberId }: { memberId: string }) {
     const url = canvas.toDataURL("image/png");
     const a = document.createElement("a");
     a.href = url;
-    a.download = `nexachain-referral-${memberId}.png`;
+    a.download = `nivesh-venture-referral-${memberId}.png`;
     a.click();
   }
 

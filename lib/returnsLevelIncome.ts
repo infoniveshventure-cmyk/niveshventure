@@ -150,7 +150,7 @@ export async function calculateDailyReturnsLevelIncome(forceDate?: string) {
 
             await User.updateOne(
               { _id: upline._id },
-              { $inc: { dailyReturnsWallet: calculatedAmount, pendingReturnsLevelIncome: calculatedAmount } }
+              { $inc: { pendingReturnsLevelIncome: calculatedAmount } }
             );
 
           } catch (err: any) {

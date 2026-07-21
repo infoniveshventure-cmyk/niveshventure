@@ -43,6 +43,13 @@ const MonthlyClosingSchema = new Schema(
     },
     lastManualActionBy: { type: String, default: "" },
     lastManualActionAt: { type: Date, default: null },
+    
+    // Admin closing report fields
+    users7ClosedCount: { type: Number, default: 0 },
+    users5ClosedCount: { type: Number, default: 0 },
+    totalDailyReturnClosed: { type: Number, default: 0 },
+    totalReturnsLevelClosed: { type: Number, default: 0 },
+    closedByAdminName: { type: String, default: "" },
   },
   { timestamps: true }
 );

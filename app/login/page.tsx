@@ -51,7 +51,15 @@ export default function LoginPage() {
         return;
       }
 
-      const credential = await signInWithEmailAndPassword(auth, email, password);
+      // Resolve Email from User ID or Email
+      const resolveRes = await fetch(`/api/auth/resolve-identifier?identifier=${encodeURIComponent(email)}`);
+      const resolveData = await resolveRes.json();
+      if (!resolveRes.ok) {
+        throw new Error(resolveData.error || "User not found");
+      }
+      const resolvedEmail = resolveData.email;
+
+      const credential = await signInWithEmailAndPassword(auth, resolvedEmail, password);
       const idToken = await credential.user.getIdToken();
       if (!idToken) throw new Error("Firebase ID token unavailable");
       const res = await fetch("/api/auth/login", {
@@ -110,11 +118,11 @@ export default function LoginPage() {
           <div className="auth-input-wrapper">
             <input
               className="auth-input"
-              type="email"
-              placeholder="Email Address"
+              type="text"
+              placeholder="Email or User ID"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
+              autoComplete="username"
             />
             <span className="auth-input-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

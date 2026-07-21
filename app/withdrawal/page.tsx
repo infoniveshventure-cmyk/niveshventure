@@ -154,8 +154,8 @@ export default function WithdrawalPage() {
                       walletType === "returns" ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
                     }`}
                   >
-                    <div className="font-semibold text-white">Withdrawal Returns Wallet</div>
-                    <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.withdrawalReturnsWallet ?? 0).toLocaleString()} (Withdraw anytime)</div>
+                    <div className="font-semibold text-white">Level Return Wallet</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.withdrawalReturnsWallet ?? 0).toLocaleString()} (Withdraw/P2P allowed)</div>
                   </button>
                 </div>
               </div>

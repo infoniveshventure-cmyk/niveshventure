@@ -100,6 +100,24 @@ export async function GET() {
   // Get past closings history
   const history = await MonthlyClosing.find({ status: "closed" }).sort({ completedAt: -1 }).limit(50);
 
+  // Fetch users for 7% and 5% categorization
+  const allUsers = await User.find({ role: "member" })
+    .select("memberId fullName totalInvestment currentReturnPlan monthlyMissCount dailyReturnsWallet")
+    .lean();
+
+  const users7 = allUsers.filter((u) => u.currentReturnPlan === 7 || (u.monthlyMissCount || 0) < 2);
+  const users5 = allUsers.filter((u) => u.currentReturnPlan === 5 || (u.monthlyMissCount || 0) === 2);
+
+  const stats7 = {
+    totalUsers: users7.length,
+    totalPending: parseFloat(users7.reduce((sum, u) => sum + (u.dailyReturnsWallet || 0), 0).toFixed(6)),
+  };
+
+  const stats5 = {
+    totalUsers: users5.length,
+    totalPending: parseFloat(users5.reduce((sum, u) => sum + (u.dailyReturnsWallet || 0), 0).toFixed(6)),
+  };
+
   return NextResponse.json({
     status: currentClosing.status,
     currentMonth: currentMonthStr,
@@ -109,6 +127,10 @@ export async function GET() {
     nextClosingDate,
     currentClosing,
     history,
+    users7,
+    users5,
+    stats7,
+    stats5,
   });
 }
 
@@ -407,16 +429,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Closing must be in progress to complete it." }, { status: 400 });
     }
 
+    const session = await getSessionFromCookies();
+    const adminUser = session ? await User.findOne({ memberId: session.memberId }).select("fullName").lean() : null;
+    const adminName = adminUser?.fullName || "Admin";
+
     closing.status = "closed";
     closing.completedAt = new Date();
 
-    // Automatically Release: Referral Income, Matching Income, Booster Income
-    const autoReleaseTypes = ["referral_income", "matching_income", "booster_income"];
+    // Automatically Release: Referral Income, Matching Income, Booster Income, Returns Income, Level Income
+    const autoReleaseTypes = ["referral_income", "matching_income", "booster_income", "returns_income", "level_income"];
     closing.releasedTypes = autoReleaseTypes;
 
     const memberIds = closing.calculatedIncomes.map((c: any) => c.memberId);
     const users = await User.find({ memberId: { $in: memberIds } });
     const userMap = new Map(users.map((u) => [u.memberId, u]));
+
+    const users7 = users.filter((u) => u.currentReturnPlan === 7 || (u.monthlyMissCount || 0) < 2);
+    const users5 = users.filter((u) => u.currentReturnPlan === 5 || (u.monthlyMissCount || 0) === 2);
+
+    let totalDailyReturnClosed = 0;
+    let totalReturnsLevelClosed = 0;
+
+    for (const u of users) {
+      totalDailyReturnClosed += u.dailyReturnsWallet || 0;
+      totalReturnsLevelClosed += u.pendingReturnsLevelIncome || 0;
+    }
+
+    closing.users7ClosedCount = users7.length;
+    closing.users5ClosedCount = users5.length;
+    closing.totalDailyReturnClosed = parseFloat(totalDailyReturnClosed.toFixed(6));
+    closing.totalReturnsLevelClosed = parseFloat(totalReturnsLevelClosed.toFixed(6));
+    closing.closedByAdminName = adminName;
     
     const transactionsToCreate: any[] = [];
     const bulkOps: any[] = [];
@@ -489,6 +532,36 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // Credit Daily Returns and Level Returns (Monthly Closing)
+      const dailyAmt = user.dailyReturnsWallet || 0;
+      const levelAmt = user.pendingReturnsLevelIncome || 0;
+
+      if (dailyAmt > 0) {
+        transactionsToCreate.push({
+          memberId: user.memberId,
+          type: "returns_income",
+          direction: "credit",
+          amount: dailyAmt,
+          currency: "USDT",
+          status: "completed",
+          note: `Monthly Investment Returns - ${month}`,
+          referenceId: closing._id.toString(),
+        });
+      }
+
+      if (levelAmt > 0) {
+        transactionsToCreate.push({
+          memberId: user.memberId,
+          type: "level_income",
+          direction: "credit",
+          amount: levelAmt,
+          currency: "USDT",
+          status: "completed",
+          note: `Monthly Returns Level Income - ${month}`,
+          referenceId: closing._id.toString(),
+        });
+      }
+
       bulkOps.push({
         updateOne: {
           filter: { _id: user._id },
@@ -499,24 +572,31 @@ export async function POST(req: NextRequest) {
               leftCurrentBusiness: 0,
               rightCurrentBusiness: 0,
               dailyReturnsWallet: 0,
+              dailyReturnPending: 0,
+              returnsDailyEarnings: 0,
+              pendingReturnsLevelIncome: 0,
             },
             $inc: {
               earningsWalletBalance: walletBalanceInc,
               totalReferralIncome: totalReferralIncomeInc,
               totalMatchingIncome: totalMatchingIncomeInc,
               totalRewardIncome: totalRewardIncomeInc,
-              withdrawalReturnsWallet: user.dailyReturnsWallet || 0,
+              totalReturnsIncome: dailyAmt,
+              totalInvestmentReturn: dailyAmt,
+              totalLevelIncome: levelAmt,
+              totalReturnsLevelIncomeEarned: levelAmt,
+              withdrawalReturnsWallet: parseFloat((dailyAmt + levelAmt).toFixed(6)),
             }
           }
         }
       });
 
       // Notify User
-      if (calc.referralIncome > 0 || calc.matchingIncome > 0 || calc.boosterIncome > 0) {
+      if (calc.referralIncome > 0 || calc.matchingIncome > 0 || calc.boosterIncome > 0 || dailyAmt > 0 || levelAmt > 0) {
         notifyMember(
           user.memberId,
-          "Monthly Incomes Released! 💸",
-          `Your Auto-Release Incomes (Referral, Matching, Booster) for ${month} have been credited to your wallet.`,
+          "Monthly Settlement Completed! 💸",
+          `Your Monthly Settlement for ${month} is complete. Pending returns and incomes have been credited.`,
           "income_released"
         ).catch(() => {});
       }

@@ -3,7 +3,7 @@ import { Schema, model, models } from "mongoose";
 const WebsiteSettingsSchema = new Schema(
   {
     key: { type: String, default: "singleton", unique: true },
-    websiteName: { type: String, default: "NexaChain" },
+    websiteName: { type: String, default: "Nivesh Venture" },
     logoUrl: { type: String, default: "/logo1.png" },
     contactEmail: { type: String, default: "" },
     contactPhone: { type: String, default: "" },

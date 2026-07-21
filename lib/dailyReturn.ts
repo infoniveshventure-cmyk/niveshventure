@@ -144,7 +144,13 @@ export async function runDailyReturn(forceDate?: string) {
   const manualDailyPct = manualPctRule ? Number(manualPctRule.value) : 0.2;
 
   // 2. Date strings in IST
-  const today = forceDate || getISTDateString(); // "YYYY-MM-DD"
+  // We process yesterday's daily returns/misses because yesterday has fully ended.
+  let today = forceDate;
+  if (!today) {
+    const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const yesterdayIST = new Date(nowIST.getTime() - 24 * 60 * 60 * 1000);
+    today = getISTDateString(yesterdayIST);
+  }
   const month = today.slice(0, 7); // "YYYY-MM"
 
   // 3. Process each member & admin
@@ -455,6 +461,8 @@ export async function runMonthlySettlement(force = false) {
       if (amount > 0) {
         member.totalReturnsIncome = (member.totalReturnsIncome || 0) + amount;
         member.totalDailyReturnSettled = (member.totalDailyReturnSettled || 0) + amount;
+        member.withdrawalReturnsWallet = (member.withdrawalReturnsWallet || 0) + amount;
+        member.dailyReturnsWallet = 0;
         member.dailyReturnPending = 0;
         member.returnsDailyEarnings = 0;
         member.lastReturnsClosingPeriod = prevMonth;
@@ -515,6 +523,7 @@ export async function runMonthlySettlement(force = false) {
 
       if (levelIncomeAmt > 0) {
         member.totalReturnsLevelIncomeEarned = (member.totalReturnsLevelIncomeEarned || 0) + levelIncomeAmt;
+        member.withdrawalReturnsWallet = (member.withdrawalReturnsWallet || 0) + levelIncomeAmt;
         member.pendingReturnsLevelIncome = 0;
         member.lastReturnsLevelClosing = prevMonth;
 
@@ -561,6 +570,115 @@ export async function runMonthlySettlement(force = false) {
     totalAmountSettled: parseFloat(totalAmount.toFixed(4)),
     forced: force,
   };
+}
+
+export async function generateDailyReturnForUser(memberId: string, date: string) {
+  await connectDB();
+
+  const today = date;
+  const month = today.slice(0, 7);
+
+  const member = await User.findOne({ memberId });
+  if (!member) return { error: "Member not found" };
+
+  // 1. Double Credit Protection
+  const dailyReturnRecord = await DailyReturn.findOne({ memberId, date: today });
+  if (dailyReturnRecord) {
+    return { success: true, updated: false, reason: "Daily return already calculated for today" };
+  }
+
+  // 2. Fetch active investment volume
+  const activeInvestments = await Investment.find({ memberId, status: "active" }).select("amount").lean();
+  const totalActiveInvestment = activeInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+
+  if (totalActiveInvestment <= 0) {
+    return { success: true, updated: false, reason: "No active investments" };
+  }
+
+  // 3. Load business rules
+  const [completedRule, modeRule, manualPctRule] = await Promise.all([
+    getCachedBusinessRule("production_completed_monthly_rate"),
+    getCachedBusinessRule("daily_return_mode"),
+    getCachedBusinessRule("daily_return_manual_pct"),
+  ]);
+
+  const completedRate = completedRule ? Number(completedRule.value) : 7;
+  const mode = modeRule ? String(modeRule.value) : "auto";
+  const manualDailyPct = manualPctRule ? Number(manualPctRule.value) : 0.2;
+
+  const settings = await getCachedSettings() || await WebsiteSettings.create({ key: "singleton" });
+  const returnAfterOneMiss = settings.returnPlanAfterOneMiss ?? 5;
+
+  let dailyPlanRate = completedRate;
+  if (member.monthlyMissCount >= 2) {
+    dailyPlanRate = returnAfterOneMiss;
+  } else {
+    dailyPlanRate = completedRate;
+  }
+  member.currentReturnPlan = dailyPlanRate;
+
+  // Compute effective daily percentage
+  const daysInMonth = getDaysInMonth(today);
+  const dailyPct = mode === "auto" ? (dailyPlanRate / daysInMonth) : manualDailyPct;
+
+  // Calculate profit
+  const profit = parseFloat(
+    ((totalActiveInvestment * dailyPct) / 100).toFixed(6)
+  );
+
+  const runningTotal = parseFloat(
+    ((member.dailyReturnPending || 0) + profit).toFixed(6)
+  );
+
+  // Create DailyReturn record
+  await DailyReturn.create({
+    memberId: member.memberId,
+    date: today,
+    month,
+    investmentAmount: totalActiveInvestment,
+    dailyPct,
+    profit,
+    runningTotal,
+    settled: false,
+  });
+
+  if (profit > 0) {
+    await Transaction.create({
+      memberId: member.memberId,
+      type: "returns_income",
+      direction: "credit",
+      amount: profit,
+      currency: "USDT",
+      status: "completed",
+      note: `Daily ROI return for ${today}`,
+      description: `Daily ROI yield of ${dailyPct.toFixed(6)}% on active investment $${totalActiveInvestment.toLocaleString()}`,
+      walletType: "returns",
+    });
+  }
+
+  const dailyInvReturn = parseFloat(((totalActiveInvestment * 0.233) / 100).toFixed(6));
+  member.dailyReturnPending = runningTotal;
+  member.returnsDailyEarnings = runningTotal;
+  member.dailyReturnsWallet = parseFloat(
+    ((member.dailyReturnsWallet || 0) + profit + dailyInvReturn).toFixed(6)
+  );
+  member.totalInvestmentReturn = parseFloat(
+    ((member.totalInvestmentReturn || 0) + dailyInvReturn).toFixed(6)
+  );
+  member.predictionSubmitted = true;
+  member.lastPredictionDate = today;
+
+  await member.save();
+
+  // Trigger daily Returns Level Income calculation
+  try {
+    const { calculateDailyReturnsLevelIncome } = await import("@/lib/returnsLevelIncome");
+    await calculateDailyReturnsLevelIncome();
+  } catch (lvlErr) {
+    console.error("Failed to run Level ROI calculation inside generateDailyReturnForUser:", lvlErr);
+  }
+
+  return { success: true, updated: true, profit };
 }
 
 export async function recalculateDailyReturnForUser(memberId: string, date: string) {
@@ -617,7 +735,7 @@ export async function recalculateDailyReturnForUser(memberId: string, date: stri
   member.productionStatus = "active";
 
   let dailyPlanRate = completedRate;
-  if (member.monthlyMissCount === 2) {
+  if (member.monthlyMissCount >= 2) {
     dailyPlanRate = returnAfterOneMiss;
   } else {
     dailyPlanRate = completedRate;
@@ -625,7 +743,8 @@ export async function recalculateDailyReturnForUser(memberId: string, date: stri
   member.currentReturnPlan = dailyPlanRate;
 
   // Compute effective daily percentage
-  const dailyPct = mode === "auto" ? dailyPlanRate : manualDailyPct;
+  const daysInMonth = getDaysInMonth(today);
+  const dailyPct = mode === "auto" ? (dailyPlanRate / daysInMonth) : manualDailyPct;
 
   // Calculate profit
   const totalActiveInvestment = dailyReturnRecord.investmentAmount || 0;
@@ -651,8 +770,8 @@ export async function recalculateDailyReturnForUser(memberId: string, date: stri
     ((member.dailyReturnPending || 0) + diff).toFixed(6)
   );
   member.returnsDailyEarnings = member.dailyReturnPending;
-  member.returnsWalletBalance = parseFloat(
-    ((member.returnsWalletBalance || 0) + profit).toFixed(6)
+  member.dailyReturnsWallet = parseFloat(
+    ((member.dailyReturnsWallet || 0) + profit).toFixed(6)
   );
 
   if (profit > 0) {
@@ -677,7 +796,6 @@ export async function recalculateDailyReturnForUser(memberId: string, date: stri
   // Trigger daily Returns Level Income calculation for this retro credited amount
   try {
     const { calculateDailyReturnsLevelIncome } = await import("@/lib/returnsLevelIncome");
-    // We can run it; calculateDailyReturnsLevelIncome handles all matching level incomes based on active ROI records.
     await calculateDailyReturnsLevelIncome();
   } catch (lvlErr) {
     console.error("Failed to run Level ROI calculation inside recalculateDailyReturnForUser:", lvlErr);
