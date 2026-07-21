@@ -30,8 +30,8 @@ export default function DirectProgressCard({
   // Message block based on requirements
   const statusMessage =
     activeCount >= PER_LEVEL
-      ? "Great! Level 1 completed successfully."
-      : `You need ${remainingNeeded} more active Direct member${remainingNeeded === 1 ? "" : "s"} to complete this level.`;
+      ? "Great! All direct requirements completed successfully."
+      : `You need ${remainingNeeded} more active Direct member${remainingNeeded === 1 ? "" : "s"} to complete your directs requirement.`;
 
   return (
     <div className="glass-card p-6">
@@ -48,9 +48,6 @@ export default function DirectProgressCard({
             {isActive ? "Active" : "Inactive"}
           </span>
         </h2>
-        <span className="text-xs px-3 py-1 rounded-full bg-neon-violet/20 text-neon-violet border border-neon-violet/40 flex items-center gap-1">
-          ★ Level 1
-        </span>
       </div>
       <p className="text-xs text-ink-muted mb-6">
         {statusMessage}
@@ -111,7 +108,7 @@ export default function DirectProgressCard({
           </div>
           <p className="text-xs sm:text-sm">
             {activeCount === 0 ? (
-              <>Share your referral link to start Level 1!</>
+              <>Share your referral link to start inviting directs!</>
             ) : (
               <>Great! You have {activeCount} out of {PER_LEVEL} active Directs.<br />You're {percent}% there!</>
             )}
