@@ -50,6 +50,10 @@ export default function DashboardPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyData, setHistoryData] = useState<any[]>([]);
 
+  const [showLevelHistoryModal, setShowLevelHistoryModal] = useState(false);
+  const [levelHistoryLoading, setLevelHistoryLoading] = useState(false);
+  const [levelHistoryData, setLevelHistoryData] = useState<any[]>([]);
+
   const loadHistory = async () => {
     setHistoryLoading(true);
     try {
@@ -65,11 +69,32 @@ export default function DashboardPage() {
     }
   };
 
+  const loadLevelHistory = async () => {
+    setLevelHistoryLoading(true);
+    try {
+      const res = await fetch("/api/user/level-returns-history", { cache: "no-store" });
+      if (res.ok) {
+        const json = await res.json();
+        setLevelHistoryData(json.records || []);
+      }
+    } catch (err) {
+      console.error("Failed to load level history:", err);
+    } finally {
+      setLevelHistoryLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (showHistoryModal) {
       void loadHistory();
     }
   }, [showHistoryModal]);
+
+  useEffect(() => {
+    if (showLevelHistoryModal) {
+      void loadLevelHistory();
+    }
+  }, [showLevelHistoryModal]);
 
   useEffect(() => {
     async function load() {
@@ -217,7 +242,7 @@ export default function DashboardPage() {
     { label: "Total Return Withdrawal", value: user?.withdrawalReturnsWallet ?? profile?.withdrawalReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
     { label: "Total Return Level", value: user?.returnsWalletBalance ?? profile?.returnsWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
     { label: "Daily Return Wallet", value: user?.dailyReturnsWallet ?? profile?.dailyReturnsWallet ?? 0, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", onClick: () => setShowHistoryModal(true) },
-    { label: "Return Level Pending", value: user?.pendingReturnsLevelIncome ?? profile?.pendingReturnsLevelIncome ?? 0, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", isPendingReturnsLevel: true, onClick: () => setShowHistoryModal(true) },
+    { label: "Return Level Pending", value: user?.pendingReturnsLevelIncome ?? profile?.pendingReturnsLevelIncome ?? 0, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", isPendingReturnsLevel: true, onClick: () => setShowLevelHistoryModal(true) },
   ];
 
   async function handlePredict(answer: "yes" | "no") {
@@ -823,6 +848,91 @@ export default function DashboardPage() {
             <div className="mt-4 pt-3 border-t border-white/5 flex justify-end">
               <button
                 onClick={() => setShowHistoryModal(false)}
+                className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-white/10 hover:bg-white/5 text-white transition bg-white/5 hover:border-white/20"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Level Return History Modal ── */}
+      {showLevelHistoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="glass-card max-w-4xl w-full p-6 relative max-h-[85vh] flex flex-col border border-white/10 shadow-2xl">
+            <button
+              onClick={() => setShowLevelHistoryModal(false)}
+              className="absolute top-4 right-4 text-ink-muted hover:text-white transition"
+            >
+              <X size={20} />
+            </button>
+
+            <h3 className="font-display font-semibold text-lg text-white mb-2 flex items-center gap-2">
+              <TrendingUp className="text-neon-cyan" size={20} /> Return Level Income History
+            </h3>
+            <p className="text-xs text-ink-muted mb-4 border-b border-white/5 pb-2">
+              Detailed list of team level returns generated daily across your 10 levels.
+            </p>
+
+            <div className="overflow-y-auto flex-1 pr-1 space-y-4">
+              {levelHistoryLoading ? (
+                <div className="py-12 text-center text-sm text-ink-muted animate-pulse">
+                  Loading level return history...
+                </div>
+              ) : levelHistoryData.length === 0 ? (
+                <div className="py-12 text-center text-sm text-ink-muted italic">
+                  No level return income history found.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10 text-ink-muted font-bold uppercase tracking-wider text-[10px]">
+                        <th className="py-2 px-2">Date</th>
+                        <th className="py-2 px-2">From Member</th>
+                        <th className="py-2 px-2 text-center">Level</th>
+                        <th className="py-2 px-2 text-center">Percentage</th>
+                        <th className="py-2 px-2 text-right">Calculated Amount</th>
+                        <th className="py-2 px-2 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {levelHistoryData.map((item) => (
+                        <tr key={item.id} className="hover:bg-white/5 border-b border-white/5 last:border-0">
+                          <td className="py-3 px-2 font-mono text-white whitespace-nowrap">{item.date}</td>
+                          <td className="py-3 px-2 text-white">
+                            <div className="font-mono text-neon-cyan font-bold">{item.downlineMemberId}</div>
+                            <div className="text-[10px] text-ink-muted truncate max-w-[150px]">{item.downlineName}</div>
+                          </td>
+                          <td className="py-3 px-2 text-center font-bold text-white whitespace-nowrap">
+                            Level {item.level}
+                          </td>
+                          <td className="py-3 px-2 text-center text-ink-muted font-mono font-semibold">
+                            {item.percentage}%
+                          </td>
+                          <td className="py-3 px-2 text-right text-neon-green font-mono font-bold">
+                            ${item.amount.toFixed(4)}
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${item.status === "Credited"
+                              ? "bg-neon-green/10 text-neon-green"
+                              : "bg-yellow-400/10 text-yellow-400"
+                              }`}>
+                              {item.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-white/5 flex justify-end">
+              <button
+                onClick={() => setShowLevelHistoryModal(false)}
                 className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-white/10 hover:bg-white/5 text-white transition bg-white/5 hover:border-white/20"
               >
                 Close Window
