@@ -174,19 +174,16 @@ export default function DashboardPage() {
   }, [countdownEndTime, accountState]);
 
   const currentDate = new Date();
-  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-  const activeDailyYield = (totalActiveInvestment * 0.233) / 100;
   const isPredictedToday = !!predSubmission;
-  const todayRoiYield = isPredictedToday ? ((totalActiveInvestment * currentReturnPlan) / 100) : 0;
-  const todayRoiDailyYield = isPredictedToday ? ((totalActiveInvestment * (currentReturnPlan / daysInMonth)) / 100) : 0;
+  const dailyPct = currentReturnPlan === 7 ? 0.233 : (currentReturnPlan === 5 ? 0.166 : 0);
+  const todayYield = isPredictedToday ? ((totalActiveInvestment * dailyPct) / 100) : 0;
 
-  const pendingDailyAmt = (dailyReturnPending || user?.dailyReturnPending || 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayRoiYield : 0);
+  const pendingDailyAmt = (dailyReturnPending || user?.dailyReturnPending || 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayYield : 0);
   const totalPendingReturnsAndLevel = pendingDailyAmt + (user?.pendingReturnsLevelIncome ?? 0);
 
-  const todayInvReturnYield = isPredictedToday ? activeDailyYield : 0;
-  let displayedTotalInvReturn = (user?.totalInvestmentReturn ?? profile?.totalInvestmentReturn ?? 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayInvReturnYield : 0);
+  let displayedTotalInvReturn = (user?.totalInvestmentReturn ?? profile?.totalInvestmentReturn ?? 0) + (isPredictedToday && !hasDailyReturnRecordToday ? todayYield : 0);
   if (displayedTotalInvReturn === 0 && isPredictedToday) {
-    displayedTotalInvReturn = todayInvReturnYield;
+    displayedTotalInvReturn = todayYield;
   }
 
   const totalEarningVal =
@@ -219,8 +216,8 @@ export default function DashboardPage() {
     { label: "Active Investment", value: totalActiveInvestment || user?.totalInvestment || 0, icon: Briefcase, prefix: "$", href: "/invest", color: "text-neon-green" },
     { label: "Total Return Withdrawal", value: user?.withdrawalReturnsWallet ?? profile?.withdrawalReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
     { label: "Total Return Level", value: user?.returnsWalletBalance ?? profile?.returnsWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
-    { label: "Daily Return Wallet", value: user?.dailyReturnsWallet ?? profile?.dailyReturnsWallet ?? 0, icon: Clock, prefix: "$", href: "/wallet", color: "text-neon-magenta" },
-    { label: "Return Level Pending", value: user?.pendingReturnsLevelIncome ?? profile?.pendingReturnsLevelIncome ?? 0, icon: Clock, prefix: "$", href: "/wallet", color: "text-neon-magenta" },
+    { label: "Daily Return Wallet", value: user?.dailyReturnsWallet ?? profile?.dailyReturnsWallet ?? 0, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", onClick: () => setShowHistoryModal(true) },
+    { label: "Return Level Pending", value: user?.pendingReturnsLevelIncome ?? profile?.pendingReturnsLevelIncome ?? 0, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", isPendingReturnsLevel: true, onClick: () => setShowHistoryModal(true) },
   ];
 
   async function handlePredict(answer: "yes" | "no") {

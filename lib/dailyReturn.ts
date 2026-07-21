@@ -264,7 +264,7 @@ export async function runDailyReturn(forceDate?: string) {
 
           for (const dr of dailyReturns) {
             const originalProfit = dr.profit || 0;
-            const newDailyPct = 5 / daysInMonth;
+            const newDailyPct = 0.166;
             const newProfit = parseFloat(
               ((dr.investmentAmount * newDailyPct) / 100).toFixed(6)
             );
@@ -312,8 +312,12 @@ export async function runDailyReturn(forceDate?: string) {
     }
 
     // Compute effective daily percentage
-    const daysInMonth = getDaysInMonth(today);
-    const dailyPct = mode === "auto" ? (dailyPlanRate / daysInMonth) : manualDailyPct;
+    let dailyPct = 0;
+    if (mode === "auto") {
+      dailyPct = dailyPlanRate === 7 ? 0.233 : (dailyPlanRate === 5 ? 0.166 : 0);
+    } else {
+      dailyPct = manualDailyPct;
+    }
 
     // C. Calculate profit
     const profit = parseFloat(
@@ -350,11 +354,14 @@ export async function runDailyReturn(forceDate?: string) {
         });
       }
 
-      const dailyInvReturn = parseFloat(((totalActiveInvestment * 0.233) / 100).toFixed(6));
       member.dailyReturnPending = runningTotal;
       member.returnsDailyEarnings = runningTotal;
-      member.dailyReturnsWallet = (member.dailyReturnsWallet || 0) + profit + dailyInvReturn;
-      member.totalInvestmentReturn = (member.totalInvestmentReturn || 0) + dailyInvReturn;
+      member.dailyReturnsWallet = parseFloat(
+        ((member.dailyReturnsWallet || 0) + profit).toFixed(6)
+      );
+      member.totalInvestmentReturn = parseFloat(
+        ((member.totalInvestmentReturn || 0) + profit).toFixed(6)
+      );
       await member.save();
       processed++;
     } catch (err: any) {
@@ -618,8 +625,12 @@ export async function generateDailyReturnForUser(memberId: string, date: string)
   member.currentReturnPlan = dailyPlanRate;
 
   // Compute effective daily percentage
-  const daysInMonth = getDaysInMonth(today);
-  const dailyPct = mode === "auto" ? (dailyPlanRate / daysInMonth) : manualDailyPct;
+  let dailyPct = 0;
+  if (mode === "auto") {
+    dailyPct = dailyPlanRate === 7 ? 0.233 : (dailyPlanRate === 5 ? 0.166 : 0);
+  } else {
+    dailyPct = manualDailyPct;
+  }
 
   // Calculate profit
   const profit = parseFloat(
@@ -656,14 +667,13 @@ export async function generateDailyReturnForUser(memberId: string, date: string)
     });
   }
 
-  const dailyInvReturn = parseFloat(((totalActiveInvestment * 0.233) / 100).toFixed(6));
   member.dailyReturnPending = runningTotal;
   member.returnsDailyEarnings = runningTotal;
   member.dailyReturnsWallet = parseFloat(
-    ((member.dailyReturnsWallet || 0) + profit + dailyInvReturn).toFixed(6)
+    ((member.dailyReturnsWallet || 0) + profit).toFixed(6)
   );
   member.totalInvestmentReturn = parseFloat(
-    ((member.totalInvestmentReturn || 0) + dailyInvReturn).toFixed(6)
+    ((member.totalInvestmentReturn || 0) + profit).toFixed(6)
   );
   member.predictionSubmitted = true;
   member.lastPredictionDate = today;

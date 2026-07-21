@@ -12,7 +12,7 @@ cp .env.example .env
 ## github repo repush  :
 ``` 
 git add . 
-git commit -m "Dashboard Return Level Pending Wallet " 
+git commit -m "Dashboard Daily Return Wallet logic fix  " 
 git push -u origin main
 ```
 

@@ -60,14 +60,9 @@ export async function GET() {
   const hasPredictionToday = await PredictionSubmission.exists({ memberId: session.memberId, date: today });
 
   const totalActiveInvestment = user.totalInvestment || 0;
-  const activeDailyYield = (totalActiveInvestment * 0.233) / 100;
-  
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const currentReturnPlan = user.currentReturnPlan || 7;
-  const todayRoiDailyYield = hasPredictionToday ? ((totalActiveInvestment * (currentReturnPlan / daysInMonth)) / 100) : 0;
-
-  const todayYield = activeDailyYield + todayRoiDailyYield;
+  const dailyPct = currentReturnPlan === 7 ? 0.233 : (currentReturnPlan === 5 ? 0.166 : 0);
+  const todayYield = hasPredictionToday ? ((totalActiveInvestment * dailyPct) / 100) : 0;
 
   let liveDailyReturnsWallet = user.dailyReturnsWallet || 0;
   if (!hasDailyReturnRecordToday) {
