@@ -140,7 +140,7 @@ export async function runDailyReturn(forceDate?: string) {
   const missedRate = missedRule ? Number(missedRule.value) : 5;
   const maxMissLimit = maxMissLimitRule ? Number(maxMissLimitRule.value) : 3;
 
-  const mode = modeRule ? String(modeRule.value) : "auto";
+  const mode = (modeRule && modeRule.value) ? String(modeRule.value) : "auto";
   const manualDailyPct = manualPctRule ? Number(manualPctRule.value) : 0.2;
 
   // 2. Date strings in IST
@@ -610,7 +610,7 @@ export async function generateDailyReturnForUser(memberId: string, date: string)
   ]);
 
   const completedRate = completedRule ? Number(completedRule.value) : 7;
-  const mode = modeRule ? String(modeRule.value) : "auto";
+  const mode = (modeRule && modeRule.value) ? String(modeRule.value) : "auto";
   const manualDailyPct = manualPctRule ? Number(manualPctRule.value) : 0.2;
 
   const settings = await getCachedSettings() || await WebsiteSettings.create({ key: "singleton" });
@@ -727,7 +727,7 @@ export async function recalculateDailyReturnForUser(memberId: string, date: stri
   const missedRate = missedRule ? Number(missedRule.value) : 5;
   const maxMissLimit = maxMissLimitRule ? Number(maxMissLimitRule.value) : 3;
 
-  const mode = modeRule ? String(modeRule.value) : "auto";
+  const mode = (modeRule && modeRule.value) ? String(modeRule.value) : "auto";
   const manualDailyPct = manualPctRule ? Number(manualPctRule.value) : 0.2;
 
   const settings = await getCachedSettings() || await WebsiteSettings.create({ key: "singleton" });
