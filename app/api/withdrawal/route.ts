@@ -77,9 +77,18 @@ export async function POST(req: NextRequest) {
     const validKey = await compareSecret(sanitizedAccessKey, user.accessKeyHash);
     if (!validKey) return NextResponse.json({ error: "Invalid Access Key" }, { status: 401 });
 
-    const balanceField = walletType === "returns" ? "withdrawalReturnsWallet" : "earningsWalletBalance";
+    let balanceField = "earningsWalletBalance";
+    let walletLabel = "All Earnings Wallet";
+    if (walletType === "returns") {
+      balanceField = "withdrawalReturnsWallet";
+      walletLabel = "Total Return Withdrawal Wallet";
+    } else if (walletType === "level_returns") {
+      balanceField = "returnsWalletBalance";
+      walletLabel = "Total Return Level Wallet";
+    }
+
     if ((user as any)[balanceField] < amount) {
-      return NextResponse.json({ error: `Insufficient ${walletType === "returns" ? "Withdrawal Returns Wallet" : "All Earnings Wallet"} balance` }, { status: 400 });
+      return NextResponse.json({ error: `Insufficient ${walletLabel} balance` }, { status: 400 });
     }
 
     const processingCharge = Number((amount * feeRate).toFixed(2));
@@ -108,7 +117,7 @@ export async function POST(req: NextRequest) {
       amount,
       currency: mode,
       status: "pending",
-      note: `Withdrawal request submitted from ${walletType === "returns" ? "Withdrawal Returns Wallet" : "All Earnings Wallet"}`,
+      note: `Withdrawal request submitted from ${walletLabel}`,
       referenceId: withdrawal._id.toString(),
       walletType,
     });

@@ -523,7 +523,7 @@ export async function runMonthlySettlement(force = false) {
 
       if (levelIncomeAmt > 0) {
         member.totalReturnsLevelIncomeEarned = (member.totalReturnsLevelIncomeEarned || 0) + levelIncomeAmt;
-        member.withdrawalReturnsWallet = (member.withdrawalReturnsWallet || 0) + levelIncomeAmt;
+        member.returnsWalletBalance = (member.returnsWalletBalance || 0) + levelIncomeAmt;
         member.pendingReturnsLevelIncome = 0;
         member.lastReturnsLevelClosing = prevMonth;
 

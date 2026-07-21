@@ -585,7 +585,8 @@ export async function POST(req: NextRequest) {
               totalInvestmentReturn: dailyAmt,
               totalLevelIncome: levelAmt,
               totalReturnsLevelIncomeEarned: levelAmt,
-              withdrawalReturnsWallet: parseFloat((dailyAmt + levelAmt).toFixed(6)),
+              withdrawalReturnsWallet: parseFloat(dailyAmt.toFixed(6)),
+              returnsWalletBalance: parseFloat(levelAmt.toFixed(6)),
             }
           }
         }

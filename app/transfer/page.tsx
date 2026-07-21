@@ -26,6 +26,7 @@ type TransferRecord = {
 const WALLET_LABELS: Record<string, string> = {
   main: "Main Wallet",
   earnings: "All Earnings Wallet",
+  daily_returns: "Daily Return Wallet",
   withdrawal_returns: "Level Return Wallet",
 };
 

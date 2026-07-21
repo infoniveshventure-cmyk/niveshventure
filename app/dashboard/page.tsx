@@ -217,8 +217,10 @@ export default function DashboardPage() {
     { label: "Total Earning", value: totalEarningVal, icon: TrendingUp, prefix: "$", href: "/income", color: "text-neon-green" },
     { label: "Total Withdrawal", value: user?.totalWithdrawn ?? profile?.totalWithdrawn ?? 0, icon: ArrowUpRight, prefix: "$", href: "/withdrawal", color: "" },
     { label: "Active Investment", value: totalActiveInvestment || user?.totalInvestment || 0, icon: Briefcase, prefix: "$", href: "/invest", color: "text-neon-green" },
-    { label: "Level Return Wallet", value: user?.withdrawalReturnsWallet ?? profile?.withdrawalReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
-    { label: "Returns Pending Wallet", value: totalPendingReturnsAndLevel, icon: Clock, prefix: "$", href: "#", color: "text-neon-magenta", isPendingReturnsLevel: true, onClick: () => setShowHistoryModal(true) },
+    { label: "Total Return Withdrawal", value: user?.withdrawalReturnsWallet ?? profile?.withdrawalReturnsWallet ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Total Return Level", value: user?.returnsWalletBalance ?? profile?.returnsWalletBalance ?? 0, icon: Wallet, prefix: "$", href: "/wallet", color: "text-neon-cyan" },
+    { label: "Daily Return Wallet", value: user?.dailyReturnsWallet ?? profile?.dailyReturnsWallet ?? 0, icon: Clock, prefix: "$", href: "/wallet", color: "text-neon-magenta" },
+    { label: "Return Level Pending", value: user?.pendingReturnsLevelIncome ?? profile?.pendingReturnsLevelIncome ?? 0, icon: Clock, prefix: "$", href: "/wallet", color: "text-neon-magenta" },
   ];
 
   async function handlePredict(answer: "yes" | "no") {

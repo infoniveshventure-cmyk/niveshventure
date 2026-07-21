@@ -11,7 +11,7 @@ export default function WithdrawalPage() {
   const { profile } = useAuth();
   const [mode, setMode] = useState<"USDT" | "INR">("USDT");
   const [kind, setKind] = useState<"earning" | "capital">("earning");
-  const [walletType, setWalletType] = useState<"earnings" | "returns">("earnings");
+  const [walletType, setWalletType] = useState<"earnings" | "returns" | "level_returns">("earnings");
   const [amount, setAmount] = useState("");
   const [accessKey, setAccessKey] = useState("");
   const [bank, setBank] = useState({ bankName: "", accountNumber: "", ifsc: "", accountHolder: "" });
@@ -133,10 +133,10 @@ export default function WithdrawalPage() {
               <p className="text-xs text-neon-magenta">Capital (Nivesh) withdrawable only after 11-month lock-in completes.</p>
             )}
 
-            {kind === "earning" && (
+             {kind === "earning" && (
               <div className="space-y-2 my-2">
                 <label className="text-xs text-ink-muted block">Select Source Wallet</label>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     type="button"
                     onClick={() => setWalletType("earnings")}
@@ -154,8 +154,18 @@ export default function WithdrawalPage() {
                       walletType === "returns" ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
                     }`}
                   >
-                    <div className="font-semibold text-white">Level Return Wallet</div>
+                    <div className="font-semibold text-white">Total Return Withdrawal</div>
                     <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.withdrawalReturnsWallet ?? 0).toLocaleString()} (Withdraw/P2P allowed)</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWalletType("level_returns")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs border text-left transition ${
+                      walletType === "level_returns" ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan" : "border-white/10 text-ink-muted"
+                    }`}
+                  >
+                    <div className="font-semibold text-white">Total Return Level</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">Bal: ${(profile?.returnsWalletBalance ?? 0).toLocaleString()} (Withdraw/P2P allowed)</div>
                   </button>
                 </div>
               </div>

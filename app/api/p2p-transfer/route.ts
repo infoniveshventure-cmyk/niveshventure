@@ -8,7 +8,9 @@ import { compareSecret, getSessionFromCookies } from "@/lib/auth-server";
 const WALLET_FIELD_MAP: Record<string, { senderField: string; receiverField: string; label: string }> = {
   main: { senderField: "walletBalance", receiverField: "walletBalance", label: "Main Wallet" },
   earnings: { senderField: "earningsWalletBalance", receiverField: "earningsWalletBalance", label: "All Earnings Wallet" },
-  withdrawal_returns: { senderField: "withdrawalReturnsWallet", receiverField: "withdrawalReturnsWallet", label: "Level Return Wallet" },
+  daily_returns: { senderField: "dailyReturnsWallet", receiverField: "dailyReturnsWallet", label: "Daily Return Wallet" },
+  withdrawal_returns: { senderField: "withdrawalReturnsWallet", receiverField: "withdrawalReturnsWallet", label: "Total Return Withdrawal Wallet" },
+  returns: { senderField: "returnsWalletBalance", receiverField: "returnsWalletBalance", label: "Total Return Level Wallet" },
 };
 
 export async function GET() {
@@ -17,7 +19,7 @@ export async function GET() {
 
   await connectDB();
   const user = await User.findOne({ memberId: session.memberId }).select(
-    "walletBalance dailyReturnsWallet withdrawalReturnsWallet earningsWalletBalance dailyReturnPending pendingReturnsLevelIncome boosterWalletBalance nivshWalletBalance usdtWalletBalance fullName " +
+    "walletBalance dailyReturnsWallet withdrawalReturnsWallet returnsWalletBalance earningsWalletBalance dailyReturnPending pendingReturnsLevelIncome boosterWalletBalance nivshWalletBalance usdtWalletBalance fullName " +
     "currentReturnPlan lastPredictionDate predictionSubmitted totalInvestment"
   );
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -58,7 +60,9 @@ export async function GET() {
   const wallets = [
     { key: "main", label: "Main Wallet", balance: user.walletBalance ?? 0 },
     { key: "earnings", label: "All Earnings Wallet", balance: user.earningsWalletBalance ?? 0 },
-    { key: "withdrawal_returns", label: "Level Return Wallet", balance: user.withdrawalReturnsWallet ?? 0 },
+    { key: "daily_returns", label: "Daily Return Wallet", balance: liveDailyReturnsWallet },
+    { key: "withdrawal_returns", label: "Total Return Withdrawal Wallet", balance: user.withdrawalReturnsWallet ?? 0 },
+    { key: "returns", label: "Total Return Level Wallet", balance: user.returnsWalletBalance ?? 0 },
   ];
 
   const settings = await WebsiteSettings.findOne({ key: "singleton" });

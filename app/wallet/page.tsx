@@ -42,6 +42,7 @@ type WalletData = {
     walletBalance: number;
     dailyReturnsWallet?: number;
     withdrawalReturnsWallet?: number;
+    returnsWalletBalance?: number;
     boosterWalletBalance: number;
     nivshWalletBalance: number;
     usdtWalletBalance: number;
@@ -123,20 +124,48 @@ export default function WalletPage() {
       </div>
       {/* ── Section 1: Primary Wallets ── */}
       <p className="text-xs text-ink-muted uppercase tracking-widest font-semibold mb-3">
-        Main Balance Wallet
+        Settled Wallets (Withdrawable & P2P)
       </p>
-      <div className="max-w-md mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* 1. My Wallet */}
         <Link href="/withdrawal" className="stat-card group block">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center mb-3">
             <Wallet size={18} className="text-base" />
           </div>
-          <p className="text-xs text-ink-muted">My Wallet</p>
+          <p className="text-xs text-ink-muted">My Wallet (Main)</p>
           <p className="font-display text-xl font-bold mt-1 group-hover:text-neon-cyan transition">
             {sym}{(w?.walletBalance ?? 0).toLocaleString()}
           </p>
           <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
             Main balance for withdrawals, P2P transfers &amp; investments
+          </p>
+        </Link>
+
+        {/* 2. Total Return Withdrawal Wallet */}
+        <Link href="/withdrawal" className="stat-card group block">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center mb-3">
+            <TrendingUp size={18} className="text-base" />
+          </div>
+          <p className="text-xs text-ink-muted">Total Return Withdrawal</p>
+          <p className="font-display text-xl font-bold mt-1 group-hover:text-neon-cyan transition">
+            {sym}{(w?.withdrawalReturnsWallet ?? 0).toLocaleString()}
+          </p>
+          <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
+            Settled monthly daily return. Withdrawable &amp; P2P allowed.
+          </p>
+        </Link>
+
+        {/* 3. Total Return Level Wallet */}
+        <Link href="/withdrawal" className="stat-card group block">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-violet to-neon-cyan flex items-center justify-center mb-3">
+            <Layers size={18} className="text-base" />
+          </div>
+          <p className="text-xs text-ink-muted">Total Return Level</p>
+          <p className="font-display text-xl font-bold mt-1 group-hover:text-neon-cyan transition">
+            {sym}{(w?.returnsWalletBalance ?? 0).toLocaleString()}
+          </p>
+          <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
+            Settled monthly level return. Withdrawable &amp; P2P allowed.
           </p>
         </Link>
       </div>
@@ -269,8 +298,8 @@ export default function WalletPage() {
         </div>
       </div>
 
-      {/* ── Section 3.5: Rank & Daily Return Status ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      {/* ── Section 3.5: Rank & Pending Returns Status ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Current Rank */}
         <Link href="/rewards" className="stat-card group border border-amber-500/20">
           <div className="flex items-center gap-4">
@@ -288,25 +317,38 @@ export default function WalletPage() {
           </div>
         </Link>
 
-        {/* Returns Pending Wallet */}
+        {/* Daily Return Wallet */}
         <div className="stat-card border border-yellow-400/20">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-yellow-400/15 flex items-center justify-center shrink-0">
               <Clock size={22} className="text-yellow-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-ink-muted font-semibold uppercase tracking-wide">Returns Pending Wallet</p>
+              <p className="text-xs text-ink-muted font-semibold uppercase tracking-wide">Daily Return Wallet</p>
               <p className="font-display text-xl font-bold mt-0.5 text-yellow-400">
-                {loading ? "—" : `$${(dailyReturnPending + pendingReturnsLevelIncome).toLocaleString(undefined, { maximumFractionDigits: 4 })}`}
+                {loading ? "—" : `$${(w?.dailyReturnsWallet ?? 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}`}
               </p>
               <p className="text-[10px] text-yellow-400/60 mt-0.5 leading-snug">
-                Accumulates daily return + level income. Non-withdrawable, non-P2P.
+                Accumulates daily return. P2P Allowed. Non-withdrawable.
               </p>
-              {totalDailyReturnSettled > 0 && (
-                <p className="text-[10px] text-neon-green/70 mt-1">
-                  Total settled: ${totalDailyReturnSettled.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </p>
-              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Return Level Pending Wallet */}
+        <div className="stat-card border border-pink-500/20">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-pink-500/15 flex items-center justify-center shrink-0">
+              <Clock size={22} className="text-pink-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-ink-muted font-semibold uppercase tracking-wide">Return Level Pending</p>
+              <p className="font-display text-xl font-bold mt-0.5 text-pink-400">
+                {loading ? "—" : `$${pendingReturnsLevelIncome.toLocaleString(undefined, { maximumFractionDigits: 4 })}`}
+              </p>
+              <p className="text-[10px] text-pink-400/60 mt-0.5 leading-snug">
+                Accumulates level returns. Non-withdrawable, non-P2P.
+              </p>
             </div>
           </div>
         </div>
